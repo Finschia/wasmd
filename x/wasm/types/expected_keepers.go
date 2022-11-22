@@ -8,9 +8,9 @@ import (
 	capabilitytypes "github.com/Finschia/finschia-sdk/x/capability/types"
 	"github.com/Finschia/finschia-sdk/x/distribution/types"
 	stakingtypes "github.com/Finschia/finschia-sdk/x/staking/types"
-	connectiontypes "github.com/Finschia/ibc-go/v3/modules/core/03-connection/types"
-	channeltypes "github.com/Finschia/ibc-go/v3/modules/core/04-channel/types"
-	ibcexported "github.com/Finschia/ibc-go/v3/modules/core/exported"
+	connectiontypes "github.com/cosmos/ibc-go/v4/modules/core/03-connection/types"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
 )
 
 // BankViewKeeper defines a subset of methods implemented by the cosmos-sdk bank keeper

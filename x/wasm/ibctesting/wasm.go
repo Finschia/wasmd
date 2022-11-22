@@ -13,7 +13,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/Finschia/finschia-sdk/types"
-	ibctesting "github.com/Finschia/ibc-go/v3/testing"
+	ibctesting "github.com/cosmos/ibc-go/v4/testing"
 	"github.com/Finschia/ostracon/libs/rand"
 
 	"github.com/Finschia/wasmd/x/wasm/types"

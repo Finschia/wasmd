@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	channeltypes "github.com/Finschia/ibc-go/v3/modules/core/04-channel/types"
-	ibctesting "github.com/Finschia/ibc-go/v3/testing"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	ibctesting "github.com/cosmos/ibc-go/v4/testing"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
 
 	wasmibctesting "github.com/Finschia/wasmd/x/wasm/ibctesting"

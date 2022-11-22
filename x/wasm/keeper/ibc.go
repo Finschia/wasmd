@@ -6,7 +6,7 @@ import (
 	sdk "github.com/Finschia/finschia-sdk/types"
 	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
 	capabilitytypes "github.com/Finschia/finschia-sdk/x/capability/types"
-	host "github.com/Finschia/ibc-go/v3/modules/core/24-host"
+	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )

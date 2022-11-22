@@ -3,8 +3,8 @@ package wasmtesting
 import (
 	sdk "github.com/Finschia/finschia-sdk/types"
 	capabilitytypes "github.com/Finschia/finschia-sdk/x/capability/types"
-	channeltypes "github.com/Finschia/ibc-go/v3/modules/core/04-channel/types"
-	ibcexported "github.com/Finschia/ibc-go/v3/modules/core/exported"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )

@@ -62,11 +62,11 @@ import (
 	upgradeclient "github.com/Finschia/finschia-sdk/x/upgrade/client"
 	upgradekeeper "github.com/Finschia/finschia-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/Finschia/finschia-sdk/x/upgrade/types"
-	"github.com/Finschia/ibc-go/v3/modules/apps/transfer"
-	ibctransfertypes "github.com/Finschia/ibc-go/v3/modules/apps/transfer/types"
-	ibc "github.com/Finschia/ibc-go/v3/modules/core"
-	ibchost "github.com/Finschia/ibc-go/v3/modules/core/24-host"
-	ibckeeper "github.com/Finschia/ibc-go/v3/modules/core/keeper"
+	"github.com/cosmos/ibc-go/v4/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v4/modules/core"
+	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
+	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
 	"github.com/Finschia/ostracon/crypto"
 	"github.com/Finschia/ostracon/crypto/ed25519"
 	"github.com/Finschia/ostracon/libs/log"
@@ -173,18 +173,19 @@ func (f *TestFaucet) NewFundedRandomAccount(ctx sdk.Context, amounts ...sdk.Coin
 }
 
 type TestKeepers struct {
-	AccountKeeper  authkeeper.AccountKeeper
-	StakingKeeper  stakingkeeper.Keeper
-	DistKeeper     distributionkeeper.Keeper
-	BankKeeper     bankkeeper.Keeper
-	GovKeeper      govkeeper.Keeper
-	ContractKeeper types.ContractOpsKeeper
-	WasmKeeper     *Keeper
-	IBCKeeper      *ibckeeper.Keeper
-	Router         *baseapp.Router
-	EncodingConfig wasmappparams.EncodingConfig
-	Faucet         *TestFaucet
-	MultiStore     sdk.CommitMultiStore
+	AccountKeeper    authkeeper.AccountKeeper
+	StakingKeeper    stakingkeeper.Keeper
+	DistKeeper       distributionkeeper.Keeper
+	BankKeeper       bankkeeper.Keeper
+	GovKeeper        govkeeper.Keeper
+	ContractKeeper   types.ContractOpsKeeper
+	WasmKeeper       *Keeper
+	IBCKeeper        *ibckeeper.Keeper
+	Router           *baseapp.Router
+	EncodingConfig   wasmappparams.EncodingConfig
+	Faucet           *TestFaucet
+	MultiStore       sdk.CommitMultiStore
+	ScopedWasmKeeper capabilitykeeper.ScopedKeeper
 }
 
 // CreateDefaultTestInput common settings for CreateTestInput
@@ -430,18 +431,19 @@ func createTestInput(
 	govKeeper.SetTallyParams(ctx, govtypes.DefaultTallyParams())
 
 	keepers := TestKeepers{
-		AccountKeeper:  accountKeeper,
-		StakingKeeper:  stakingKeeper,
-		DistKeeper:     distKeeper,
-		ContractKeeper: contractKeeper,
-		WasmKeeper:     &keeper,
-		BankKeeper:     bankKeeper,
-		GovKeeper:      govKeeper,
-		IBCKeeper:      ibcKeeper,
-		Router:         router,
-		EncodingConfig: encodingConfig,
-		Faucet:         faucet,
-		MultiStore:     ms,
+		AccountKeeper:    accountKeeper,
+		StakingKeeper:    stakingKeeper,
+		DistKeeper:       distKeeper,
+		ContractKeeper:   contractKeeper,
+		WasmKeeper:       &keeper,
+		BankKeeper:       bankKeeper,
+		GovKeeper:        govKeeper,
+		IBCKeeper:        ibcKeeper,
+		Router:           router,
+		EncodingConfig:   encodingConfig,
+		Faucet:           faucet,
+		MultiStore:       ms,
+		ScopedWasmKeeper: scopedWasmKeeper,
 	}
 	return ctx, keepers
 }

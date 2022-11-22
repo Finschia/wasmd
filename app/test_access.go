@@ -9,8 +9,8 @@ import (
 	bankkeeper "github.com/Finschia/finschia-sdk/x/bank/keeper"
 	capabilitykeeper "github.com/Finschia/finschia-sdk/x/capability/keeper"
 	stakingkeeper "github.com/Finschia/finschia-sdk/x/staking/keeper"
-	ibctransferkeeper "github.com/Finschia/ibc-go/v3/modules/apps/transfer/keeper"
-	ibckeeper "github.com/Finschia/ibc-go/v3/modules/core/keeper"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
+	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
 
 	"github.com/Finschia/wasmd/app/params"
 	"github.com/Finschia/wasmd/x/wasm"
