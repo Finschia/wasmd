@@ -221,6 +221,9 @@ Params defines the set of wasm parameters.
 | ----- | ---- | ----- | ----------- |
 | `code_upload_access` | [AccessConfig](#cosmwasm.wasm.v1.AccessConfig) |  |  |
 | `instantiate_default_permission` | [AccessType](#cosmwasm.wasm.v1.AccessType) |  |  |
+| `gas_multiplier` | [uint64](#uint64) |  |  |
+| `instance_cost` | [uint64](#uint64) |  |  |
+| `compile_cost` | [uint64](#uint64) |  |  |
 
 
 
@@ -538,6 +541,7 @@ GenesisState - genesis state of x/wasm
 | `contracts` | [Contract](#cosmwasm.wasm.v1.Contract) | repeated |  |
 | `sequences` | [Sequence](#cosmwasm.wasm.v1.Sequence) | repeated |  |
 | `gen_msgs` | [GenesisState.GenMsgs](#cosmwasm.wasm.v1.GenesisState.GenMsgs) | repeated |  |
+| `inactive_contract_addresses` | [string](#string) | repeated | InactiveContractAddresses is a list of contract address that set inactive |
 
 
 

@@ -4,7 +4,7 @@ executors:
   golang:
     docker:
       - image: circleci/golang:1.17
-    working_directory: /go/src/github.com/cosmwasm/wasmd
+    working_directory: /go/src/github.com/line/wasmd
 
 commands:
   make:
@@ -148,14 +148,14 @@ jobs:
           version: 20.10.11
       - run:
           name: Build Docker artifact
-          command: docker build --pull -t "cosmwasm/wasmd:${CIRCLE_SHA1}" .
+          command: docker build --pull -t "line/wasmd:${CIRCLE_SHA1}" .
       - run:
           name: Push application Docker image to docker hub
           command: |
             if [ "${CIRCLE_BRANCH}" = "master" ]; then
-              docker tag "cosmwasm/wasmd:${CIRCLE_SHA1}" cosmwasm/wasmd:latest
+              docker tag "line/wasmd:${CIRCLE_SHA1}" line/wasmd:latest
               docker login --password-stdin -u "$DOCKER_USER" \<<<"$DOCKER_PASS"
-              docker push cosmwasm/wasmd:latest
+              docker push line/wasmd:latest
               docker logout
             fi
 
@@ -170,12 +170,12 @@ jobs:
           version: 20.10.11
       - run:
           name: Build Docker artifact
-          command: docker build --pull -t "cosmwasm/wasmd:${CIRCLE_TAG}" .
+          command: docker build --pull -t "line/wasmd:${CIRCLE_TAG}" .
       - run:
           name: Push application Docker image to docker hub
           command: |
             docker login --password-stdin -u "$DOCKER_USER" \<<<"$DOCKER_PASS"
-            docker push "cosmwasm/wasmd:${CIRCLE_TAG}"
+            docker push "line/wasmd:${CIRCLE_TAG}"
             docker logout
 
 workflows:
