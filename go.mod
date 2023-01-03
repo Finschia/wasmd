@@ -1,6 +1,6 @@
 module github.com/line/wasmd
 
-go 1.17
+go 1.18
 
 require (
 	github.com/cosmos/iavl v0.19.4
