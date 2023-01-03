@@ -15,11 +15,10 @@ import (
 )
 
 // Simulation operation weights constants
-//nolint:gosec
 const (
-	OpWeightMsgStoreCode           = "op_weight_msg_store_code"
-	OpWeightMsgInstantiateContract = "op_weight_msg_instantiate_contract"
-	OpReflectContractPath          = "op_reflect_contract_path"
+	OpWeightMsgStoreCode           = "op_weight_msg_store_code"           //nolint:gosec
+	OpWeightMsgInstantiateContract = "op_weight_msg_instantiate_contract" //nolint:gosec
+	OpReflectContractPath          = "op_reflect_contract_path"           //nolint:gosec
 )
 
 // WasmKeeper is a subset of the wasm keeper used by simulations

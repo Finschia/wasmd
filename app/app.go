@@ -204,7 +204,7 @@ var (
 		vesting.AppModuleBasic{},
 		wasm.AppModuleBasic{},
 		ica.AppModuleBasic{},
-		//intertx.AppModuleBasic{},	// TODO support later
+		// intertx.AppModuleBasic{},	// TODO support later
 	)
 
 	// module account permissions
@@ -261,7 +261,7 @@ type WasmApp struct {
 	ibcKeeper           *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	icaControllerKeeper icacontrollerkeeper.Keeper
 	icaHostKeeper       icahostkeeper.Keeper
-	//interTxKeeper       intertxkeeper.Keeper	// TODO support later
+	// interTxKeeper       intertxkeeper.Keeper	// TODO support later
 	transferKeeper ibctransferkeeper.Keeper
 	feeGrantKeeper feegrantkeeper.Keeper
 	authzKeeper    authzkeeper.Keeper
@@ -503,13 +503,13 @@ func NewWasmApp(
 
 	// TODO support later
 	//// For wasmd we use the demo controller from https://github.com/cosmos/interchain-accounts but see notes below
-	//app.interTxKeeper = intertxkeeper.NewKeeper(appCodec, keys[intertxtypes.StoreKey], app.icaControllerKeeper, scopedInterTxKeeper)
+	// app.interTxKeeper = intertxkeeper.NewKeeper(appCodec, keys[intertxtypes.StoreKey], app.icaControllerKeeper, scopedInterTxKeeper)
 	// Note: please do your research before using this in production app, this is a demo and not an officially
 	// supported IBC team implementation. Do your own research before using it.
-	//interTxModule := intertx.NewAppModule(appCodec, app.interTxKeeper)
-	//interTxIBCModule := intertx.NewIBCModule(app.interTxKeeper)
+	// interTxModule := intertx.NewAppModule(appCodec, app.interTxKeeper)
+	// interTxIBCModule := intertx.NewIBCModule(app.interTxKeeper)
 	// You will likely want to swap out the second argument with your own reviewed and maintained ica auth module
-	//icaControllerIBCModule := icacontroller.NewIBCModule(app.icaControllerKeeper, interTxIBCModule)
+	// icaControllerIBCModule := icacontroller.NewIBCModule(app.icaControllerKeeper, interTxIBCModule)
 
 	icaControllerIBCModule := icacontroller.NewIBCModule(app.icaControllerKeeper, icaAuthModule)
 
@@ -565,7 +565,7 @@ func NewWasmApp(
 		AddRoute(ibctransfertypes.ModuleName, transferIBCModule).
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerIBCModule).
 		AddRoute(icahosttypes.SubModuleName, icaHostIBCModule).
-		//AddRoute(intertxtypes.ModuleName, icaControllerIBCModule).
+		// AddRoute(intertxtypes.ModuleName, icaControllerIBCModule).
 		AddRoute(ibcmock.ModuleName, mockIBCModule)
 	app.ibcKeeper.SetRouter(ibcRouter)
 
@@ -639,7 +639,7 @@ func NewWasmApp(
 		ibctransfertypes.ModuleName,
 		ibchost.ModuleName,
 		icatypes.ModuleName,
-		//intertxtypes.ModuleName,
+		// intertxtypes.ModuleName,
 		wasm.ModuleName,
 	)
 
@@ -664,7 +664,7 @@ func NewWasmApp(
 		ibctransfertypes.ModuleName,
 		ibchost.ModuleName,
 		icatypes.ModuleName,
-		//intertxtypes.ModuleName,
+		// intertxtypes.ModuleName,
 		wasm.ModuleName,
 	)
 
@@ -696,7 +696,7 @@ func NewWasmApp(
 		ibctransfertypes.ModuleName,
 		ibchost.ModuleName,
 		icatypes.ModuleName,
-		//intertxtypes.ModuleName,
+		// intertxtypes.ModuleName,
 		// wasm after ibc transfer
 		wasm.ModuleName,
 	)
@@ -872,9 +872,9 @@ func (app *WasmApp) SimulationManager() *module.SimulationManager {
 // API server.
 func (app *WasmApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
 	clientCtx := apiSvr.ClientCtx
-	//rpc.RegisterRoutes(clientCtx, apiSvr.Router)
+	// rpc.RegisterRoutes(clientCtx, apiSvr.Router)
 	// Register legacy tx routes.
-	//authrest.RegisterTxRoutes(clientCtx, apiSvr.Router)
+	// authrest.RegisterTxRoutes(clientCtx, apiSvr.Router)
 	// Register new tx routes from grpc-gateway.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 	// Register new tendermint queries routes from grpc-gateway.
@@ -884,7 +884,7 @@ func (app *WasmApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICo
 	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register legacy and grpc-gateway routes for all modules.
-	//ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
+	// ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily

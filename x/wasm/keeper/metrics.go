@@ -89,6 +89,7 @@ func PrometheusMetricsProvider(namespace string, labelsAndValues ...string) func
 
 // NopMetricsProvider returns NopMetrics for each store
 func NopMetricsProvider() func() *Metrics {
+	//nolint:gocritic
 	return func() *Metrics {
 		return NopMetrics()
 	}

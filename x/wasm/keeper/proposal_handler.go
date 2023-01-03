@@ -246,6 +246,7 @@ func handleDeactivateContractProposal(ctx sdk.Context, k types.ContractOpsKeeper
 	}
 
 	// The error is already checked in ValidateBasic.
+	//nolint:errcheck
 	contractAddr, _ := sdk.AccAddressFromBech32(p.Contract)
 
 	err := k.DeactivateContract(ctx, contractAddr)
@@ -269,6 +270,7 @@ func handleActivateContractProposal(ctx sdk.Context, k types.ContractOpsKeeper, 
 	}
 
 	// The error is already checked in ValidateBasic.
+	//nolint:errcheck
 	contractAddr, _ := sdk.AccAddressFromBech32(p.Contract)
 
 	err := k.ActivateContract(ctx, contractAddr)

@@ -46,7 +46,8 @@ func ReadFileWithSizeLimit(name string, sizeLimit int64) ([]byte, error) {
 	data := make([]byte, 0, size)
 	for {
 		if len(data) >= cap(data) {
-			d := append(data[:cap(data)], 0)
+			d := data[:cap(data)]
+			d = append(d, 0)
 			data = d[:len(data)]
 		}
 		n, err := f.Read(data[len(data):cap(data)])

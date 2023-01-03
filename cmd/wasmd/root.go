@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"github.com/spf13/viper"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/line/lbm-sdk/baseapp"
