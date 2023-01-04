@@ -276,6 +276,9 @@ find out the entire path for the events.
 | message                | module                       | wasm                           |                                               |
 | message                | sender                       | {senderAddress}                |                                               |
 | execute                | _contract_address            | {contractAddress}              |                                               |
+| transfer               | recipient                    | {recipientAddress}             | Only when the fund exists                     |
+| transfer               | sender                       | {senderAddress}                | Only when the fund exists                     |                 
+| transfer               | amount                       | {amount}                       | Only when the fund exists                     |
 | wasm                   | {customContractAttributeKey} | {customContractAttributeValue} | (optional) Defined by wasm contract developer |
 | wasm-{customEventType} | {customContractAttributeKey} | {customContractAttributeKey}   | (optional) Defined by wasm contract developer |
 
