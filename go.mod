@@ -143,6 +143,6 @@ replace (
 	// latest grpc doesn't work with with our modified proto compiler, so we need to enforce
 	// the following version across all dependencies.
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/line/lbm-sdk => github.com/zemyblue/lbm-sdk v1.0.0-init.1.0.20230102102404-5d119c8b69ce
+	github.com/line/lbm-sdk => github.com/zemyblue/lbm-sdk v1.0.0-init.1.0.20230104072543-4a8047a970bd
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
