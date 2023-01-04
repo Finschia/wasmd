@@ -186,7 +186,6 @@ proto-swagger-gen:
 	@echo "Generating Protobuf Swagger"
 	@if $(DOCKER) ps -a --format '{{.Names}}' | grep -Eq "^${PROTO_GEN_SWAGGER_IMAGE}$$"; then $(DOCKER) start -a $(PROTO_GEN_SWAGGER_IMAGE); else $(DOCKER) run --name $(PROTO_GEN_SWAGGER_IMAGE) -v $(CURDIR):/workspace --workdir /workspace $(PROTO_BUILDER_IMAGE) \
 		sh ./scripts/protoc-swagger-gen.sh; fi
-	@#./scripts/protoc-swagger-gen.sh
 
 proto-lint:
 	@$(DOCKER_BUF) lint --error-format=json
