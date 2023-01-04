@@ -219,17 +219,19 @@ var (
 		icatypes.ModuleName:            nil,
 		wasm.ModuleName:                {authtypes.Burner},
 	}
-
-	// module accounts that are allowed to receive tokens
-	allowedReceivingModAcc = map[string]bool{
-		distrtypes.ModuleName: true,
-	}
 )
 
 var (
 	_ simapp.App              = (*WasmApp)(nil)
 	_ servertypes.Application = (*WasmApp)(nil)
 )
+
+// allowedReceivingModAcc define module accounts that are allowed to receive tokens
+func allowedReceivingModAcc() map[string]bool {
+	return map[string]bool{
+		distrtypes.ModuleName: true,
+	}
+}
 
 // WasmApp extended ABCI application
 type WasmApp struct {
@@ -841,7 +843,7 @@ func (app *WasmApp) ModuleAccountAddrs() map[string]bool {
 func (app *WasmApp) BlockedAddrs() map[string]bool {
 	blockedAddrs := make(map[string]bool)
 	for acc := range maccPerms {
-		blockedAddrs[authtypes.NewModuleAddress(acc).String()] = !allowedReceivingModAcc[acc]
+		blockedAddrs[authtypes.NewModuleAddress(acc).String()] = !allowedReceivingModAcc()[acc]
 	}
 
 	return blockedAddrs
