@@ -190,8 +190,8 @@ func (ac appCreator) newApp(
 ) servertypes.Application {
 	var cache sdk.MultiStorePersistentCache
 
+	ibCacheMetricsProvider := baseapp.MetricsProvider(cast.ToBool(viper.GetBool(server.FlagPrometheus)))
 	if cast.ToBool(appOpts.Get(server.FlagInterBlockCache)) {
-		ibCacheMetricsProvider := baseapp.MetricsProvider(cast.ToBool(viper.GetBool(server.FlagPrometheus)))
 		cache = store.NewCommitKVStoreCacheManager(
 			cast.ToInt(appOpts.Get(server.FlagInterBlockCacheSize)), ibCacheMetricsProvider)
 	}
