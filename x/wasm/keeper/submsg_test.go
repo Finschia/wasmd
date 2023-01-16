@@ -27,7 +27,7 @@ func TestDispatchSubMsgSuccessCase(t *testing.T) {
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
 	contractStart := sdk.NewCoins(sdk.NewInt64Coin("denom", 40000))
 
-	creator := keepers.Faucet.NewFundedAccount(ctx, deposit...)
+	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
 	creatorBalance := deposit.Sub(contractStart)
 	_, _, fred := keyPubAddr()
 
@@ -111,7 +111,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 	ctx = ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter())
 	keeper := keepers.WasmKeeper
 	contractStart := sdk.NewCoins(sdk.NewInt64Coin(fundedDenom, int64(fundedAmount)))
-	uploader := keepers.Faucet.NewFundedAccount(ctx, contractStart.Add(contractStart...)...)
+	uploader := keepers.Faucet.NewFundedRandomAccount(ctx, contractStart.Add(contractStart...)...)
 
 	// upload code
 	reflectID, _, err := keepers.ContractKeeper.Create(ctx, uploader, testdata.ReflectContractWasm(), nil)
@@ -237,14 +237,14 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 		"send tokens": {
 			submsgID:         5,
 			msg:              validBankSend,
-			resultAssertions: []assertion{assertReturnedEvents(0), assertGasUsed(94000, 95000)},
+			resultAssertions: []assertion{assertReturnedEvents(0), assertGasUsed(93000, 94000)},
 		},
 		"not enough tokens": {
 			submsgID:    6,
 			msg:         invalidBankSend,
 			subMsgError: true,
 			// uses less gas than the send tokens (cost of bank transfer)
-			resultAssertions: []assertion{assertGasUsed(76000, 77000), assertErrorString("codespace: sdk, code: 5")},
+			resultAssertions: []assertion{assertGasUsed(75000, 76000), assertErrorString("codespace: sdk, code: 5")},
 		},
 		"out of gas panic with no gas limit": {
 			submsgID:        7,
@@ -257,7 +257,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 			msg:      validBankSend,
 			gasLimit: &subGasLimit,
 			// uses same gas as call without limit (note we do not charge the 40k on reply)
-			resultAssertions: []assertion{assertReturnedEvents(0), assertGasUsed(94000, 95000)},
+			resultAssertions: []assertion{assertReturnedEvents(0), assertGasUsed(93000, 94000)},
 		},
 		"not enough tokens with limit": {
 			submsgID:    16,
@@ -265,7 +265,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 			subMsgError: true,
 			gasLimit:    &subGasLimit,
 			// uses same gas as call without limit (note we do not charge the 40k on reply)
-			resultAssertions: []assertion{assertGasUsed(76000, 77000), assertErrorString("codespace: sdk, code: 5")},
+			resultAssertions: []assertion{assertGasUsed(75000, 76000), assertErrorString("codespace: sdk, code: 5")},
 		},
 		"out of gas caught with gas limit": {
 			submsgID:    17,
@@ -273,7 +273,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 			subMsgError: true,
 			gasLimit:    &subGasLimit,
 			// uses all the subGasLimit, plus the 52k or so for the main contract
-			resultAssertions: []assertion{assertGasUsed(subGasLimit+74000, subGasLimit+75000), assertErrorString("codespace: sdk, code: 11")},
+			resultAssertions: []assertion{assertGasUsed(subGasLimit+73000, subGasLimit+74000), assertErrorString("codespace: sdk, code: 11")},
 		},
 		"instantiate contract gets address in data and events": {
 			submsgID:         21,
@@ -283,7 +283,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			creator := keepers.Faucet.NewFundedAccount(ctx, contractStart...)
+			creator := keepers.Faucet.NewFundedRandomAccount(ctx, contractStart...)
 			_, _, empty := keyPubAddr()
 
 			contractAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, reflectID, creator, nil, []byte("{}"), fmt.Sprintf("contract %s", name), contractStart)
@@ -367,7 +367,7 @@ func TestDispatchSubMsgEncodeToNoSdkMsg(t *testing.T) {
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
 	contractStart := sdk.NewCoins(sdk.NewInt64Coin("denom", 40000))
 
-	creator := keepers.Faucet.NewFundedAccount(ctx, deposit...)
+	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
 	_, _, fred := keyPubAddr()
 
 	// upload code
@@ -433,7 +433,7 @@ func TestDispatchSubMsgConditionalReplyOn(t *testing.T) {
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
 	contractStart := sdk.NewCoins(sdk.NewInt64Coin("denom", 40000))
 
-	creator := keepers.Faucet.NewFundedAccount(ctx, deposit...)
+	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
 	_, _, fred := keyPubAddr()
 
 	// upload code

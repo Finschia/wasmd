@@ -28,7 +28,7 @@ func TestInstantiate2(t *testing.T) {
 	beneficiaryAddr := RandomAccountAddress(t)
 	initMsg := mustMarshal(t, HackatomExampleInitMsg{Verifier: verifierAddr, Beneficiary: beneficiaryAddr})
 
-	otherAddr := keepers.Faucet.NewFundedAccount(parentCtx, sdk.NewInt64Coin("denom", 1_000_000_000))
+	otherAddr := keepers.Faucet.NewFundedRandomAccount(parentCtx, sdk.NewInt64Coin("denom", 1_000_000_000))
 
 	const (
 		mySalt  = "my salt"

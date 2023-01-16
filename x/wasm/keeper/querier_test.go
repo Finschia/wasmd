@@ -23,7 +23,6 @@ import (
 	wasmvmtypes "github.com/line/wasmvm/types"
 
 	"github.com/line/wasmd/x/wasm/keeper/wasmtesting"
-	"github.com/line/wasmd/x/wasm/lbmtypes"
 	"github.com/line/wasmd/x/wasm/types"
 )
 
@@ -165,7 +164,7 @@ func TestQuerySmartContractPanics(t *testing.T) {
 		CodeID:  1,
 		Created: types.NewAbsoluteTxPosition(ctx),
 	})
-	ctx = ctx.WithGasMeter(sdk.NewGasMeter(types.DefaultInstanceCost)).WithLogger(log.TestingLogger())
+	ctx = ctx.WithGasMeter(sdk.NewGasMeter(DefaultInstanceCost)).WithLogger(log.TestingLogger())
 
 	specs := map[string]struct {
 		doInContract func()
@@ -263,8 +262,8 @@ func TestQueryContractListByCodeOrdering(t *testing.T) {
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 1000000))
 	topUp := sdk.NewCoins(sdk.NewInt64Coin("denom", 500))
-	creator := keepers.Faucet.NewFundedAccount(ctx, deposit...)
-	anyAddr := keepers.Faucet.NewFundedAccount(ctx, topUp...)
+	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
+	anyAddr := keepers.Faucet.NewFundedRandomAccount(ctx, topUp...)
 
 	wasmCode, err := os.ReadFile("./testdata/hackatom.wasm")
 	require.NoError(t, err)
@@ -742,9 +741,6 @@ func TestQueryParams(t *testing.T) {
 	keeper.SetParams(ctx, types.Params{
 		CodeUploadAccess:             types.AllowNobody,
 		InstantiateDefaultPermission: types.AccessTypeNobody,
-		GasMultiplier:                types.DefaultGasMultiplier,
-		InstanceCost:                 types.DefaultInstanceCost,
-		CompileCost:                  types.DefaultCompileCost,
 	})
 
 	paramsResponse, err = q.Params(sdk.WrapSDKContext(ctx), &types.QueryParamsRequest{})
@@ -882,53 +878,53 @@ func fromBase64(s string) []byte {
 	return r
 }
 
-func TestQueryInactiveContracts(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
-	keeper := keepers.WasmKeeper
-
-	var mock wasmtesting.MockWasmer
-	wasmtesting.MakeInstantiable(&mock)
-	example1 := SeedNewContractInstance(t, ctx, keepers, &mock)
-	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
-	example2 := SeedNewContractInstance(t, ctx, keepers, &mock)
-	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
-
-	// set inactive
-	err := keeper.deactivateContract(ctx, example1.Contract)
-	require.NoError(t, err)
-	err = keeper.deactivateContract(ctx, example2.Contract)
-	require.NoError(t, err)
-
-	q := Querier(keeper)
-	rq := lbmtypes.QueryInactiveContractsRequest{}
-	res, err := q.InactiveContracts(sdk.WrapSDKContext(ctx), &rq)
-	require.NoError(t, err)
-	expect := []string{example1.Contract.String(), example2.Contract.String()}
-	for _, exp := range expect {
-		assert.Contains(t, res.Addresses, exp)
-	}
-}
-
-func TestQueryIsInactiveContract(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
-	keeper := keepers.WasmKeeper
-
-	var mock wasmtesting.MockWasmer
-	wasmtesting.MakeInstantiable(&mock)
-	example := SeedNewContractInstance(t, ctx, keepers, &mock)
-
-	q := Querier(keeper)
-	rq := lbmtypes.QueryInactiveContractRequest{Address: example.Contract.String()}
-	res, err := q.InactiveContract(sdk.WrapSDKContext(ctx), &rq)
-	require.NoError(t, err)
-	require.False(t, res.Inactivated)
-
-	// set inactive
-	err = keeper.deactivateContract(ctx, example.Contract)
-	require.NoError(t, err)
-
-	rq = lbmtypes.QueryInactiveContractRequest{Address: example.Contract.String()}
-	res, err = q.InactiveContract(sdk.WrapSDKContext(ctx), &rq)
-	require.NoError(t, err)
-	require.True(t, res.Inactivated)
-}
+//func TestQueryInactiveContracts(t *testing.T) {
+//	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+//	keeper := keepers.WasmKeeper
+//
+//	var mock wasmtesting.MockWasmer
+//	wasmtesting.MakeInstantiable(&mock)
+//	example1 := SeedNewContractInstance(t, ctx, keepers, &mock)
+//	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
+//	example2 := SeedNewContractInstance(t, ctx, keepers, &mock)
+//	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
+//
+//	// set inactive
+//	err := keeper.deactivateContract(ctx, example1.Contract)
+//	require.NoError(t, err)
+//	err = keeper.deactivateContract(ctx, example2.Contract)
+//	require.NoError(t, err)
+//
+//	q := Querier(keeper)
+//	rq := lbmtypes.QueryInactiveContractsRequest{}
+//	res, err := q.InactiveContracts(sdk.WrapSDKContext(ctx), &rq)
+//	require.NoError(t, err)
+//	expect := []string{example1.Contract.String(), example2.Contract.String()}
+//	for _, exp := range expect {
+//		assert.Contains(t, res.Addresses, exp)
+//	}
+//}
+//
+//func TestQueryIsInactiveContract(t *testing.T) {
+//	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+//	keeper := keepers.WasmKeeper
+//
+//	var mock wasmtesting.MockWasmer
+//	wasmtesting.MakeInstantiable(&mock)
+//	example := SeedNewContractInstance(t, ctx, keepers, &mock)
+//
+//	q := Querier(keeper)
+//	rq := lbmtypes.QueryInactiveContractRequest{Address: example.Contract.String()}
+//	res, err := q.InactiveContract(sdk.WrapSDKContext(ctx), &rq)
+//	require.NoError(t, err)
+//	require.False(t, res.Inactivated)
+//
+//	// set inactive
+//	err = keeper.deactivateContract(ctx, example.Contract)
+//	require.NoError(t, err)
+//
+//	rq = lbmtypes.QueryInactiveContractRequest{Address: example.Contract.String()}
+//	res, err = q.InactiveContract(sdk.WrapSDKContext(ctx), &rq)
+//	require.NoError(t, err)
+//	require.True(t, res.Inactivated)
+//}

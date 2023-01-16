@@ -149,7 +149,7 @@ type state struct {
 
 func TestHandleInstantiate(t *testing.T) {
 	data := setupTest(t)
-	creator := data.faucet.NewFundedAccount(data.ctx, sdk.NewInt64Coin("denom", 100000))
+	creator := data.faucet.NewFundedRandomAccount(data.ctx, sdk.NewInt64Coin("denom", 100000))
 
 	h := data.module.Route().Handler()
 	q := data.module.LegacyQuerierHandler(nil)
@@ -207,7 +207,7 @@ func TestHandleInstantiate(t *testing.T) {
 
 func TestHandleStoreAndInstantiate(t *testing.T) {
 	data := setupTest(t)
-	creator := data.faucet.NewFundedAccount(data.ctx, sdk.NewInt64Coin("denom", 100000))
+	creator := data.faucet.NewFundedRandomAccount(data.ctx, sdk.NewInt64Coin("denom", 100000))
 
 	h := data.module.Route().Handler()
 	q := data.module.LegacyQuerierHandler(nil)
@@ -384,8 +384,8 @@ func TestHandleExecute(t *testing.T) {
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
 	topUp := sdk.NewCoins(sdk.NewInt64Coin("denom", 5000))
 
-	creator := data.faucet.NewFundedAccount(data.ctx, deposit.Add(deposit...)...)
-	fred := data.faucet.NewFundedAccount(data.ctx, topUp...)
+	creator := data.faucet.NewFundedRandomAccount(data.ctx, deposit.Add(deposit...)...)
+	fred := data.faucet.NewFundedRandomAccount(data.ctx, topUp...)
 
 	h := data.module.Route().Handler()
 	q := data.module.LegacyQuerierHandler(nil)
@@ -528,7 +528,7 @@ func TestHandleExecuteEscrow(t *testing.T) {
 	topUp := sdk.NewCoins(sdk.NewInt64Coin("denom", 5000))
 	creator := sdk.AccAddress(bytes.Repeat([]byte{1}, address.Len))
 	data.faucet.Fund(data.ctx, creator, sdk.NewInt64Coin("denom", 100000))
-	fred := data.faucet.NewFundedAccount(data.ctx, topUp...)
+	fred := data.faucet.NewFundedRandomAccount(data.ctx, topUp...)
 
 	h := data.module.Route().Handler()
 

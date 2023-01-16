@@ -22,8 +22,8 @@ func TestLegacyQueryContractState(t *testing.T) {
 	keeper := keepers.WasmKeeper
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
-	creator := keepers.Faucet.NewFundedAccount(ctx, deposit.Add(deposit...)...)
-	anyAddr := keepers.Faucet.NewFundedAccount(ctx, sdk.NewInt64Coin("denom", 5000))
+	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit.Add(deposit...)...)
+	anyAddr := keepers.Faucet.NewFundedRandomAccount(ctx, sdk.NewInt64Coin("denom", 5000))
 
 	wasmCode, err := os.ReadFile("./testdata/hackatom.wasm")
 	require.NoError(t, err)
@@ -160,8 +160,8 @@ func TestLegacyQueryContractListByCodeOrdering(t *testing.T) {
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 1000000))
 	topUp := sdk.NewCoins(sdk.NewInt64Coin("denom", 500))
-	creator := keepers.Faucet.NewFundedAccount(ctx, deposit.Add(deposit...)...)
-	anyAddr := keepers.Faucet.NewFundedAccount(ctx, topUp...)
+	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit.Add(deposit...)...)
+	anyAddr := keepers.Faucet.NewFundedRandomAccount(ctx, topUp...)
 
 	wasmCode, err := os.ReadFile("./testdata/hackatom.wasm")
 	require.NoError(t, err)

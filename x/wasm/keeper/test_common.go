@@ -167,7 +167,7 @@ func (f *TestFaucet) Fund(parentCtx sdk.Context, receiver sdk.AccAddress, amount
 	f.balance = f.balance.Sub(amounts)
 }
 
-func (f *TestFaucet) NewFundedAccount(ctx sdk.Context, amounts ...sdk.Coin) sdk.AccAddress {
+func (f *TestFaucet) NewFundedRandomAccount(ctx sdk.Context, amounts ...sdk.Coin) sdk.AccAddress {
 	_, _, addr := keyPubAddr()
 	f.Fund(ctx, addr, amounts...)
 	return addr

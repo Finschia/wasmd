@@ -14,7 +14,6 @@ import (
 	sdkerrors "github.com/line/lbm-sdk/types/errors"
 	"github.com/line/lbm-sdk/types/query"
 
-	"github.com/line/wasmd/x/wasm/lbmtypes"
 	"github.com/line/wasmd/x/wasm/types"
 )
 
@@ -320,47 +319,47 @@ func (q GrpcQuerier) Params(c context.Context, req *types.QueryParamsRequest) (*
 	return &types.QueryParamsResponse{Params: params}, nil
 }
 
-func (q GrpcQuerier) InactiveContracts(c context.Context, req *lbmtypes.QueryInactiveContractsRequest) (*lbmtypes.QueryInactiveContractsResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-	ctx := sdk.UnwrapSDKContext(c)
-
-	addresses := make([]string, 0)
-	prefixStore := prefix.NewStore(ctx.KVStore(q.storeKey), types.InactiveContractPrefix)
-	pageRes, err := query.FilteredPaginate(prefixStore, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
-		if accumulate {
-			contractAddress := sdk.AccAddress(value)
-			addresses = append(addresses, contractAddress.String())
-		}
-		return true, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &lbmtypes.QueryInactiveContractsResponse{
-		Addresses:  addresses,
-		Pagination: pageRes,
-	}, nil
-}
-
-func (q GrpcQuerier) InactiveContract(c context.Context, req *lbmtypes.QueryInactiveContractRequest) (*lbmtypes.QueryInactiveContractResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-	ctx := sdk.UnwrapSDKContext(c)
-
-	contractAddr, err := sdk.AccAddressFromBech32(req.Address)
-	if err != nil {
-		return nil, err
-	}
-
-	if !q.keeper.HasContractInfo(ctx, contractAddr) {
-		return nil, types.ErrNotFound
-	}
-
-	inactivated := q.keeper.IsInactiveContract(ctx, contractAddr)
-	return &lbmtypes.QueryInactiveContractResponse{
-		Inactivated: inactivated,
-	}, nil
-}
+//func (q GrpcQuerier) InactiveContracts(c context.Context, req *lbmtypes.QueryInactiveContractsRequest) (*lbmtypes.QueryInactiveContractsResponse, error) {
+//	if req == nil {
+//		return nil, status.Error(codes.InvalidArgument, "empty request")
+//	}
+//	ctx := sdk.UnwrapSDKContext(c)
+//
+//	addresses := make([]string, 0)
+//	prefixStore := prefix.NewStore(ctx.KVStore(q.storeKey), types.InactiveContractPrefix)
+//	pageRes, err := query.FilteredPaginate(prefixStore, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
+//		if accumulate {
+//			contractAddress := sdk.AccAddress(value)
+//			addresses = append(addresses, contractAddress.String())
+//		}
+//		return true, nil
+//	})
+//	if err != nil {
+//		return nil, err
+//	}
+//	return &lbmtypes.QueryInactiveContractsResponse{
+//		Addresses:  addresses,
+//		Pagination: pageRes,
+//	}, nil
+//}
+//
+//func (q GrpcQuerier) InactiveContract(c context.Context, req *lbmtypes.QueryInactiveContractRequest) (*lbmtypes.QueryInactiveContractResponse, error) {
+//	if req == nil {
+//		return nil, status.Error(codes.InvalidArgument, "empty request")
+//	}
+//	ctx := sdk.UnwrapSDKContext(c)
+//
+//	contractAddr, err := sdk.AccAddressFromBech32(req.Address)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	if !q.keeper.HasContractInfo(ctx, contractAddr) {
+//		return nil, types.ErrNotFound
+//	}
+//
+//	inactivated := q.keeper.IsInactiveContract(ctx, contractAddr)
+//	return &lbmtypes.QueryInactiveContractResponse{
+//		Inactivated: inactivated,
+//	}, nil
+//}

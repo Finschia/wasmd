@@ -464,10 +464,7 @@ func TestImportContractWithCodeHistoryReset(t *testing.T) {
 		"code_upload_access": {
 			"permission": "Everybody"
 		},
-		"instantiate_default_permission": "Everybody",
-		"gas_multiplier": 100,
-		"instance_cost": 40000,
-		"compile_cost": 2
+		"instantiate_default_permission": "Everybody"
 	},
   "codes": [
     {
