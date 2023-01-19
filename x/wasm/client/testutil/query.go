@@ -12,7 +12,6 @@ import (
 
 	"github.com/line/wasmd/x/wasm/client/cli"
 	"github.com/line/wasmd/x/wasm/types"
-	types2 "github.com/line/wasmd/x/wasmplus/types"
 )
 
 func (s *IntegrationTestSuite) TestGetCmdListCode() {
@@ -95,10 +94,14 @@ func (s *IntegrationTestSuite) TestGetCmdQueryCodeInfo() {
 			},
 			true,
 			&types.CodeInfoResponse{
-				CodeID:                codeID,
-				Creator:               val.Address.String(),
-				DataHash:              expectedDataHash,
-				InstantiatePermission: types.AllowEverybody,
+				CodeID:   codeID,
+				Creator:  val.Address.String(),
+				DataHash: expectedDataHash,
+				InstantiatePermission: types.AccessConfig{
+					Permission: types.AccessTypeEverybody,
+					Address:    "",
+					Addresses:  []string{},
+				},
 			},
 		},
 		"no codeID": {
@@ -466,72 +469,4 @@ func (s *IntegrationTestSuite) TestGetCmdListPinnedCode() {
 	var contractInfo types.QueryPinnedCodesResponse
 	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &contractInfo), out.String())
 	s.Require().Equal(expcted, &contractInfo)
-}
-
-func (s *IntegrationTestSuite) TestGetCmdListInactiveContracts() {
-	val := s.network.Validators[0]
-
-	cmd := cli.GetCmdListInactiveContracts()
-	out, err := clitestutil.ExecTestCLICmd(val.ClientCtx, cmd, s.queryCommonArgs())
-	s.Require().NoError(err)
-
-	expected := &types2.QueryInactiveContractsResponse{
-		Addresses:  []string{s.inactiveContractAddress},
-		Pagination: &query.PageResponse{},
-	}
-	var resInfo types2.QueryInactiveContractsResponse
-	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &resInfo), out.String())
-	s.Require().Equal(expected, &resInfo)
-}
-
-func (s *IntegrationTestSuite) TestGetCmdIsInactiveContract() {
-	val := s.network.Validators[0]
-
-	testCases := map[string]struct {
-		args     []string
-		valid    bool
-		expected proto.Message
-	}{
-		"valid query(inactivate)": {
-			[]string{
-				s.inactiveContractAddress,
-			},
-			true,
-			&types2.QueryInactiveContractResponse{
-				Inactivated: true,
-			},
-		},
-		"valid query(activate)": {
-			[]string{
-				"link1hmayw7vv0p3gzeh3jzwmw9xj8fy8a3kmpqgjrysljdnecqkps02qrq5rvm",
-			},
-			false,
-			nil,
-		},
-		"wrong bech32_address": {
-			[]string{
-				"xxx",
-			},
-			false,
-			nil,
-		},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-
-		s.Run(name, func() {
-			cmd := cli.GetCmdIsInactiveContract()
-			out, err := clitestutil.ExecTestCLICmd(val.ClientCtx, cmd, append(tc.args, s.queryCommonArgs()...))
-			if !tc.valid {
-				s.Require().Error(err)
-				return
-			}
-			s.Require().NoError(err)
-
-			var resInfo types2.QueryInactiveContractResponse
-			s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &resInfo), out.String())
-			s.Require().Equal(tc.expected, &resInfo)
-		})
-	}
 }

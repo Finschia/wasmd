@@ -21,8 +21,9 @@ import (
 	ostrand "github.com/line/ostracon/libs/rand"
 
 	wasmapp "github.com/line/wasmd/app"
-	"github.com/line/wasmd/app/params"
-	"github.com/line/wasmd/x/wasm/types"
+	wasmappparams "github.com/line/wasmd/app/params"
+	wasmplusapp "github.com/line/wasmd/appplus"
+	"github.com/line/wasmd/x/wasmplus/types"
 )
 
 func TestIntegrationTestSuite(t *testing.T) {
@@ -32,7 +33,7 @@ func TestIntegrationTestSuite(t *testing.T) {
 }
 
 func DefaultConfig() network.Config {
-	encCfg := wasmapp.MakeEncodingConfig()
+	encCfg := wasmplusapp.MakeEncodingConfig()
 
 	return network.Config{
 		Codec:             encCfg.Marshaler,
@@ -41,7 +42,7 @@ func DefaultConfig() network.Config {
 		TxConfig:          encCfg.TxConfig,
 		AccountRetriever:  authtypes.AccountRetriever{},
 		AppConstructor:    NewAppConstructor(encCfg),
-		GenesisState:      wasmapp.ModuleBasics.DefaultGenesis(encCfg.Marshaler),
+		GenesisState:      wasmplusapp.ModuleBasics.DefaultGenesis(encCfg.Marshaler),
 		TimeoutCommit:     1 * time.Second,
 		ChainID:           "chain-" + ostrand.NewRand().Str(6),
 		NumValidators:     4,
@@ -57,9 +58,9 @@ func DefaultConfig() network.Config {
 	}
 }
 
-func NewAppConstructor(encodingCfg params.EncodingConfig) network.AppConstructor {
+func NewAppConstructor(encodingCfg wasmappparams.EncodingConfig) network.AppConstructor {
 	return func(val network.Validator) servertypes.Application {
-		return wasmapp.NewWasmApp(
+		return wasmplusapp.NewWasmApp(
 			val.Ctx.Logger, dbm.NewMemDB(), nil, true,
 			map[int64]bool{}, val.Ctx.Config.RootDir, 0,
 			encodingCfg,

@@ -13,8 +13,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/line/wasmd/x/wasm/client/cli"
-	"github.com/line/wasmd/x/wasm/keeper"
-	"github.com/line/wasmd/x/wasm/types"
+	wasmkeeper "github.com/line/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/line/wasmd/x/wasm/types"
+	"github.com/line/wasmd/x/wasmplus/types"
 )
 
 type IntegrationTestSuite struct {
@@ -25,9 +26,10 @@ type IntegrationTestSuite struct {
 
 	setupHeight int64
 
-	codeID               string
-	contractAddress      string
-	nonExistValidAddress string
+	codeID                  string
+	contractAddress         string
+	nonExistValidAddress    string
+	inactiveContractAddress string
 
 	// for hackatom contract
 	verifier    string
@@ -45,11 +47,13 @@ func NewIntegrationTestSuite(cfg network.Config) *IntegrationTestSuite {
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
-	s.T().Log("Setting up integration test suite.")
+	//s.T().Log("Setting up integration test suite.")
 
 	if testing.Short() {
 		s.T().Skip("skipping test in unit-tests mode.")
 	}
+
+	s.inactiveContractAddress = "link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"
 
 	// add inactive contract to genesis
 	var wasmData types.GenesisState
@@ -70,11 +74,11 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.codeID = s.deployContract()
 
 	s.verifier = s.network.Validators[0].Address.String()
-	s.beneficiary = keeper.RandomAccountAddress(s.T())
+	s.beneficiary = wasmkeeper.RandomAccountAddress(s.T())
 	params := fmt.Sprintf("{\"verifier\": \"%s\", \"beneficiary\": \"%s\"}", s.verifier, s.beneficiary)
 	s.contractAddress = s.instantiate(s.codeID, params)
 
-	s.nonExistValidAddress = keeper.RandomAccountAddress(s.T()).String()
+	s.nonExistValidAddress = wasmkeeper.RandomAccountAddress(s.T()).String()
 
 	s.setupHeight, err = s.network.LatestHeight()
 	s.Require().NoError(err)
@@ -96,7 +100,7 @@ func (s *IntegrationTestSuite) queryCommonArgs() []string {
 func (s *IntegrationTestSuite) deployContract() string {
 	val := s.network.Validators[0]
 
-	wasmPath := "../../keeper/testdata/hackatom.wasm"
+	wasmPath := "../../../wasm/keeper/testdata/hackatom.wasm"
 	_, err := os.ReadFile(wasmPath)
 	s.Require().NoError(err)
 
@@ -115,9 +119,9 @@ func (s *IntegrationTestSuite) deployContract() string {
 
 	// parse codeID
 	for _, v := range res.Events {
-		if v.Type == types.EventTypeStoreCode {
+		if v.Type == wasmtypes.EventTypeStoreCode {
 			for _, attr := range v.Attributes {
-				if string(attr.Key) == types.AttributeKeyCodeID {
+				if string(attr.Key) == wasmtypes.AttributeKeyCodeID {
 					return string(attr.Value)
 				}
 			}
@@ -148,7 +152,7 @@ func (s *IntegrationTestSuite) instantiate(codeID, params string) string {
 
 	// parse contractAddress
 	for _, v := range res.Events {
-		if v.Type == types.EventTypeInstantiate {
+		if v.Type == wasmtypes.EventTypeInstantiate {
 			return string(v.Attributes[0].Value)
 		}
 	}

@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/line/wasmd/x/wasm/types"
-	types2 "github.com/line/wasmd/x/wasmplus/types"
 )
 
 var (
@@ -376,58 +375,6 @@ func TestGetCmdListPinnedCode(t *testing.T) {
 	}
 }
 
-func TestGetCmdListInactiveContracts(t *testing.T) {
-	res := types2.QueryInactiveContractsResponse{}
-	bz, err := res.Marshal()
-	require.NoError(t, err)
-	ctx := makeContext(bz)
-	tests := testcase{
-		{"execute success", nil, ctx, nil, nil},
-		{"bad status", badStatusError, ctx, nil, nil},
-		{"invalid request", invalidRequestError, ctx, invalidRequestFlags, nil},
-		{"invalid url", invalidControlChar, context.Background(), invalidNodeFlags, nil},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := GetCmdListInactiveContracts()
-			err := cmd.ParseFlags(tt.flags)
-			require.NoError(t, err)
-			cmd.SetContext(tt.ctx)
-			actual := cmd.RunE(cmd, tt.args)
-			if tt.want == nil {
-				assert.Nilf(t, actual, "GetCmdListInactiveContracts()")
-			} else {
-				assert.Equalf(t, tt.want.Error(), actual.Error(), "GetCmdListInactiveContracts()")
-			}
-		})
-	}
-}
-
-func TestGetCmdIsInactiveContract(t *testing.T) {
-	res := types2.QueryInactiveContractResponse{}
-	bz, err := res.Marshal()
-	require.NoError(t, err)
-	ctx := makeContext(bz)
-	tests := testcase{
-		{"execute success", nil, ctx, nil, argsWithAddr},
-		{"bad status", badStatusError, ctx, nil, argsWithAddr},
-		{"invalid url", invalidControlChar, context.Background(), invalidNodeFlags, argsWithAddr},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := GetCmdIsInactiveContract()
-			err := cmd.ParseFlags(tt.flags)
-			require.NoError(t, err)
-			cmd.SetContext(tt.ctx)
-			actual := cmd.RunE(cmd, tt.args)
-			if tt.want == nil {
-				assert.Nilf(t, actual, "GetCmdIsInactiveContract()")
-			} else {
-				assert.Equalf(t, tt.want.Error(), actual.Error(), "GetCmdIsInactiveContract()")
-			}
-		})
-	}
-}
 func makeContext(bz []byte) context.Context {
 	result := ocrpctypes.ResultABCIQuery{Response: ocabcitypes.ResponseQuery{Value: bz}}
 	mockClient := ocrpcmocks.RemoteClient{}

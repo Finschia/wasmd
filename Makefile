@@ -83,6 +83,7 @@ ifeq ($(OS),Windows_NT)
 	exit 1
 else
 	go build -mod=readonly $(BUILD_FLAGS) -o build/wasmd ./cmd/wasmd
+	go build -mod=readonly $(BUILD_FLAGS) -o build/wasmplusd ./cmd/wasmplusd
 endif
 
 build-contract-tests-hooks:

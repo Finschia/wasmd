@@ -20,6 +20,7 @@ import (
 	wasmkeeper "github.com/line/wasmd/x/wasm/keeper"
 	"github.com/line/wasmd/x/wasm/simulation"
 	wasmtypes "github.com/line/wasmd/x/wasm/types"
+	"github.com/line/wasmd/x/wasmplus/client/cli"
 	"github.com/line/wasmd/x/wasmplus/keeper"
 	"github.com/line/wasmd/x/wasmplus/types"
 )
@@ -73,16 +74,12 @@ func (a AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, serv
 
 // GetTxCmd returns the root tx command for the wasm module.
 func (a AppModuleBasic) GetTxCmd() *cobra.Command {
-	//return wasmcli.GetTxCmd()
-	//TODO implement me
-	panic("implement me")
+	return cli.GetTxCmd()
 }
 
 // GetQueryCmd returns no root query command for the wasm module.
 func (a AppModuleBasic) GetQueryCmd() *cobra.Command {
-	//return cli.GetQueryCmd()
-	//TODO implement me
-	panic("implement me")
+	return cli.GetQueryCmd()
 }
 
 type AppModule struct {
