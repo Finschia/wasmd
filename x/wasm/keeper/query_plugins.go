@@ -20,7 +20,7 @@ type QueryHandler struct {
 	Ctx         sdk.Context
 	Plugins     WasmVMQueryHandler
 	Caller      sdk.AccAddress
-	GasRegister GasRegister
+	gasRegister GasRegister
 }
 
 func NewQueryHandler(ctx sdk.Context, vmQueryHandler WasmVMQueryHandler, caller sdk.AccAddress, gasRegister GasRegister) QueryHandler {
@@ -28,7 +28,7 @@ func NewQueryHandler(ctx sdk.Context, vmQueryHandler WasmVMQueryHandler, caller 
 		Ctx:         ctx,
 		Plugins:     vmQueryHandler,
 		Caller:      caller,
-		GasRegister: gasRegister,
+		gasRegister: gasRegister,
 	}
 }
 
@@ -42,7 +42,7 @@ var _ wasmvmtypes.Querier = QueryHandler{}
 
 func (q QueryHandler) Query(request wasmvmtypes.QueryRequest, gasLimit uint64) ([]byte, error) {
 	// set a limit for a subCtx
-	sdkGas := q.GasRegister.FromWasmVMGas(gasLimit)
+	sdkGas := q.gasRegister.FromWasmVMGas(gasLimit)
 	// discard all changes/ events in subCtx by not committing the cached context
 	subCtx, _ := q.Ctx.WithGasMeter(sdk.NewGasMeter(sdkGas)).CacheContext()
 

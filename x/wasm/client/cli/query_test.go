@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	sdkerrors "github.com/line/lbm-sdk/types/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"net/url"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/line/lbm-sdk/client"
 	"github.com/line/lbm-sdk/codec"
+	sdkerrors "github.com/line/lbm-sdk/types/errors"
 	ocabcitypes "github.com/line/ostracon/abci/types"
 	ocrpcmocks "github.com/line/ostracon/rpc/client/mocks"
 	ocrpctypes "github.com/line/ostracon/rpc/core/types"
@@ -21,8 +21,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/line/wasmd/x/wasm/lbmtypes"
 	"github.com/line/wasmd/x/wasm/types"
+	types2 "github.com/line/wasmd/x/wasmplus/types"
 )
 
 var (
@@ -377,7 +377,7 @@ func TestGetCmdListPinnedCode(t *testing.T) {
 }
 
 func TestGetCmdListInactiveContracts(t *testing.T) {
-	res := lbmtypes.QueryInactiveContractsResponse{}
+	res := types2.QueryInactiveContractsResponse{}
 	bz, err := res.Marshal()
 	require.NoError(t, err)
 	ctx := makeContext(bz)
@@ -404,7 +404,7 @@ func TestGetCmdListInactiveContracts(t *testing.T) {
 }
 
 func TestGetCmdIsInactiveContract(t *testing.T) {
-	res := lbmtypes.QueryInactiveContractResponse{}
+	res := types2.QueryInactiveContractResponse{}
 	bz, err := res.Marshal()
 	require.NoError(t, err)
 	ctx := makeContext(bz)

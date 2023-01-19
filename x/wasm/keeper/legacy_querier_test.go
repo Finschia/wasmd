@@ -18,7 +18,7 @@ import (
 )
 
 func TestLegacyQueryContractState(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	keeper := keepers.WasmKeeper
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
@@ -155,7 +155,7 @@ func TestLegacyQueryContractState(t *testing.T) {
 }
 
 func TestLegacyQueryContractListByCodeOrdering(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	keeper := keepers.WasmKeeper
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 1000000))
@@ -219,7 +219,7 @@ func TestLegacyQueryContractListByCodeOrdering(t *testing.T) {
 }
 
 func TestLegacyQueryContractHistory(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	keeper := keepers.WasmKeeper
 
 	var otherAddr sdk.AccAddress = bytes.Repeat([]byte{0x2}, types.ContractAddrLen)
@@ -330,7 +330,7 @@ func TestLegacyQueryCodeList(t *testing.T) {
 
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+			ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 			keeper := keepers.WasmKeeper
 
 			for _, codeID := range spec.codeIDs {

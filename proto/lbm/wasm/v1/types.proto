@@ -4,7 +4,7 @@ package lbm.wasm.v1;
 import "gogoproto/gogo.proto";
 import "cosmwasm/wasm/v1/types.proto";
 
-option go_package = "github.com/line/wasmd/x/wasm/lbmtypes";
+option go_package = "github.com/line/wasmd/x/wasmplus/types";
 option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.equal_all) = true;
 

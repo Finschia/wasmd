@@ -32,9 +32,6 @@ type decoratedKeeper interface {
 	setContractInfoExtension(ctx sdk.Context, contract sdk.AccAddress, extra types.ContractInfoExtension) error
 	setAccessConfig(ctx sdk.Context, codeID uint64, caller sdk.AccAddress, newConfig types.AccessConfig, autz AuthorizationPolicy) error
 	ClassicAddressGenerator() AddressGenerator
-
-	//activateContract(ctx sdk.Context, contractAddress sdk.AccAddress) error
-	//deactivateContract(ctx sdk.Context, contractAddress sdk.AccAddress) error
 }
 
 type PermissionedKeeper struct {
@@ -131,11 +128,3 @@ func (p PermissionedKeeper) SetContractInfoExtension(ctx sdk.Context, contract s
 func (p PermissionedKeeper) SetAccessConfig(ctx sdk.Context, codeID uint64, caller sdk.AccAddress, newConfig types.AccessConfig) error {
 	return p.nested.setAccessConfig(ctx, codeID, caller, newConfig, p.authZPolicy)
 }
-
-//func (p PermissionedKeeper) DeactivateContract(ctx sdk.Context, contractAddress sdk.AccAddress) error {
-//	return p.nested.deactivateContract(ctx, contractAddress)
-//}
-//
-//func (p PermissionedKeeper) ActivateContract(ctx sdk.Context, contractAddress sdk.AccAddress) error {
-//	return p.nested.activateContract(ctx, contractAddress)
-//}

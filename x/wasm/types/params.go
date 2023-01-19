@@ -13,8 +13,10 @@ import (
 	paramtypes "github.com/line/lbm-sdk/x/params/types"
 )
 
-var ParamStoreKeyUploadAccess = []byte("uploadAccess")
-var ParamStoreKeyInstantiateAccess = []byte("instantiateAccess")
+var (
+	ParamStoreKeyUploadAccess      = []byte("uploadAccess")
+	ParamStoreKeyInstantiateAccess = []byte("instantiateAccess")
+)
 
 var AllAccessTypes = []AccessType{
 	AccessTypeNobody,

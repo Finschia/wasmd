@@ -19,7 +19,6 @@ import (
 	sdkerrors "github.com/line/lbm-sdk/types/errors"
 	authtypes "github.com/line/lbm-sdk/x/auth/types"
 	vestingexported "github.com/line/lbm-sdk/x/auth/vesting/exported"
-	bankpluskeeper "github.com/line/lbm-sdk/x/bankplus/keeper"
 	paramtypes "github.com/line/lbm-sdk/x/params/types"
 	"github.com/line/ostracon/libs/log"
 	wasmvm "github.com/line/wasmvm"
@@ -54,8 +53,6 @@ type WasmVMQueryHandler interface {
 type CoinTransferrer interface {
 	// TransferCoins sends the coin amounts from the source to the destination with rules applied.
 	TransferCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
-	//AddToInactiveAddr(ctx sdk.Context, address sdk.AccAddress)
-	//DeleteFromInactiveAddr(ctx sdk.Context, address sdk.AccAddress)
 }
 
 // AccountPruner handles the balances and data cleanup for accounts that are pruned on contract instantiate.
@@ -113,7 +110,6 @@ func NewKeeper(
 	cdc codec.Codec,
 	storeKey sdk.StoreKey,
 	paramSpace paramtypes.Subspace,
-	//accountKeeper authkeeper.AccountKeeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	stakingKeeper types.StakingKeeper,
@@ -127,8 +123,6 @@ func NewKeeper(
 	homeDir string,
 	wasmConfig types.WasmConfig,
 	availableCapabilities string,
-	customEncoders *MessageEncoders,
-	customPlugins *QueryPlugins,
 	opts ...Option,
 ) Keeper {
 	wasmer, err := wasmvm.NewVM(filepath.Join(homeDir, "wasm"), availableCapabilities, contractMemoryLimit, wasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
@@ -157,7 +151,7 @@ func NewKeeper(
 		maxQueryStackSize:    types.DefaultMaxQueryStackSize,
 		acceptedAccountTypes: defaultAcceptedAccountTypes,
 	}
-	keeper.wasmVMQueryHandler = DefaultQueryPlugins(bankKeeper, stakingKeeper, distKeeper, channelKeeper, queryRouter, keeper).Merge(customPlugins)
+	keeper.wasmVMQueryHandler = DefaultQueryPlugins(bankKeeper, stakingKeeper, distKeeper, channelKeeper, queryRouter, keeper)
 	for _, o := range opts {
 		o.apply(keeper)
 	}
@@ -469,9 +463,6 @@ func (k Keeper) execute(ctx sdk.Context, contractAddress sdk.AccAddress, caller 
 	if err != nil {
 		return nil, err
 	}
-	//if k.IsInactiveContract(ctx, contractAddress) {
-	//	return nil, sdkerrors.Wrap(types.ErrInactiveContract, "can not execute")
-	//}
 
 	executeCosts := k.gasRegister.InstantiateContractCosts(k.IsPinnedCode(ctx, contractInfo.CodeID), len(msg))
 	ctx.GasMeter().ConsumeGas(executeCosts, "Loading CosmWasm module: execute")
@@ -517,9 +508,6 @@ func (k Keeper) migrate(ctx sdk.Context, contractAddress sdk.AccAddress, caller 
 	if contractInfo == nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "unknown contract")
 	}
-	//if k.IsInactiveContract(ctx, contractAddress) {
-	//	return nil, sdkerrors.Wrap(types.ErrInactiveContract, "can not migrate")
-	//}
 	if !authZ.CanModifyContract(contractInfo.AdminAddr(), caller) {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "can not migrate")
 	}
@@ -688,9 +676,6 @@ func (k Keeper) setContractAdmin(ctx sdk.Context, contractAddress, caller, newAd
 	if contractInfo == nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "unknown contract")
 	}
-	//if k.IsInactiveContract(ctx, contractAddress) {
-	//	return sdkerrors.Wrap(types.ErrInactiveContract, "can not modify contract")
-	//}
 	if !authZ.CanModifyContract(contractInfo.AdminAddr(), caller) {
 		return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "can not modify contract")
 	}
@@ -1194,7 +1179,7 @@ func moduleLogger(ctx sdk.Context) log.Logger {
 }
 
 // Querier creates a new grpc querier instance
-func Querier(k *Keeper) *GrpcQuerier { //nolint:revive
+func Querier(k *Keeper) *grpcQuerier { //nolint:revive
 	return NewGrpcQuerier(k.cdc, k.storeKey, k, k.queryGasLimit)
 }
 
@@ -1204,16 +1189,14 @@ func (k Keeper) QueryGasLimit() sdk.Gas {
 }
 
 // BankCoinTransferrer replicates the cosmos-sdk behaviour as in
-// lbm-sdk's x/bank/keeper/msg_server.go Send
-// (https://github.com/line/lbm-sdk/blob/2a5a2d2c885b03e278bcd67546d4f21e74614ead/x/bank/keeper/msg_server.go#L26)
+// https://github.com/cosmos/cosmos-sdk/blob/v0.41.4/x/bank/keeper/msg_server.go#L26
 type BankCoinTransferrer struct {
-	keeper bankpluskeeper.Keeper
+	keeper types.BankKeeper
 }
 
 func NewBankCoinTransferrer(keeper types.BankKeeper) BankCoinTransferrer {
-	bankPlusKeeper := keeper.(bankpluskeeper.Keeper)
 	return BankCoinTransferrer{
-		keeper: bankPlusKeeper,
+		keeper: keeper,
 	}
 }
 
@@ -1241,14 +1224,6 @@ func (c BankCoinTransferrer) TransferCoins(parentCtx sdk.Context, fromAddr sdk.A
 	}
 	return nil
 }
-
-//func (c BankCoinTransferrer) AddToInactiveAddr(ctx sdk.Context, address sdk.AccAddress) {
-//	c.keeper.AddToInactiveAddr(ctx, address)
-//}
-//
-//func (c BankCoinTransferrer) DeleteFromInactiveAddr(ctx sdk.Context, address sdk.AccAddress) {
-//	c.keeper.DeleteFromInactiveAddr(ctx, address)
-//}
 
 var _ AccountPruner = VestingCoinBurner{}
 

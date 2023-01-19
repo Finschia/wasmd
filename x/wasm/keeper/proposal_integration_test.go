@@ -22,7 +22,7 @@ import (
 )
 
 func TestStoreCodeProposal(t *testing.T) {
-	parentCtx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	parentCtx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
 	wasmKeeper.SetParams(parentCtx, types.Params{
 		CodeUploadAccess:             types.AllowNobody,
@@ -77,7 +77,7 @@ func TestStoreCodeProposal(t *testing.T) {
 }
 
 func TestInstantiateProposal(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	ctx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
 	wasmKeeper.SetParams(ctx, types.Params{
 		CodeUploadAccess:             types.AllowNobody,
@@ -142,7 +142,7 @@ func TestInstantiateProposal(t *testing.T) {
 }
 
 func TestInstantiateProposal_NoAdmin(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	ctx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
 	wasmKeeper.SetParams(ctx, types.Params{
 		CodeUploadAccess:             types.AllowNobody,
@@ -214,7 +214,7 @@ func TestInstantiateProposal_NoAdmin(t *testing.T) {
 }
 
 func TestMigrateProposal(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	ctx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
 	wasmKeeper.SetParams(ctx, types.Params{
 		CodeUploadAccess:             types.AllowNobody,
@@ -295,7 +295,7 @@ func TestMigrateProposal(t *testing.T) {
 }
 
 func TestExecuteProposal(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	ctx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, bankKeeper := keepers.GovKeeper, keepers.BankKeeper
 
 	exampleContract := InstantiateHackatomExampleContract(t, ctx, keepers)
@@ -355,7 +355,7 @@ func TestExecuteProposal(t *testing.T) {
 }
 
 func TestSudoProposal(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	ctx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, bankKeeper := keepers.GovKeeper, keepers.BankKeeper
 
 	exampleContract := InstantiateHackatomExampleContract(t, ctx, keepers)
@@ -465,7 +465,7 @@ func TestAdminProposals(t *testing.T) {
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+			ctx, keepers := CreateTestInput(t, false, "staking")
 			govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
 			wasmKeeper.SetParams(ctx, types.Params{
 				CodeUploadAccess:             types.AllowNobody,
@@ -494,7 +494,7 @@ func TestAdminProposals(t *testing.T) {
 }
 
 func TestUpdateParamsProposal(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	ctx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
 
 	var (
@@ -591,7 +591,7 @@ func TestUpdateParamsProposal(t *testing.T) {
 }
 
 func TestPinCodesProposal(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	ctx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
 
 	mock := wasmtesting.MockWasmer{
@@ -679,7 +679,7 @@ func TestPinCodesProposal(t *testing.T) {
 }
 
 func TestUnpinCodesProposal(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	ctx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
 
 	mock := wasmtesting.MockWasmer{
@@ -767,7 +767,7 @@ func TestUnpinCodesProposal(t *testing.T) {
 }
 
 func TestUpdateInstantiateConfigProposal(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
+	ctx, keepers := CreateTestInput(t, false, "staking")
 	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
 
 	mock := wasmtesting.MockWasmer{
@@ -859,66 +859,3 @@ func TestUpdateInstantiateConfigProposal(t *testing.T) {
 		})
 	}
 }
-
-//func TestValidateDeactivateContractProposal(t *testing.T) {
-//	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
-//	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
-//
-//	var mock wasmtesting.MockWasmer
-//	wasmtesting.MakeInstantiable(&mock)
-//	example := SeedNewContractInstance(t, ctx, keepers, &mock)
-//
-//	src := lbmtypes.DeactivateContractProposal{
-//		Title:       "Foo",
-//		Description: "Bar",
-//		Contract:    example.Contract.String(),
-//	}
-//
-//	em := sdk.NewEventManager()
-//
-//	// when stored
-//	storedProposal, err := govKeeper.SubmitProposal(ctx, &src)
-//	require.NoError(t, err)
-//
-//	// proposal execute
-//	handler := govKeeper.Router().GetRoute(storedProposal.ProposalRoute())
-//	err = handler(ctx.WithEventManager(em), storedProposal.GetContent())
-//	require.NoError(t, err)
-//
-//	// then
-//	isInactive := wasmKeeper.IsInactiveContract(ctx, example.Contract)
-//	require.True(t, isInactive)
-//}
-//
-//func TestActivateContractProposal(t *testing.T) {
-//	ctx, keepers := CreateTestInput(t, false, "staking", nil, nil)
-//	govKeeper, wasmKeeper := keepers.GovKeeper, keepers.WasmKeeper
-//
-//	var mock wasmtesting.MockWasmer
-//	wasmtesting.MakeInstantiable(&mock)
-//	example := SeedNewContractInstance(t, ctx, keepers, &mock)
-//	// set deactivate
-//	err := wasmKeeper.deactivateContract(ctx, example.Contract)
-//	require.NoError(t, err)
-//
-//	src := lbmtypes.ActivateContractProposal{
-//		Title:       "Foo",
-//		Description: "Bar",
-//		Contract:    example.Contract.String(),
-//	}
-//
-//	em := sdk.NewEventManager()
-//
-//	// when stored
-//	storedProposal, err := govKeeper.SubmitProposal(ctx, &src)
-//	require.NoError(t, err)
-//
-//	// proposal execute
-//	handler := govKeeper.Router().GetRoute(storedProposal.ProposalRoute())
-//	err = handler(ctx.WithEventManager(em), storedProposal.GetContent())
-//	require.NoError(t, err)
-//
-//	// then
-//	isInactive := wasmKeeper.IsInactiveContract(ctx, example.Contract)
-//	require.False(t, isInactive)
-//}

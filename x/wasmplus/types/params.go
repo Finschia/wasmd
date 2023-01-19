@@ -1,28 +1,36 @@
-package lbmtypes
+package types
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 
 	sdkerrors "github.com/line/lbm-sdk/types/errors"
 	paramtypes "github.com/line/lbm-sdk/x/params/types"
 
+	wasmkeeper "github.com/line/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/line/wasmd/x/wasm/types"
 )
 
-var ParamStoreKeyGasMultiplier = []byte("gasMultiplier")
-var ParamStoreKeyInstanceCost = []byte("instanceCost")
-var ParamStoreKeyCompileCost = []byte("compileCost")
+var (
+	ParamStoreKeyGasMultiplier = []byte("gasMultiplier")
+	ParamStoreKeyInstanceCost  = []byte("instanceCost")
+	ParamStoreKeyCompileCost   = []byte("compileCost")
+)
+
+// ParamKeyTable returns the parameter key table.
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
+}
 
 func DefaultParams() Params {
 	return Params{
 		CodeUploadAccess:             wasmtypes.AllowEverybody,
 		InstantiateDefaultPermission: wasmtypes.AccessTypeEverybody,
-		// todo should set wasmkepper's default after solving import cycle problem.
-		GasMultiplier: 0, // keeper.DefaultGasMultiplier,
-		InstanceCost:  0, // keeper.DefaultInstanceCost,
-		CompileCost:   0, // keeper.DefaultCompileCost,
+		GasMultiplier:                wasmkeeper.DefaultGasMultiplier,
+		InstanceCost:                 wasmkeeper.DefaultInstanceCost,
+		CompileCost:                  wasmkeeper.DefaultCompileCost,
 	}
 }
 
@@ -52,6 +60,15 @@ func (p Params) ValidateBasic() error {
 	}
 	if err := validateAccessConfig(p.CodeUploadAccess); err != nil {
 		return errors.Wrap(err, "upload access")
+	}
+	if err := validateGasMultiplier(p.GasMultiplier); err != nil {
+		return errors.Wrap(err, "gas multiplier")
+	}
+	if err := validateInstanceCost(p.InstanceCost); err != nil {
+		return errors.Wrap(err, "instance cost")
+	}
+	if err := validateCompileCost(p.CompileCost); err != nil {
+		return errors.Wrap(err, "compile cost")
 	}
 	return nil
 }

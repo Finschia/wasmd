@@ -17,7 +17,7 @@ import (
 )
 
 func TestInstantiate2(t *testing.T) {
-	parentCtx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	parentCtx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	example := StoreHackatomExampleContract(t, parentCtx, keepers)
 	otherExample := StoreReflectContract(t, parentCtx, keepers)
 	mock := &wasmtesting.MockWasmer{}

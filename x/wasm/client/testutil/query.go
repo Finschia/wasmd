@@ -11,8 +11,8 @@ import (
 	"github.com/line/lbm-sdk/types/query"
 
 	"github.com/line/wasmd/x/wasm/client/cli"
-	"github.com/line/wasmd/x/wasm/lbmtypes"
 	"github.com/line/wasmd/x/wasm/types"
+	types2 "github.com/line/wasmd/x/wasmplus/types"
 )
 
 func (s *IntegrationTestSuite) TestGetCmdListCode() {
@@ -475,11 +475,11 @@ func (s *IntegrationTestSuite) TestGetCmdListInactiveContracts() {
 	out, err := clitestutil.ExecTestCLICmd(val.ClientCtx, cmd, s.queryCommonArgs())
 	s.Require().NoError(err)
 
-	expected := &lbmtypes.QueryInactiveContractsResponse{
+	expected := &types2.QueryInactiveContractsResponse{
 		Addresses:  []string{s.inactiveContractAddress},
 		Pagination: &query.PageResponse{},
 	}
-	var resInfo lbmtypes.QueryInactiveContractsResponse
+	var resInfo types2.QueryInactiveContractsResponse
 	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &resInfo), out.String())
 	s.Require().Equal(expected, &resInfo)
 }
@@ -497,7 +497,7 @@ func (s *IntegrationTestSuite) TestGetCmdIsInactiveContract() {
 				s.inactiveContractAddress,
 			},
 			true,
-			&lbmtypes.QueryInactiveContractResponse{
+			&types2.QueryInactiveContractResponse{
 				Inactivated: true,
 			},
 		},
@@ -529,7 +529,7 @@ func (s *IntegrationTestSuite) TestGetCmdIsInactiveContract() {
 			}
 			s.Require().NoError(err)
 
-			var resInfo lbmtypes.QueryInactiveContractResponse
+			var resInfo types2.QueryInactiveContractResponse
 			s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &resInfo), out.String())
 			s.Require().Equal(tc.expected, &resInfo)
 		})

@@ -19,8 +19,8 @@ import (
 	wasmvm "github.com/line/wasmvm"
 
 	"github.com/line/wasmd/x/wasm/keeper"
-	"github.com/line/wasmd/x/wasm/lbmtypes"
 	"github.com/line/wasmd/x/wasm/types"
+	types2 "github.com/line/wasmd/x/wasmplus/types"
 )
 
 func GetQueryCmd() *cobra.Command {
@@ -608,10 +608,10 @@ func GetCmdListInactiveContracts() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			queryClient := lbmtypes.NewQueryClient(clientCtx)
+			queryClient := types2.NewQueryClient(clientCtx)
 			res, err := queryClient.InactiveContracts(
 				context.Background(),
-				&lbmtypes.QueryInactiveContractsRequest{
+				&types2.QueryInactiveContractsRequest{
 					Pagination: pageReq,
 				},
 			)
@@ -637,10 +637,10 @@ func GetCmdIsInactiveContract() *cobra.Command {
 				return err
 			}
 
-			queryClient := lbmtypes.NewQueryClient(clientCtx)
+			queryClient := types2.NewQueryClient(clientCtx)
 			res, err := queryClient.InactiveContract(
 				context.Background(),
-				&lbmtypes.QueryInactiveContractRequest{
+				&types2.QueryInactiveContractRequest{
 					Address: args[0],
 				},
 			)

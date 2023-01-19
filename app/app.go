@@ -533,8 +533,6 @@ func NewWasmApp(
 		wasmDir,
 		wasmConfig,
 		availableCapabilities,
-		nil,
-		nil,
 		wasmOpts...,
 	)
 

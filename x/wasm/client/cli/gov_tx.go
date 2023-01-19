@@ -15,8 +15,8 @@ import (
 	"github.com/line/lbm-sdk/x/gov/client/cli"
 	govtypes "github.com/line/lbm-sdk/x/gov/types"
 
-	"github.com/line/wasmd/x/wasm/lbmtypes"
 	"github.com/line/wasmd/x/wasm/types"
+	types2 "github.com/line/wasmd/x/wasmplus/types"
 )
 
 func ProposalStoreCodeCmd() *cobra.Command {
@@ -742,7 +742,7 @@ func ProposalDeactivateContractCmd() *cobra.Command {
 				return err
 			}
 
-			content := lbmtypes.DeactivateContractProposal{
+			content := types2.DeactivateContractProposal{
 				Title:       proposalTitle,
 				Description: proposalDescr,
 				Contract:    args[0],
@@ -795,7 +795,7 @@ func ProposalActivateContractCmd() *cobra.Command {
 				return err
 			}
 
-			content := lbmtypes.ActivateContractProposal{
+			content := types2.ActivateContractProposal{
 				Title:       proposalTitle,
 				Description: proposalDescr,
 				Contract:    args[0],

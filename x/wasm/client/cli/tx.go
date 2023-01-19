@@ -18,8 +18,8 @@ import (
 
 	"github.com/line/wasmd/x/wasm/client/cli/os"
 	"github.com/line/wasmd/x/wasm/ioutils"
-	"github.com/line/wasmd/x/wasm/lbmtypes"
 	"github.com/line/wasmd/x/wasm/types"
+	types2 "github.com/line/wasmd/x/wasmplus/types"
 )
 
 const (
@@ -359,10 +359,10 @@ func StoreCodeAndInstantiateContractCmd() *cobra.Command {
 	return cmd
 }
 
-func parseStoreCodeAndInstantiateContractArgs(file string, initMsg string, sender sdk.AccAddress, flags *flag.FlagSet) (lbmtypes.MsgStoreCodeAndInstantiateContract, error) {
+func parseStoreCodeAndInstantiateContractArgs(file string, initMsg string, sender sdk.AccAddress, flags *flag.FlagSet) (types2.MsgStoreCodeAndInstantiateContract, error) {
 	wasm, err := os.ReadFileWithSizeLimit(file, int64(types.MaxWasmSize))
 	if err != nil {
-		return lbmtypes.MsgStoreCodeAndInstantiateContract{}, err
+		return types2.MsgStoreCodeAndInstantiateContract{}, err
 	}
 
 	// gzip the wasm file
@@ -370,33 +370,33 @@ func parseStoreCodeAndInstantiateContractArgs(file string, initMsg string, sende
 		wasm, err = ioutils.GzipIt(wasm)
 
 		if err != nil {
-			return lbmtypes.MsgStoreCodeAndInstantiateContract{}, err
+			return types2.MsgStoreCodeAndInstantiateContract{}, err
 		}
 	} else if !ioutils.IsGzip(wasm) {
-		return lbmtypes.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("invalid input file. Use wasm binary or gzip")
+		return types2.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("invalid input file. Use wasm binary or gzip")
 	}
 
 	var perm *types.AccessConfig
 	onlyAddrStr, err := flags.GetString(flagInstantiateByAddress)
 	if err != nil {
-		return lbmtypes.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("instantiate by address: %s", err)
+		return types2.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("instantiate by address: %s", err)
 	}
 	if onlyAddrStr != "" {
 		addr, err := sdk.AccAddressFromBech32(onlyAddrStr)
 		if err != nil {
-			return lbmtypes.MsgStoreCodeAndInstantiateContract{}, sdkerrors.Wrap(err, flagInstantiateByAddress)
+			return types2.MsgStoreCodeAndInstantiateContract{}, sdkerrors.Wrap(err, flagInstantiateByAddress)
 		}
 		x := types.AccessTypeOnlyAddress.With(addr)
 		perm = &x
 	} else {
 		everybodyStr, err := flags.GetString(flagInstantiateByEverybody)
 		if err != nil {
-			return lbmtypes.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("instantiate by everybody: %s", err)
+			return types2.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("instantiate by everybody: %s", err)
 		}
 		if everybodyStr != "" {
 			ok, err := strconv.ParseBool(everybodyStr)
 			if err != nil {
-				return lbmtypes.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("boolean value expected for instantiate by everybody: %s", err)
+				return types2.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("boolean value expected for instantiate by everybody: %s", err)
 			}
 			if ok {
 				perm = &types.AllowEverybody
@@ -406,25 +406,25 @@ func parseStoreCodeAndInstantiateContractArgs(file string, initMsg string, sende
 
 	amountStr, err := flags.GetString(flagAmount)
 	if err != nil {
-		return lbmtypes.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("amount: %s", err)
+		return types2.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("amount: %s", err)
 	}
 	amount, err := sdk.ParseCoinsNormalized(amountStr)
 	if err != nil {
-		return lbmtypes.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("amount: %s", err)
+		return types2.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("amount: %s", err)
 	}
 	label, err := flags.GetString(flagLabel)
 	if err != nil {
-		return lbmtypes.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("label: %s", err)
+		return types2.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("label: %s", err)
 	}
 	if label == "" {
-		return lbmtypes.MsgStoreCodeAndInstantiateContract{}, errors.New("label is required on all contracts")
+		return types2.MsgStoreCodeAndInstantiateContract{}, errors.New("label is required on all contracts")
 	}
 	adminStr, err := flags.GetString(flagAdmin)
 	if err != nil {
-		return lbmtypes.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("admin: %s", err)
+		return types2.MsgStoreCodeAndInstantiateContract{}, fmt.Errorf("admin: %s", err)
 	}
 
-	msg := lbmtypes.MsgStoreCodeAndInstantiateContract{
+	msg := types2.MsgStoreCodeAndInstantiateContract{
 		Sender:                sender.String(),
 		WASMByteCode:          wasm,
 		InstantiatePermission: perm,

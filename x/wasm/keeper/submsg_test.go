@@ -21,7 +21,7 @@ import (
 
 // Try a simple send, no gas limit to for a sanity check before trying table tests
 func TestDispatchSubMsgSuccessCase(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, ReflectFeatures)
 	accKeeper, keeper, bankKeeper := keepers.AccountKeeper, keepers.WasmKeeper, keepers.BankKeeper
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
@@ -106,7 +106,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 	subGasLimit := uint64(300_000)
 
 	// prep - create one chain and upload the code
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, ReflectFeatures)
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	ctx = ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter())
 	keeper := keepers.WasmKeeper
@@ -361,7 +361,7 @@ func TestDispatchSubMsgEncodeToNoSdkMsg(t *testing.T) {
 		Bank: nilEncoder,
 	}
 
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, nil, nil, WithMessageHandler(NewSDKMessageHandler(nil, customEncoders)))
+	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, WithMessageHandler(NewSDKMessageHandler(nil, customEncoders)))
 	keeper := keepers.WasmKeeper
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
@@ -427,7 +427,7 @@ func TestDispatchSubMsgEncodeToNoSdkMsg(t *testing.T) {
 
 // Try a simple send, no gas limit to for a sanity check before trying table tests
 func TestDispatchSubMsgConditionalReplyOn(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, ReflectFeatures)
 	keeper := keepers.WasmKeeper
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
