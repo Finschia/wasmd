@@ -2,7 +2,7 @@ package keeper
 
 import (
 	"fmt"
-	
+
 	"github.com/line/lbm-sdk/codec"
 	sdk "github.com/line/lbm-sdk/types"
 	bankpluskeeper "github.com/line/lbm-sdk/x/bankplus/keeper"
@@ -16,11 +16,10 @@ import (
 
 type Keeper struct {
 	wasmkeeper.Keeper
-	cdc        codec.Codec
-	storeKey   sdk.StoreKey
-	metrics    *Metrics
-	bank       bankpluskeeper.Keeper
-	paramSpace paramtypes.Subspace
+	cdc      codec.Codec
+	storeKey sdk.StoreKey
+	metrics  *Metrics
+	bank     bankpluskeeper.Keeper
 }
 
 func NewKeeper(
@@ -48,16 +47,12 @@ func NewKeeper(
 	if !ok {
 		panic("bankKeeper should be bankPlusKeeper")
 	}
-	// set KeyTable if it has not already been set
-	if !paramSpace.HasKeyTable() {
-		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
-	}
 	result := Keeper{
-		cdc:        cdc,
-		storeKey:   storeKey,
-		metrics:    NopMetrics(),
-		bank:       bankPlusKeeper,
-		paramSpace: paramSpace,
+		cdc:      cdc,
+		storeKey: storeKey,
+		metrics:  NopMetrics(),
+		bank:     bankPlusKeeper,
+		//paramSpace: paramSpace,
 	}
 	result.Keeper = wasmkeeper.NewKeeper(
 		cdc,
@@ -97,15 +92,4 @@ func (Keeper) Logger(ctx sdk.Context) log.Logger {
 
 func ModuleLogger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-// GetCustomParams returns the total set of wasm parameters.
-func (k Keeper) getParams(ctx sdk.Context) types.Params {
-	var params types.Params
-	k.paramSpace.GetParamSet(ctx, &params)
-	return params
-}
-
-func (k Keeper) setParams(ctx sdk.Context, ps types.Params) {
-	k.paramSpace.SetParamSet(ctx, &ps)
 }

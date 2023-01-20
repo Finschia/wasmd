@@ -21,8 +21,6 @@ func InitGenesis(
 		return nil, sdkerrors.Wrap(err, "wasm")
 	}
 
-	keeper.setParams(ctx, data.Params)
-
 	// set InactiveContractAddresses
 	for i, contractAddr := range data.InactiveContractAddresses {
 		inactiveContractAddr := sdk.MustAccAddressFromBech32(contractAddr)
@@ -38,10 +36,9 @@ func InitGenesis(
 // ExportGenesis returns a GenesisState for a given context and keeper.
 func ExportGenesis(ctx sdk.Context, keeper *Keeper) *types.GenesisState {
 	wasmState := wasmkeeper.ExportGenesis(ctx, &keeper.Keeper)
-	params := keeper.getParams(ctx)
 
 	genState := types.GenesisState{
-		Params:    params,
+		Params:    wasmState.Params,
 		Codes:     wasmState.Codes,
 		Contracts: wasmState.Contracts,
 		Sequences: wasmState.Sequences,

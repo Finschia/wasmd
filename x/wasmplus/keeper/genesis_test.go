@@ -51,7 +51,7 @@ func TestGenesisExportImport(t *testing.T) {
 	// store some test data
 	f := fuzz.New().Funcs(wasmkeeper.ModelFuzzers...)
 
-	wasmKeeper.setParams(srcCtx, types.DefaultParams())
+	wasmKeeper.SetParams(srcCtx, wasmTypes.DefaultParams())
 
 	for i := 0; i < 5; i++ {
 		var (
@@ -99,9 +99,9 @@ func TestGenesisExportImport(t *testing.T) {
 		_, _, err = contractKeeper.Instantiate(srcCtx, codeID, creatorAddr, creatorAddr, initMsgBz, "test", nil)
 		require.NoError(t, err)
 	}
-	var wasmParams types.Params
+	var wasmParams wasmTypes.Params
 	f.NilChance(0).Fuzz(&wasmParams)
-	wasmKeeper.setParams(srcCtx, wasmParams)
+	wasmKeeper.SetParams(srcCtx, wasmParams)
 
 	// add inactiveContractAddr
 	var inactiveContractAddr []sdk.AccAddress
@@ -128,7 +128,7 @@ func TestGenesisExportImport(t *testing.T) {
 	require.NoError(t, err)
 
 	// compare
-	dstParams := dstKeeper.getParams(dstCtx)
+	dstParams := dstKeeper.GetParams(dstCtx)
 	require.Equal(t, wasmParams, dstParams)
 
 	var destInactiveContractAddr []sdk.AccAddress
@@ -161,7 +161,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
 					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 			expSuccess: true,
 		},
@@ -180,7 +180,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 10},
 					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 			expSuccess: true,
 		},
@@ -200,7 +200,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 3},
 					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 			expSuccess: true,
 		},
@@ -210,7 +210,7 @@ func TestGenesisInit(t *testing.T) {
 				CodeInfo:  wasmTypes.CodeInfoFixture(func(i *wasmTypes.CodeInfo) { i.CodeHash = make([]byte, sha256.Size) }),
 				CodeBytes: wasmCode,
 			}},
-			Params: types.DefaultParams(),
+			Params: wasmTypes.DefaultParams(),
 		}},
 		"prevent duplicate codeIDs": {src: types.GenesisState{
 			Codes: []wasmTypes.Code{
@@ -225,7 +225,7 @@ func TestGenesisInit(t *testing.T) {
 					CodeBytes: wasmCode,
 				},
 			},
-			Params: types.DefaultParams(),
+			Params: wasmTypes.DefaultParams(),
 		}},
 		"codes with same checksum can be pinned": {
 			src: types.GenesisState{
@@ -243,7 +243,7 @@ func TestGenesisInit(t *testing.T) {
 						Pinned:    true,
 					},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 		},
 		"happy path: code id in info and contract do match": {
@@ -263,7 +263,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
 					{IDKey: wasmTypes.KeyLastInstanceID, Value: 2},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 			expSuccess: true,
 		},
@@ -287,7 +287,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
 					{IDKey: wasmTypes.KeyLastInstanceID, Value: 3},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 			expSuccess: true,
 		},
@@ -299,7 +299,7 @@ func TestGenesisInit(t *testing.T) {
 						ContractInfo:    wasmTypes.ContractInfoFixture(func(c *wasmTypes.ContractInfo) { c.CodeID = 1 }, wasmTypes.OnlyGenesisFields),
 					},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 		},
 		"prevent duplicate contract address": {
@@ -318,7 +318,7 @@ func TestGenesisInit(t *testing.T) {
 						ContractInfo:    wasmTypes.ContractInfoFixture(func(c *wasmTypes.ContractInfo) { c.CodeID = 1 }, wasmTypes.OnlyGenesisFields),
 					},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 		},
 		"prevent duplicate contract model keys": {
@@ -344,7 +344,7 @@ func TestGenesisInit(t *testing.T) {
 						},
 					},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 		},
 		"prevent duplicate sequences": {
@@ -353,7 +353,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: []byte("foo"), Value: 1},
 					{IDKey: []byte("foo"), Value: 9999},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 		},
 		"prevent code id seq init value == max codeID used": {
@@ -366,7 +366,7 @@ func TestGenesisInit(t *testing.T) {
 				Sequences: []wasmTypes.Sequence{
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 1},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 		},
 		"prevent contract id seq init value == count contracts": {
@@ -386,7 +386,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
 					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 		},
 		"validator set update called for any genesis messages": {
@@ -396,7 +396,7 @@ func TestGenesisInit(t *testing.T) {
 						StoreCode: wasmTypes.MsgStoreCodeFixture(),
 					}},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 			stakingMock: StakingKeeperMock{expCalls: 1, validatorUpdate: []abci.ValidatorUpdate{
 				{
@@ -416,7 +416,7 @@ func TestGenesisInit(t *testing.T) {
 						StoreCode: wasmTypes.MsgStoreCodeFixture(),
 					}},
 				},
-				Params: types.DefaultParams(),
+				Params: wasmTypes.DefaultParams(),
 			},
 			msgHandlerMock: MockMsgHandler{expCalls: 1, err: errors.New("test error response")},
 			stakingMock:    StakingKeeperMock{expCalls: 0},
@@ -439,7 +439,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
 					{IDKey: wasmTypes.KeyLastInstanceID, Value: 3},
 				},
-				Params:                    types.DefaultParams(),
+				Params:                    wasmTypes.DefaultParams(),
 				InactiveContractAddresses: []string{keeper.BuildContractAddressClassic(1, 1).String()},
 			},
 			expSuccess: true,
@@ -455,7 +455,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
 					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
 				},
-				Params:                    types.DefaultParams(),
+				Params:                    wasmTypes.DefaultParams(),
 				InactiveContractAddresses: []string{humanAddress},
 			},
 		},
@@ -470,7 +470,7 @@ func TestGenesisInit(t *testing.T) {
 					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
 					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
 				},
-				Params:                    types.DefaultParams(),
+				Params:                    wasmTypes.DefaultParams(),
 				InactiveContractAddresses: []string{keeper.BuildContractAddressClassic(1, 1).String()},
 			},
 		},

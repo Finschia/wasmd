@@ -50,7 +50,7 @@ func (a AppModuleBasic) RegisterInterfaces(registry cdctypes.InterfaceRegistry) 
 // DefaultGenesis returns default genesis state as raw bytes for the wasm module.
 func (a AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	return cdc.MustMarshalJSON(&types.GenesisState{
-		Params: types.DefaultParams(),
+		Params: wasmtypes.DefaultParams(),
 	})
 }
 

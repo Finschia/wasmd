@@ -88,9 +88,6 @@
     - [EventActivateContractProposal](#lbm.wasm.v1.EventActivateContractProposal)
     - [EventDeactivateContractProposal](#lbm.wasm.v1.EventDeactivateContractProposal)
   
-- [lbm/wasm/v1/types.proto](#lbm/wasm/v1/types.proto)
-    - [Params](#lbm.wasm.v1.Params)
-  
 - [lbm/wasm/v1/genesis.proto](#lbm/wasm/v1/genesis.proto)
     - [GenesisState](#lbm.wasm.v1.GenesisState)
   
@@ -1357,41 +1354,6 @@ EventDeactivateContractProposal is the event that is emitted when the contract i
 
 
 
-<a name="lbm/wasm/v1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## lbm/wasm/v1/types.proto
-
-
-
-<a name="lbm.wasm.v1.Params"></a>
-
-### Params
-Params defines the set of wasm parameters.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `code_upload_access` | [cosmwasm.wasm.v1.AccessConfig](#cosmwasm.wasm.v1.AccessConfig) |  |  |
-| `instantiate_default_permission` | [cosmwasm.wasm.v1.AccessType](#cosmwasm.wasm.v1.AccessType) |  |  |
-| `gas_multiplier` | [uint64](#uint64) |  |  |
-| `instance_cost` | [uint64](#uint64) |  |  |
-| `compile_cost` | [uint64](#uint64) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="lbm/wasm/v1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -1407,7 +1369,7 @@ GenesisState - genesis state of x/wasm
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#lbm.wasm.v1.Params) |  |  |
+| `params` | [cosmwasm.wasm.v1.Params](#cosmwasm.wasm.v1.Params) |  |  |
 | `codes` | [cosmwasm.wasm.v1.Code](#cosmwasm.wasm.v1.Code) | repeated |  |
 | `contracts` | [cosmwasm.wasm.v1.Contract](#cosmwasm.wasm.v1.Contract) | repeated |  |
 | `sequences` | [cosmwasm.wasm.v1.Sequence](#cosmwasm.wasm.v1.Sequence) | repeated |  |
