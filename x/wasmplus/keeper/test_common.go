@@ -190,7 +190,7 @@ type TestKeepers struct {
 
 // CreateDefaultTestInput common settings for CreateTestInput
 func CreateDefaultTestInput(t testing.TB) (sdk.Context, TestKeepers) {
-	return CreateTestInput(t, false, "staking", nil, nil)
+	return CreateTestInput(t, false, "staking")
 }
 
 // CreateTestInput encoders can be nil to accept the defaults, or set it to override some of the message handlers (like default)
@@ -198,12 +198,10 @@ func CreateTestInput(
 	t testing.TB,
 	isCheckTx bool,
 	availableCapabilities string,
-	encoders *wasmkeeper.MessageEncoders,
-	queriers *wasmkeeper.QueryPlugins,
 	opts ...wasmkeeper.Option,
 ) (sdk.Context, TestKeepers) {
 	// Load default wasm config
-	return createTestInput(t, isCheckTx, availableCapabilities, encoders, queriers, wasmtypes.DefaultWasmConfig(), dbm.NewMemDB(), opts...)
+	return createTestInput(t, isCheckTx, availableCapabilities, wasmtypes.DefaultWasmConfig(), dbm.NewMemDB(), opts...)
 }
 
 // encoders can be nil to accept the defaults, or set it to override some of the message handlers (like default)
@@ -211,8 +209,6 @@ func createTestInput(
 	t testing.TB,
 	isCheckTx bool,
 	availableCapabilities string,
-	encoders *wasmkeeper.MessageEncoders,
-	queriers *wasmkeeper.QueryPlugins,
 	wasmConfig wasmtypes.WasmConfig,
 	db dbm.DB,
 	opts ...wasmkeeper.Option,
@@ -401,8 +397,6 @@ func createTestInput(
 		tempDir,
 		wasmConfig,
 		availableCapabilities,
-		encoders,
-		queriers,
 		opts...,
 	)
 	keeper.SetParams(ctx, wasmtypes.DefaultParams())

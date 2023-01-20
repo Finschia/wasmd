@@ -18,7 +18,7 @@ func mustMarshal(t *testing.T, r interface{}) []byte {
 }
 
 func TestInactivateContract(t *testing.T) {
-	parentCtx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	parentCtx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	example := InstantiateHackatomExampleContract(t, parentCtx, keepers)
 	otherContract := StoreHackatomExampleContract(t, parentCtx, keepers)
 	newVerifier := RandomAccountAddress(t)

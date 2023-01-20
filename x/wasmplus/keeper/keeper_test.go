@@ -11,7 +11,7 @@ import (
 )
 
 func TestActivateContract(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 
 	k := keepers.WasmKeeper
 	example := InstantiateHackatomExampleContract(t, ctx, keepers)
@@ -35,7 +35,7 @@ func TestActivateContract(t *testing.T) {
 }
 
 func TestDeactivateContract(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 
 	k := keepers.WasmKeeper
 	example := InstantiateHackatomExampleContract(t, ctx, keepers)
@@ -55,7 +55,7 @@ func TestDeactivateContract(t *testing.T) {
 }
 
 func TestIterateInactiveContracts(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	k := keepers.WasmKeeper
 
 	example1 := InstantiateHackatomExampleContract(t, ctx, keepers)

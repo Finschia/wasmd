@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/line/lbm-sdk/types"
-	
+
 	"github.com/line/wasmd/x/wasmplus/types"
 )
 
 func TestQueryInactiveContracts(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	keeper := keepers.WasmKeeper
 
 	example1 := InstantiateHackatomExampleContract(t, ctx, keepers)
@@ -37,7 +37,7 @@ func TestQueryInactiveContracts(t *testing.T) {
 }
 
 func TestQueryIsInactiveContract(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities, nil, nil)
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	keeper := keepers.WasmKeeper
 
 	example := InstantiateHackatomExampleContract(t, ctx, keepers)

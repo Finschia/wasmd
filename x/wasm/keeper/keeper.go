@@ -172,66 +172,6 @@ func (k Keeper) getInstantiateAccessConfig(ctx sdk.Context) types.AccessType {
 	return a
 }
 
-//func (k Keeper) getGasMultiplier(ctx sdk.Context) GasMultiplier {
-//	var a uint64
-//	k.paramSpace.Get(ctx, types.ParamStoreKeyGasMultiplier, &a)
-//	return NewGasMultiplier(a)
-//}
-//
-//func (k Keeper) getInstanceCost(ctx sdk.Context) uint64 {
-//	var a uint64
-//	k.paramSpace.Get(ctx, types.ParamStoreKeyInstanceCost, &a)
-//	return a
-//}
-//
-//// NewContractInstanceCosts costs to crate a new contract instance from code
-//func (k Keeper) newContractInstanceCosts(g WasmGasRegister, ctx sdk.Context, pinned bool, msgLen int) storetypes.Gas {
-//	return k.instantiateContractCosts(g, ctx, pinned, msgLen)
-//}
-//
-//// InstantiateContractCosts costs when interacting with a wasm contract
-//func (k Keeper) instantiateContractCosts(g WasmGasRegister, ctx sdk.Context, pinned bool, msgLen int) sdk.Gas {
-//	if msgLen < 0 {
-//		panic(sdkerrors.Wrap(types.ErrInvalid, "negative length"))
-//	}
-//	dataCosts := sdk.Gas(msgLen) * g.c.ContractMessageDataCost
-//	if pinned {
-//		return dataCosts
-//	}
-//	return k.getInstanceCost(ctx) + dataCosts
-//}
-//
-//// ReplyCosts costs to to handle a message reply
-//func (k Keeper) replyCosts(g WasmGasRegister, ctx sdk.Context, pinned bool, reply wasmvmtypes.Reply) sdk.Gas {
-//	var eventGas sdk.Gas
-//	msgLen := len(reply.Result.Err)
-//	if reply.Result.Ok != nil {
-//		msgLen += len(reply.Result.Ok.Data)
-//		var attrs []wasmvmtypes.EventAttribute
-//		for _, e := range reply.Result.Ok.Events {
-//			eventGas += sdk.Gas(len(e.Type)) * g.c.EventAttributeDataCost
-//			attrs = append(attrs, e.Attributes...)
-//		}
-//		// apply free tier on the whole set not per event
-//		eventGas += g.EventCosts(attrs, nil)
-//	}
-//	return eventGas + k.instantiateContractCosts(g, ctx, pinned, msgLen)
-//}
-//
-//func (k Keeper) getCompileCost(ctx sdk.Context) uint64 {
-//	var a uint64
-//	k.paramSpace.Get(ctx, types.ParamStoreKeyCompileCost, &a)
-//	return a
-//}
-//
-//// CompileCosts costs to persist and "compile" a new wasm contract
-//func (k Keeper) compileCosts(ctx sdk.Context, byteLength int) storetypes.Gas {
-//	if byteLength < 0 {
-//		panic(sdkerrors.Wrap(types.ErrInvalid, "negative length"))
-//	}
-//	return k.getCompileCost(ctx) * uint64(byteLength)
-//}
-
 // GetParams returns the total set of wasm parameters.
 func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	var params types.Params
@@ -1122,32 +1062,6 @@ func (k Keeper) importContract(ctx sdk.Context, contractAddr sdk.AccAddress, c *
 func (k Keeper) newQueryHandler(ctx sdk.Context, contractAddress sdk.AccAddress) QueryHandler {
 	return NewQueryHandler(ctx, k.wasmVMQueryHandler, contractAddress, k.gasRegister)
 }
-
-//type GasMultiplier struct {
-//	multiplier uint64
-//}
-//
-//func NewGasMultiplier(multiplier uint64) GasMultiplier {
-//	if multiplier == 0 {
-//		panic(sdkerrors.Wrap(sdkerrors.ErrLogic, "GasMultiplier can not be 0"))
-//	}
-//
-//	return GasMultiplier{multiplier: multiplier}
-//}
-//
-//// ToWasmVMGas convert to wasmVM contract runtime gas unit
-//func (m GasMultiplier) ToWasmVMGas(source storetypes.Gas) uint64 {
-//	x := source * m.multiplier
-//	if x < source {
-//		panic(sdk.ErrorOutOfGas{Descriptor: "overflow"})
-//	}
-//	return x
-//}
-//
-//// FromWasmVMGas converts to SDK gas unit
-//func (m GasMultiplier) FromWasmVMGas(source uint64) sdk.Gas {
-//	return source / m.multiplier
-//}
 
 // MultipliedGasMeter wraps the GasMeter from context and multiplies all reads by out defined multiplier
 type MultipliedGasMeter struct {

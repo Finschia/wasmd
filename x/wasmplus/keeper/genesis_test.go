@@ -589,8 +589,6 @@ func setupKeeper(t *testing.T) (*Keeper, sdk.Context, []sdk.StoreKey) {
 		tempDir,
 		wasmConfig,
 		AvailableCapabilities,
-		nil,
-		nil,
 	)
 	return &srcKeeper, ctx, []sdk.StoreKey{keys[types.StoreKey], keys[paramstypes.StoreKey]}
 }

@@ -39,8 +39,6 @@ func NewKeeper(
 	homeDir string,
 	wasmConfig wasmtypes.WasmConfig,
 	availableCapabilities string,
-	customEncoders *wasmkeeper.MessageEncoders,
-	customPlugins *wasmkeeper.QueryPlugins,
 	opts ...wasmkeeper.Option,
 ) Keeper {
 	bankPlusKeeper, ok := bankKeeper.(bankpluskeeper.Keeper)
@@ -71,8 +69,6 @@ func NewKeeper(
 		homeDir,
 		wasmConfig,
 		availableCapabilities,
-		//customEncoders,
-		//customPlugins,
 		opts...,
 	)
 	return result
