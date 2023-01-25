@@ -272,7 +272,7 @@ find out the entire path for the events.
 
 #### MsgExecuteContract
 | Type                   | Attribute Key                | Attribute Value                | Note                                          |
-|------------------------|------------------------------|:-------------------------------|-----------------------------------------------|
+|------------------------|------------------------------|--------------------------------|-----------------------------------------------|
 | message                | module                       | wasm                           |                                               |
 | message                | sender                       | {senderAddress}                |                                               |
 | execute                | _contract_address            | {contractAddress}              |                                               |
