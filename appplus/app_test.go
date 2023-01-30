@@ -22,6 +22,7 @@ var emptyWasmOpts []wasmkeeper.Option = nil
 func TestWasmdExport(t *testing.T) {
 	db := db.NewMemDB()
 	gapp := NewWasmApp(log.NewOCLogger(log.NewSyncWriter(os.Stdout)), db, nil, true, map[int64]bool{}, DefaultNodeHome, 0, MakeEncodingConfig(), wasmplustypes.EnableAllProposals, wasmapp.EmptyBaseAppOptions{}, emptyWasmOpts)
+	require.Equal(t, appName, gapp.Name())
 
 	genesisState := NewDefaultGenesisState()
 	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
@@ -95,6 +96,13 @@ func TestGetEnabledProposals(t *testing.T) {
 			assert.Equal(t, tc.expected, proposals)
 		})
 	}
+}
+
+func TestGetEnabledProposalsPanic(t *testing.T) {
+	EnableSpecificProposals = "WrongMsg"
+	assert.Panics(t, func() {
+		GetEnabledProposals()
+	})
 }
 
 func setGenesis(gapp *WasmPlusApp) error {
