@@ -15,7 +15,7 @@ import (
 	"github.com/line/wasmd/x/wasm"
 )
 
-func TestModuleMigrations(t *testing.T) {
+func TestAppPlusModuleMigrations(t *testing.T) {
 	wasmApp := appplus.Setup(false)
 	ctx := wasmApp.BaseApp.NewContext(false, ocproto.Header{})
 	upgradeHandler := func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
