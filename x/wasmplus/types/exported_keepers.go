@@ -7,7 +7,6 @@ import (
 )
 
 type ViewKeeper interface {
-	//wasmtypes.ViewKeeper
 	IterateInactiveContracts(ctx sdk.Context, fn func(contractAddress sdk.AccAddress) bool)
 	IsInactiveContract(ctx sdk.Context, contractAddress sdk.AccAddress) bool
 }

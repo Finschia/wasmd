@@ -47,8 +47,6 @@ func NewIntegrationTestSuite(cfg network.Config) *IntegrationTestSuite {
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
-	//s.T().Log("Setting up integration test suite.")
-
 	if testing.Short() {
 		s.T().Skip("skipping test in unit-tests mode.")
 	}

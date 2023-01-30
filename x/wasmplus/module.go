@@ -146,7 +146,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	// wasmplus service
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(wasmkeeper.NewDefaultPermissionKeeper(am.keeper)))
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.Querier(am.keeper))
-	//wasm service
+	// wasm service
 	wasmtypes.RegisterMsgServer(cfg.MsgServer(), wasmkeeper.NewMsgServerImpl(wasmkeeper.NewDefaultPermissionKeeper(am.keeper)))
 	wasmtypes.RegisterQueryServer(cfg.QueryServer(), keeper.WasmQuerier(am.keeper))
 }

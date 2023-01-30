@@ -2,7 +2,7 @@ package wasmplus
 
 import (
 	"strings"
-	
+
 	"github.com/gogo/protobuf/proto"
 
 	sdk "github.com/line/lbm-sdk/types"

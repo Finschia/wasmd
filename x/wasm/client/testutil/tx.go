@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"fmt"
+
 	"github.com/line/lbm-sdk/client/flags"
 	clitestutil "github.com/line/lbm-sdk/testutil/cli"
 	sdk "github.com/line/lbm-sdk/types"

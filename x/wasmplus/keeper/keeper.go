@@ -79,7 +79,7 @@ func WasmQuerier(k *Keeper) wasmtypes.QueryServer {
 }
 
 func Querier(k *Keeper) types.QueryServer {
-	return NewQuerier(k.storeKey, k)
+	return newGrpcQuerier(k.storeKey, k)
 }
 
 func (Keeper) Logger(ctx sdk.Context) log.Logger {

@@ -127,52 +127,6 @@ var TestingStakeParams = stakingtypes.Params{
 	BondDenom:         "stake",
 }
 
-//type TestFaucet struct {
-//	t                testing.TB
-//	bankKeeper       bankkeeper.Keeper
-//	sender           sdk.AccAddress
-//	balance          sdk.Coins
-//	minterModuleName string
-//}
-
-//func NewTestFaucet(t testing.TB, ctx sdk.Context, bankKeeper bankkeeper.Keeper, minterModuleName string, initialAmount ...sdk.Coin) *TestFaucet {
-//	require.NotEmpty(t, initialAmount)
-//	r := &TestFaucet{t: t, bankKeeper: bankKeeper, minterModuleName: minterModuleName}
-//	_, _, addr := keyPubAddr()
-//	r.sender = addr
-//	r.Mint(ctx, addr, initialAmount...)
-//	r.balance = initialAmount
-//	return r
-//}
-
-//func (f *TestFaucet) Mint(parentCtx sdk.Context, addr sdk.AccAddress, amounts ...sdk.Coin) {
-//	require.NotEmpty(f.t, amounts)
-//	ctx := parentCtx.WithEventManager(sdk.NewEventManager()) // discard all faucet related events
-//	err := f.bankKeeper.MintCoins(ctx, f.minterModuleName, amounts)
-//	require.NoError(f.t, err)
-//	err = f.bankKeeper.SendCoinsFromModuleToAccount(ctx, f.minterModuleName, addr, amounts)
-//	require.NoError(f.t, err)
-//	f.balance = f.balance.Add(amounts...)
-//}
-//
-//func (f *TestFaucet) Fund(parentCtx sdk.Context, receiver sdk.AccAddress, amounts ...sdk.Coin) {
-//	require.NotEmpty(f.t, amounts)
-//	// ensure faucet is always filled
-//	if !f.balance.IsAllGTE(amounts) {
-//		f.Mint(parentCtx, f.sender, amounts...)
-//	}
-//	ctx := parentCtx.WithEventManager(sdk.NewEventManager()) // discard all faucet related events
-//	err := f.bankKeeper.SendCoins(ctx, f.sender, receiver, amounts)
-//	require.NoError(f.t, err)
-//	f.balance = f.balance.Sub(amounts)
-//}
-//
-//func (f *TestFaucet) NewFundedRandomAccount(ctx sdk.Context, amounts ...sdk.Coin) sdk.AccAddress {
-//	_, _, addr := keyPubAddr()
-//	f.Fund(ctx, addr, amounts...)
-//	return addr
-//}
-
 type TestKeepers struct {
 	AccountKeeper  authkeeper.AccountKeeper
 	StakingKeeper  stakingkeeper.Keeper
@@ -584,47 +538,10 @@ func StoreExampleContract(t testing.TB, ctx sdk.Context, keepers TestKeepers, wa
 	return ExampleContract{anyAmount, creator, creatorAddr, codeID, hash}
 }
 
-//var wasmIdent = []byte("\x00\x61\x73\x6D")
-
 type ExampleContractInstance struct {
 	ExampleContract
 	Contract sdk.AccAddress
 }
-
-//// SeedNewContractInstance sets the mock wasmerEngine in keeper and calls store + instantiate to init the contract's metadata
-//func SeedNewContractInstance(t testing.TB, ctx sdk.Context, keepers TestKeepers, mock wasmtypes.WasmerEngine) ExampleContractInstance {
-//	t.Helper()
-//	exampleContract := StoreRandomContract(t, ctx, keepers, mock)
-//	contractAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, exampleContract.CodeID, exampleContract.CreatorAddr, exampleContract.CreatorAddr, []byte(`{}`), "", nil)
-//	require.NoError(t, err)
-//	return ExampleContractInstance{
-//		ExampleContract: exampleContract,
-//		Contract:        contractAddr,
-//	}
-//}
-//
-//// StoreRandomContract sets the mock wasmerEngine in keeper and calls store
-//func StoreRandomContract(t testing.TB, ctx sdk.Context, keepers TestKeepers, mock wasmtypes.WasmerEngine) ExampleContract {
-//	return StoreRandomContractWithAccessConfig(t, ctx, keepers, mock, nil)
-//}
-//
-//func StoreRandomContractWithAccessConfig(
-//	t testing.TB, ctx sdk.Context,
-//	keepers TestKeepers,
-//	mock wasmtypes.WasmerEngine,
-//	cfg *wasmtypes.AccessConfig,
-//) ExampleContract {
-//	t.Helper()
-//	anyAmount := sdk.NewCoins(sdk.NewInt64Coin("denom", 1000))
-//	creator, _, creatorAddr := keyPubAddr()
-//	fundAccounts(t, ctx, keepers.AccountKeeper, keepers.BankKeeper, creatorAddr, anyAmount)
-//	//keepers.WasmKeeper.wasmVM = mock
-//	wasmCode := append(wasmIdent, rand.Bytes(10)...) //nolint:gocritic
-//	codeID, checksum, err := keepers.ContractKeeper.Create(ctx, creatorAddr, wasmCode, cfg)
-//	require.NoError(t, err)
-//	exampleContract := ExampleContract{InitialAmount: anyAmount, Creator: creator, CreatorAddr: creatorAddr, CodeID: codeID, Checksum: checksum}
-//	return exampleContract
-//}
 
 type HackatomExampleInstance struct {
 	ExampleContract

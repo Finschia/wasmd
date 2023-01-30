@@ -6,7 +6,6 @@ import (
 	clitestutil "github.com/line/lbm-sdk/testutil/cli"
 	"github.com/line/lbm-sdk/types/query"
 
-	_ "github.com/line/wasmd/x/wasm/client/testutil"
 	"github.com/line/wasmd/x/wasmplus/client/cli"
 	"github.com/line/wasmd/x/wasmplus/types"
 )

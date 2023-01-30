@@ -20,12 +20,15 @@ type queryKeeper interface {
 	HasContractInfo(ctx sdk.Context, contractAddress sdk.AccAddress) bool
 }
 
+var _ types.QueryServer = &grpcQuerier{}
+
 type grpcQuerier struct {
 	keeper   queryKeeper
 	storeKey sdk.StoreKey
 }
 
-func NewQuerier(storeKey sdk.StoreKey, keeper queryKeeper) *grpcQuerier {
+// newGrpcQuerier constructor
+func newGrpcQuerier(storeKey sdk.StoreKey, keeper queryKeeper) *grpcQuerier {
 	return &grpcQuerier{storeKey: storeKey, keeper: keeper}
 }
 
