@@ -2,6 +2,7 @@ package appplus
 
 import (
 	"encoding/json"
+	"github.com/line/lbm-sdk/server"
 	wasmapp "github.com/line/wasmd/app"
 	wasmkeeper "github.com/line/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/line/wasmd/x/wasm/types"
@@ -60,6 +61,37 @@ func TestBlockedAddrs(t *testing.T) {
 			}
 		})
 	}
+}
+
+// EmptyBaseAppOptions is a stub implementing AppOptions
+type WrongWasmAppOptions struct{}
+
+// Get implements AppOptions
+func (ao WrongWasmAppOptions) Get(o string) interface{} {
+	if o == server.FlagTrace {
+		return "FALse"
+	}
+	return nil
+}
+
+func TestWrongWasmAppOptionsNewWasmApp(t *testing.T) {
+	require.PanicsWithValue(t,
+		"error while reading wasm config: strconv.ParseBool: parsing \"FALse\": invalid syntax",
+		func() {
+			NewWasmApp(
+				log.NewOCLogger(log.NewSyncWriter(os.Stdout)),
+				nil,
+				nil,
+				true,
+				map[int64]bool{},
+				DefaultNodeHome,
+				0,
+				MakeEncodingConfig(),
+				wasmplustypes.EnableAllProposals,
+				WrongWasmAppOptions{},
+				emptyWasmOpts,
+			)
+		})
 }
 
 func TestGetMaccPerms(t *testing.T) {
