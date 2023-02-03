@@ -26,5 +26,5 @@ message GenesisState {
   ];
 
   // InactiveContractAddresses is a list of contract address that set inactive
-  repeated string inactive_contract_addresses = 6 [(gogoproto.jsontag) = "inactive_contract_address, omitempty"];
+  repeated string inactive_contract_addresses = 6 [(gogoproto.jsontag) = "inactive_contract_address,omitempty"];
 }

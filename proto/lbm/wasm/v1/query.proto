@@ -16,6 +16,7 @@ service Query {
     option (google.api.http).get = "/lbm/wasm/v1/inactive_contracts";
   };
 
+  // InactiveContract check it the contract is inactive state or not
   rpc InactiveContract(QueryInactiveContractRequest) returns (QueryInactiveContractResponse) {
     option (google.api.http).get = "/lbm/wasm/v1/inactive_contracts/{address}";
   }

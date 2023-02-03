@@ -117,7 +117,7 @@ import (
 	wasmplustypes "github.com/line/wasmd/x/wasmplus/types"
 )
 
-const appName = "WasmApp"
+const appName = "WasmPlusApp"
 
 // We pull these out, so we can set them with LDFLAGS in the Makefile
 var (
@@ -741,7 +741,6 @@ func NewWasmApp(
 	app.ScopedWasmKeeper = scopedWasmKeeper
 	app.ScopedICAHostKeeper = scopedICAHostKeeper
 	app.ScopedICAControllerKeeper = scopedICAControllerKeeper
-	//app.ScopedInterTxKeeper = scopedInterTxKeeper
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {

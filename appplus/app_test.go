@@ -51,7 +51,6 @@ func TestBlockedAddrs(t *testing.T) {
 	blockedAddrs := gapp.BlockedAddrs()
 
 	for acc := range maccPerms {
-		//for acc := range gapp.BlockedAddrs() {
 		t.Run(acc, func(t *testing.T) {
 			addr := gapp.AccountKeeper.GetModuleAddress(acc)
 			if blockedAddrs[addr.String()] {
@@ -69,6 +68,7 @@ type WrongWasmAppOptions struct{}
 // Get implements AppOptions
 func (ao WrongWasmAppOptions) Get(o string) interface{} {
 	if o == server.FlagTrace {
+		// make fail case.
 		return "FALse"
 	}
 	return nil
