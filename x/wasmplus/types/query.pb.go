@@ -243,6 +243,7 @@ const _ = grpc.SupportPackageIsVersion4
 type QueryClient interface {
 	// InactiveContracts queries all inactive contracts
 	InactiveContracts(ctx context.Context, in *QueryInactiveContractsRequest, opts ...grpc.CallOption) (*QueryInactiveContractsResponse, error)
+	// InactiveContract check it the contract is inactive state or not
 	InactiveContract(ctx context.Context, in *QueryInactiveContractRequest, opts ...grpc.CallOption) (*QueryInactiveContractResponse, error)
 }
 
@@ -276,6 +277,7 @@ func (c *queryClient) InactiveContract(ctx context.Context, in *QueryInactiveCon
 type QueryServer interface {
 	// InactiveContracts queries all inactive contracts
 	InactiveContracts(context.Context, *QueryInactiveContractsRequest) (*QueryInactiveContractsResponse, error)
+	// InactiveContract check it the contract is inactive state or not
 	InactiveContract(context.Context, *QueryInactiveContractRequest) (*QueryInactiveContractResponse, error)
 }
 
