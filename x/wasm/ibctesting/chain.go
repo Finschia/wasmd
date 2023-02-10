@@ -396,18 +396,17 @@ func (chain *TestChain) ExpireClient(amount time.Duration) {
 // CurrentOCClientHeader creates a OC header using the current header parameters
 // on the chain. The trusted fields in the header are set to nil.
 func (chain *TestChain) CurrentOCClientHeader() *ibcoctypes.Header {
-	return chain.CreateOCClientHeader(chain.ChainID, chain.CurrentHeader.Height, clienttypes.Height{}, chain.CurrentHeader.Time, chain.Vals, nil /*chain.Voters, nil*/, chain.Signers)
+	return chain.CreateOCClientHeader(chain.ChainID, chain.CurrentHeader.Height, clienttypes.Height{}, chain.CurrentHeader.Time, chain.Vals, nil, chain.Signers)
 }
 
 // CreateOCClientHeader creates a OC header to update the OC client. Args are passed in to allow
 // caller flexibility to use params that differ from the chain.
-func (chain *TestChain) CreateOCClientHeader(chainID string, blockHeight int64, trustedHeight clienttypes.Height, timestamp time.Time, tmValSet, tmTrustedVals *octypes.ValidatorSet /*tmVoterSet, tmTrustedVoterSet *octypes.VoterSet,*/, signers []octypes.PrivValidator) *ibcoctypes.Header {
+func (chain *TestChain) CreateOCClientHeader(chainID string, blockHeight int64, trustedHeight clienttypes.Height, timestamp time.Time, tmValSet, tmTrustedVals *octypes.ValidatorSet, signers []octypes.PrivValidator) *ibcoctypes.Header {
 	var (
 		valSet      *tmproto.ValidatorSet
 		trustedVals *tmproto.ValidatorSet
 	)
 	require.NotNil(chain.t, tmValSet)
-	//require.NotNil(chain.t, tmVoterSet)
 
 	vsetHash := tmValSet.Hash()
 
