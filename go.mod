@@ -11,7 +11,7 @@ require (
 	github.com/google/gofuzz v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/line/ibc-go/v3 v3.3.1
+	github.com/line/ibc-go/v3 v3.3.2-0.20230210040007-d855e1d87f26
 	github.com/line/lbm-sdk v0.46.1-0.20230209105703-b88647308597
 	github.com/line/ostracon v1.0.9-0.20230209043112-5aca894db3a6
 	github.com/line/wasmvm v1.1.1-0.11.0.0.20230113085344-89650a7edd05
@@ -140,6 +140,5 @@ replace (
 	// latest grpc doesn't work with with our modified proto compiler, so we need to enforce
 	// the following version across all dependencies.
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/line/ibc-go/v3 => github.com/zemyblue/ibc-go/v3 v3.0.0-20230210000241-1509180d8065
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
