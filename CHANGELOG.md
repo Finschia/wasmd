@@ -12,6 +12,7 @@
 * [\#8](https://github.com/line/wasmd/pull/8) Bump line/lbm-sdk to a7557b1d10
 
 ### Bug Fixes
+* [\#12](https://github.com/line/wasmd/pull/12) fix not to register wrong codec in `x/wasmplus`
 
 ### Breaking Changes
 
