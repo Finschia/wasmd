@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/line/lbm-sdk/x/auth/legacy/legacytx"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -134,4 +135,26 @@ func TestNewMsgStoreCodeAndInstantiateContractGetSigners(t *testing.T) {
 	res := NewMsgStoreCodeAndInstantiateContract(sdk.AccAddress([]byte("input111111111111111"))).GetSigners()
 	bytes := sdk.MustAccAddressFromBech32(res[0].String())
 	require.Equal(t, "696e707574313131313131313131313131313131", fmt.Sprintf("%v", hex.EncodeToString(bytes)))
+}
+
+func TestMsgJsonSignBytes(t *testing.T) {
+	const myInnerMsg = `{"foo":"bar"}`
+	specs := map[string]struct {
+		src legacytx.LegacyMsg
+		exp string
+	}{
+		"MsgInstantiateContract": {
+			src: &MsgStoreCodeAndInstantiateContract{Sender: "sender1", WASMByteCode: []byte{89, 69, 76, 76, 79, 87, 32, 83, 85, 66, 77, 65, 82, 73, 78, 69}, Admin: "admin1", Label: "My", Msg: wasmTypes.RawContractMessage(myInnerMsg)},
+			exp: `
+{
+	"type":"wasm/MsgStoreCodeAndInstantiateContract",
+	"value": {"admin":"admin1","funds":[],"label":"My","msg": {"foo":"bar"},"sender":"sender1","wasm_byte_code":"WUVMTE9XIFNVQk1BUklORQ=="}
+}`,
+		}}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			bz := spec.src.GetSignBytes()
+			assert.JSONEq(t, spec.exp, string(bz), "raw: %s", string(bz))
+		})
+	}
 }
