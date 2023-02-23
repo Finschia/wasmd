@@ -3,13 +3,13 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/line/lbm-sdk/x/auth/legacy/legacytx"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/line/lbm-sdk/types"
+	"github.com/line/lbm-sdk/x/auth/legacy/legacytx"
 
 	wasmTypes "github.com/line/wasmd/x/wasm/types"
 )
