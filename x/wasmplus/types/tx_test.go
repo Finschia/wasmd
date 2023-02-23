@@ -143,14 +143,26 @@ func TestMsgJsonSignBytes(t *testing.T) {
 		src legacytx.LegacyMsg
 		exp string
 	}{
-		"MsgInstantiateContract": {
-			src: &MsgStoreCodeAndInstantiateContract{Sender: "sender1", WASMByteCode: []byte{89, 69, 76, 76, 79, 87, 32, 83, 85, 66, 77, 65, 82, 73, 78, 69}, Admin: "admin1", Label: "My", Msg: wasmTypes.RawContractMessage(myInnerMsg)},
+		"MsgInstantiateContract with every field": {
+			src: &MsgStoreCodeAndInstantiateContract{Sender: "sender1", WASMByteCode: []byte{89, 69, 76, 76, 79, 87, 32, 83, 85, 66, 77, 65, 82, 73, 78, 69},
+				InstantiatePermission: &wasmTypes.AccessConfig{Permission: wasmTypes.AccessTypeAnyOfAddresses, Addresses: []string{"address1", "address2"}},
+				Admin:                 "admin1", Label: "My", Msg: wasmTypes.RawContractMessage(myInnerMsg), Funds: sdk.Coins{{Denom: "denom1", Amount: sdk.NewInt(1)}}},
 			exp: `
 {
 	"type":"wasm/MsgStoreCodeAndInstantiateContract",
-	"value": {"admin":"admin1","funds":[],"label":"My","msg": {"foo":"bar"},"sender":"sender1","wasm_byte_code":"WUVMTE9XIFNVQk1BUklORQ=="}
+	"value": {"admin":"admin1","funds":[{"amount":"1","denom":"denom1"}],"instantiate_permission":{"addresses":["address1","address2"],
+		"permission":"AnyOfAddresses"},"label":"My","msg":{"foo":"bar"},"sender":"sender1","wasm_byte_code":"WUVMTE9XIFNVQk1BUklORQ=="}
 }`,
-		}}
+		},
+		"MsgInstantiateContract with minimum field": {
+			src: &MsgStoreCodeAndInstantiateContract{},
+			exp: `
+{
+	"type":"wasm/MsgStoreCodeAndInstantiateContract",
+	"value": {"funds":[]}
+}`,
+		},
+	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			bz := spec.src.GetSignBytes()
