@@ -592,3 +592,7 @@ func assertContractInfo(t *testing.T, q sdk.Querier, ctx sdk.Context, contractBe
 	assert.Equal(t, codeID, res.CodeID)
 	assert.Equal(t, creator.String(), res.Creator)
 }
+
+func TestCheckLlibwasmVersion(t *testing.T) {
+	assert.NoError(t, checkLibwasmVersion(nil, []string{}))
+}
