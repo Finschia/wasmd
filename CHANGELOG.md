@@ -13,6 +13,7 @@
 * [\#10](https://github.com/line/wasmd/pull/10) update wasmvm version
 
 ### Bug Fixes
+* [\#14](https://github.com/line/wasmd/pull/14) fix the cmd error that does not recognize wasmvm library version
 
 ### Breaking Changes
 
