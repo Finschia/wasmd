@@ -33,7 +33,9 @@ jobs:
           run-id: ${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-go-
-
+      - name: check pwd
+        run: |
+          ls -al
       - uses: golangci/golangci-lint-action@master
         with:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
