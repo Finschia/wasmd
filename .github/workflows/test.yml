@@ -33,10 +33,16 @@ jobs:
             go.mod
             go.sum
             .github/workflows/test.yml
-      - name: Clean cache
-        run: |
-          go clean -modcache
-          go mod tidy
+      - name: Clear cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          run-id: ${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: Build
         run: make build
         if: env.GIT_DIFF
@@ -68,10 +74,16 @@ jobs:
             go.mod
             go.sum
             .github/workflows/test.yml
-      - name: Clean cache
-        run: |
-          go clean -modcache
-          go mod tidy
+      - name: Clear cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          run-id: ${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: Benchmarks for gas calculations
         run: |
           cd ./x/wasm/keeper
