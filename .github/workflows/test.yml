@@ -19,11 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3.5.0
+      - uses: actions/setup-go@v4
         with:
           go-version: 1.18
       - name: Display go version
-        run: go version
+        run:  go version
       - name: Check if difference
         uses: technote-space/get-diff-action@v6.1.2
         id: git_diff
@@ -33,6 +33,10 @@ jobs:
             go.mod
             go.sum
             .github/workflows/test.yml
+      - name: Clean cache
+        run: |
+          go clean -modcache
+          go mod tidy
       - name: Build
         run: make build
         if: env.GIT_DIFF
@@ -64,6 +68,10 @@ jobs:
             go.mod
             go.sum
             .github/workflows/test.yml
+      - name: Clean cache
+        run: |
+          go clean -modcache
+          go mod tidy
       - name: Benchmarks for gas calculations
         run: |
           cd ./x/wasm/keeper
