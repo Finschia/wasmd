@@ -13,6 +13,7 @@ var _ wasmvm.KVStore = (*WasmStore)(nil)
 type WasmStore struct {
 	storetypes.KVStore
 }
+
 // NewWasmStore creates a instance of WasmStore
 func NewWasmStore(kvStore storetypes.KVStore) WasmStore {
 	return WasmStore{kvStore}
