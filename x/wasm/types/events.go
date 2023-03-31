@@ -5,6 +5,10 @@ const (
 	WasmModuleEventType = "wasm"
 	// CustomContractEventPrefix contracts can create custom events. To not mix them with other system events they got the `wasm-` prefix.
 	CustomContractEventPrefix = "wasm-"
+	// events from callable point
+	CallablePointEventType = "wasm-callablepoint"
+	// prefix for custom events from callable point
+	CustomCallablePointEventPrefix = "wasm-callablepoint-"
 
 	EventTypeStoreCode         = "store_code"
 	EventTypeInstantiate       = "instantiate"
@@ -24,6 +28,7 @@ const (
 	AttributeReservedPrefix = "_"
 
 	AttributeKeyContractAddr  = "_contract_address"
+	AttributeKeyCallstack     = "_callstack"
 	AttributeKeyCodeID        = "code_id"
 	AttributeKeyCodeIDs       = "code_ids"
 	AttributeKeyResultDataHex = "result"
