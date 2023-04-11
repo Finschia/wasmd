@@ -14,7 +14,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/line/lbm-sdk v0.46.1-0.20230106043757-1ece23d83a0b
 	github.com/line/ostracon v1.0.7
-	github.com/line/wasmvm v1.0.0-0.10.0
+	github.com/line/wasmvm v1.1.1-0.11.1.0.20230411020707-2c416761ae1a
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rakyll/statik v0.1.7
@@ -142,6 +142,5 @@ replace (
 	// latest grpc doesn't work with with our modified proto compiler, so we need to enforce
 	// the following version across all dependencies.
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/line/wasmvm => github.com/da1suk8/wasmvm v1.1.1-0.11.1.0.20230331151137-5b08ed3d220a
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
