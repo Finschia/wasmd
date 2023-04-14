@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+
 	sdk "github.com/line/lbm-sdk/types"
 
 	wasmvm "github.com/line/wasmvm"
@@ -88,12 +89,12 @@ func (a cosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 
 	instantiateCost := gasMultiplier.ToWasmVMGas(a.keeper.instantiateContractCosts(a.keeper.gasRegister, *a.ctx, a.keeper.IsPinnedCode(*a.ctx, contractInfo.CodeID), len(args)))
 	if gasLimit < instantiateCost {
-		return nil, 0, fmt.Errorf("Lack of gas for calling callable point")
+		return nil, 0, fmt.Errorf("lack of gas for calling callable point")
 	}
 	wasmGasLimit := gasLimit - instantiateCost
 
 	result, events, attrs, gas, err := a.keeper.wasmVM.CallCallablePoint(name, codeInfo.CodeHash, isReadonly, callstack, env, args, wasmStore, api, querier, gasMeter, wasmGasLimit, costJSONDeserialization)
-	gas = gas + instantiateCost
+	gas += instantiateCost
 
 	if err != nil {
 		return nil, gas, err
