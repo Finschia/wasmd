@@ -80,6 +80,10 @@ func (a cosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 		return nil, 0, err
 	}
 
+	if a.keeper.IsInactiveContract(*a.ctx, contractAddr) {
+		return nil, 0, fmt.Errorf("called contract cannot be executed")
+	}
+
 	env := types.NewEnv(*a.ctx, contractAddr)
 	wasmStore := types.NewWasmStore(prefixStore)
 	gasMultiplier := a.keeper.getGasMultiplier(*a.ctx)
@@ -125,6 +129,11 @@ func (a cosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 // returns result, gas used, error
 func (a cosmwasmAPIImpl) validateInterface(contractAddrStr string, expectedInterface []byte) ([]byte, uint64, error) {
 	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
+
+	if a.keeper.IsInactiveContract(*a.ctx, contractAddr) {
+		return nil, 0, fmt.Errorf("try to validate a contract cannot be executed")
+	}
+
 	_, codeInfo, _, err := a.keeper.contractInstance(*a.ctx, contractAddr)
 	if err != nil {
 		return nil, 0, err
