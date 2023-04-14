@@ -271,6 +271,20 @@ func TestCallCallablePoint(t *testing.T) {
 		assert.ErrorContains(t, err, "Error calling the VM")
 		assert.ErrorContains(t, err, "A contract can only be called once per one call stack.")
 	})
+
+	t.Run("fail with inactive contract", func(t *testing.T) {
+		// add contract to inactive
+		keepers.WasmKeeper.addInactiveContract(ctx, contractAddr)
+
+		argsEv := [][]byte{eventsInBin}
+		argsEvBin, err := json.Marshal(argsEv)
+		require.NoError(t, err)
+		name := "add_events_dyn"
+		nameBin, err := json.Marshal(name)
+		require.NoError(t, err)
+		_, _, err = api.CallCallablePoint(contractAddr.String(), nameBin, argsEvBin, false, callstackBin, gasLimit)
+		assert.ErrorContains(t, err, "called contract cannot be executed")
+	})
 }
 
 func TestValidateDynamicLinkInterface(t *testing.T) {
@@ -317,5 +331,15 @@ func TestValidateDynamicLinkInterface(t *testing.T) {
 		_, _, err := api.ValidateInterface(RandomAccountAddress(t).String(), validInterface)
 		require.Error(t, err)
 		assert.ErrorContains(t, err, "contract: not found")
+	})
+
+	t.Run("fail with inactive contract", func(t *testing.T) {
+		// add contract to inactive
+		keepers.WasmKeeper.addInactiveContract(ctx, contractAddr)
+
+		validInterface := []byte(`[{"name":"add_event_dyn","ty":{"params":["I32","I32","I32"],"results":[]}},{"name":"add_events_dyn","ty":{"params":["I32","I32"],"results":[]}},{"name":"add_attribute_dyn","ty":{"params":["I32","I32","I32"],"results":[]}},{"name":"add_attributes_dyn","ty":{"params":["I32","I32"],"results":[]}}]`)
+		_, _, err = api.ValidateInterface(contractAddr.String(), validInterface)
+
+		assert.ErrorContains(t, err, "try to validate a contract cannot be executed")
 	})
 }
