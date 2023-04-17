@@ -92,15 +92,6 @@ func BenchmarkAPI(b *testing.B) {
 	addrBytes, err := sdk.AccAddressFromBech32(example.Contract.String())
 	require.NoError(b, err)
 
-	b.Run("GetContractEnv", func(b *testing.B) {
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, _, _, _, _, _, _, _, err := api.GetContractEnv(addrStr, 0)
-			require.NoError(b, err)
-		}
-	})
-
 	b.Run("CanonicalAddress", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
