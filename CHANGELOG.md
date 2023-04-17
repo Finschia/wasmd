@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased](https://github.com/line/wasmd/tree/HEAD)
+### Breaking Changes
+* [\#26](https://github.com/Finschia/wasmd/pull/26) feat: implement CallCallablePoint and ValidateDynamicLinkInterface to cosmwasmAPI
 
 ### Improvements
 * [\#1](https://github.com/line/wasmd/pull/1) apply all changes of `x/wasm` in lbm-sdk until [lbm-sdk@3bdcb6ffe01c81615bedb777ca0e039cc46ef00c](https://github.com/line/lbm-sdk/tree/3bdcb6ffe01c81615bedb777ca0e039cc46ef00c)
