@@ -284,6 +284,9 @@ func TestCallCallablePoint(t *testing.T) {
 		require.NoError(t, err)
 		_, _, err = api.CallCallablePoint(contractAddr.String(), nameBin, argsEvBin, false, callstackBin, gasLimit)
 		assert.ErrorContains(t, err, "called contract cannot be executed")
+
+		// reset inactive contracts
+		keepers.WasmKeeper.deleteInactiveContract(ctx, contractAddr)
 	})
 }
 
@@ -341,5 +344,8 @@ func TestValidateDynamicLinkInterface(t *testing.T) {
 		_, _, err = api.ValidateInterface(contractAddr.String(), validInterface)
 
 		assert.ErrorContains(t, err, "try to validate a contract cannot be executed")
+
+		// reset inactive contracts
+		keepers.WasmKeeper.deleteInactiveContract(ctx, contractAddr)
 	})
 }
