@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	sdk "github.com/line/lbm-sdk/types"
-
 	wasmvm "github.com/line/wasmvm"
 	wasmvmtypes "github.com/line/wasmvm/types"
 
