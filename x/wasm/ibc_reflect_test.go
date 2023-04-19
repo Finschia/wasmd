@@ -14,7 +14,7 @@ import (
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
 )
 
-// todo check after bumping up to v3.3.0+ in line/ibc-go
+// todo check after bumping up to v3.3.0+ in finschia/ibc-go
 func TestIBCReflectContract(t *testing.T) {
 	t.Skip("check it later after enable use ibc-go v3.3.0+ in finschia-sdk")
 	// scenario:
