@@ -11,6 +11,7 @@
 ### Breaking Changes
 
 ### Build, CI
+* [\#30](https://github.com/Finschia/wasmd/pull/30) replace line repositories with finschia repositories
 
 ### Document Updates
 
