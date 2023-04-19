@@ -30,7 +30,7 @@
 * [\#1](https://github.com/Finschia/wasmd/pull/1) apply all changes of `x/wasm` in finschia-sdk until [finschia-sdk@3bdcb6ffe01c81615bedb777ca0e039cc46ef00c](https://github.com/Finschia/finschia-sdk/tree/3bdcb6ffe01c81615bedb777ca0e039cc46ef00c)
 * [\#5](https://github.com/Finschia/wasmd/pull/5) bump up wasmd v0.29.1
 * [\#7](https://github.com/Finschia/wasmd/pull/7) separate custom features in `x/wasm` into `x/wasmplus` module
-* [\#8](https://github.com/Finschia/wasmd/pull/8) Bump line/finschia-sdk to a7557b1d10
+* [\#8](https://github.com/Finschia/wasmd/pull/8) Bump Finschia/finschia-sdk to a7557b1d10
 * [\#10](https://github.com/Finschia/wasmd/pull/10) update wasmvm version
 
 ### Bug Fixes
