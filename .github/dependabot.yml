@@ -17,7 +17,7 @@ updates:
   - dependency-name: github.com/Finschia/ostracon
     versions:
     - 1.0.7
-  - dependency-name: github.com/Finschia/lbm-sdk
+  - dependency-name: github.com/Finschia/finschia-sdk
     versions:
     - 0.46.0
   - dependency-name: google.golang.org/grpc
