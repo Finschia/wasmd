@@ -1,9 +1,9 @@
 # Wasm Zone
 
-[![codecov](https://codecov.io/gh/line/wasmd/branch/main/graph/badge.svg)](https://codecov.io/gh/line/wasmd)
-[![Go Report Card](https://goreportcard.com/badge/github.com/line/wasmd)](https://goreportcard.com/report/github.com/line/wasmd)
-[![license](https://img.shields.io/github/license/line/wasmd.svg)](https://github.com/line/wasmd/blob/main/LICENSE)
-[![LoC](https://tokei.rs/b1/github/line/wasmd)](https://github.com/line/wasmd)
+[![codecov](https://codecov.io/gh/Finschia/wasmd/branch/main/graph/badge.svg)](https://codecov.io/gh/Finschia/wasmd)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Finschia/wasmd)](https://goreportcard.com/report/github.com/Finschia/wasmd)
+[![license](https://img.shields.io/github/license/Finschia/wasmd.svg)](https://github.com/Finschia/wasmd/blob/main/LICENSE)
+[![LoC](https://tokei.rs/b1/github/Finschia/wasmd)](https://github.com/Finschia/wasmd)
 <!-- [![GolangCI](https://golangci.com/badges/github.com/CosmWasm/wasmd.svg)](https://golangci.com/r/github.com/CosmWasm/wasmd) -->
 
 This repository hosts `Wasmd`, the first implementation of a cosmos zone with wasm smart contracts enabled.
@@ -131,10 +131,10 @@ to the configuration.
 
 Available flags:
  
-* `-X github.com/line/wasmd/app.NodeDir=.corald` - set the config/data directory for the node (default `~/.wasmd`)
-* `-X github.com/line/wasmd/app.Bech32Prefix=coral` - set the bech32 prefix for all accounts (default `wasm`)
-* `-X github.com/line/wasmd/app.ProposalsEnabled=true` - enable all x/wasm governance proposals (default `false`)
-* `-X github.com/line/wasmd/app.EnableSpecificProposals=MigrateContract,UpdateAdmin,ClearAdmin` - 
+* `-X github.com/Finschia/wasmd/app.NodeDir=.corald` - set the config/data directory for the node (default `~/.wasmd`)
+* `-X github.com/Finschia/wasmd/app.Bech32Prefix=coral` - set the bech32 prefix for all accounts (default `wasm`)
+* `-X github.com/Finschia/wasmd/app.ProposalsEnabled=true` - enable all x/wasm governance proposals (default `false`)
+* `-X github.com/Finschia/wasmd/app.EnableSpecificProposals=MigrateContract,UpdateAdmin,ClearAdmin` - 
     enable a subset of the x/wasm governance proposal types (overrides `ProposalsEnabled`)
 
 Examples:
