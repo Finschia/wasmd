@@ -18,7 +18,7 @@
 ## [v0.1.2](https://github.com/Finschia/wasmd/releases/tag/v0.1.2) - 2023.04.10
 
 ### Features
-* [\#21](https://github.com/Finschia/wasmd/pull/21) bump up line/ibc-go v3.3.2
+* [\#21](https://github.com/Finschia/wasmd/pull/21) bump up Finschia/ibc-go v3.3.2
 
 
 ## [v0.1.0](https://github.com/Finschia/wasmd/releases/tag/v0.1.0) - 2023.03.28
