@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math"
 	"path/filepath"
@@ -444,6 +445,60 @@ func (k Keeper) execute(ctx sdk.Context, contractAddress sdk.AccAddress, caller 
 	data, err := k.handleContractResponse(ctx, contractAddress, contractInfo.IBCPortID, res.Messages, res.Attributes, res.Data, res.Events)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "dispatch")
+	}
+
+	return data, nil
+}
+
+func (k Keeper) executeCallablePoint(ctx sdk.Context, contractAddress sdk.AccAddress, argsEv []byte, callablePointName string) ([]byte, error) {
+	defer func(begin time.Time) { k.metrics.ExecuteElapsedTimes.Observe(time.Since(begin).Seconds()) }(time.Now())
+	contractInfo, codeInfo, prefixStore, err := k.contractInstance(ctx, contractAddress)
+	if err != nil {
+		return nil, err
+	}
+	if k.IsInactiveContract(ctx, contractAddress) {
+		return nil, sdkerrors.Wrap(types.ErrInactiveContract, "can not execute")
+	}
+
+	executeCosts := k.instantiateContractCosts(k.gasRegister, ctx, k.IsPinnedCode(ctx, contractInfo.CodeID), len(argsEv))
+	ctx.GasMeter().ConsumeGas(executeCosts, "Loading CosmWasm module: execute")
+
+	env := types.NewEnv(ctx, contractAddress)
+
+	// prepare querier
+	querier := k.newQueryHandler(ctx, contractAddress)
+	gas := k.runtimeGasForContract(ctx)
+	wasmStore := types.NewWasmStore(prefixStore)
+
+	callablePointNameBin, err := json.Marshal(callablePointName)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal JSON: %s", err))
+	}
+
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal JSON: %s", err))
+	}
+
+	empty := []wasmvmtypes.HumanAddress{}
+	emptyBin, err := json.Marshal(empty)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal JSON: %s", err))
+	}
+	data, evts, attrs, gasUsed, execErr := k.wasmVM.CallCallablePoint(callablePointNameBin, codeInfo.CodeHash, false, emptyBin, env, argsEv, wasmStore, k.cosmwasmAPI(ctx), querier, k.gasMeter(ctx), gas, costJSONDeserialization)
+
+	k.consumeRuntimeGas(ctx, gasUsed)
+	if execErr != nil {
+		return nil, sdkerrors.Wrap(types.ErrExecuteFailed, execErr.Error())
+	}
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeCallablePoint,
+		sdk.NewAttribute(types.AttributeKeyContractAddr, contractAddress.String()),
+	))
+
+	err = k.handleContractResponseForCallblePoint(ctx, contractAddress, attrs, evts)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "emit all events")
 	}
 
 	return data, nil
@@ -999,6 +1054,32 @@ func (k *Keeper) handleContractResponse(
 		ctx.EventManager().EmitEvents(customEvents)
 	}
 	return k.wasmVMResponseHandler.Handle(ctx, contractAddr, ibcPort, msgs, data)
+}
+
+func (k *Keeper) handleContractResponseForCallblePoint(
+	ctx sdk.Context,
+	contractAddr sdk.AccAddress,
+	attrs []wasmvmtypes.EventAttribute,
+	evts wasmvmtypes.Events,
+) error {
+	attributeGasCost := k.gasRegister.EventCosts(attrs, evts)
+	ctx.GasMeter().ConsumeGas(attributeGasCost, "Custom contract event attributes")
+	// emit all events from this contract itself
+	if len(attrs) != 0 {
+		wasmEvents, err := newWasmModuleEventForCallablePoint(attrs, contractAddr)
+		if err != nil {
+			return err
+		}
+		ctx.EventManager().EmitEvents(wasmEvents)
+	}
+	if len(evts) > 0 {
+		customEvents, err := newCustomEventsForCallablePoint(evts, contractAddr)
+		if err != nil {
+			return err
+		}
+		ctx.EventManager().EmitEvents(customEvents)
+	}
+	return nil
 }
 
 func (k Keeper) runtimeGasForContract(ctx sdk.Context) uint64 {
