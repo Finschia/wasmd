@@ -470,7 +470,7 @@ func (k Keeper) executeCallablePoint(ctx sdk.Context, contractAddress sdk.AccAdd
 	gas := k.runtimeGasForContract(ctx)
 	wasmStore := types.NewWasmStore(prefixStore)
 
-	funcNameWithCallablePointBin, err := json.Marshal(callablePointName)
+	callablePointNameBin, err := json.Marshal(callablePointName)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal JSON: %s", err))
 	}
@@ -484,7 +484,7 @@ func (k Keeper) executeCallablePoint(ctx sdk.Context, contractAddress sdk.AccAdd
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal JSON: %s", err))
 	}
-	data, evts, attrs, gasUsed, execErr := k.wasmVM.CallCallablePoint(funcNameWithCallablePointBin, codeInfo.CodeHash, false, emptyBin, env, argsEv, wasmStore, k.cosmwasmAPI(ctx), querier, k.gasMeter(ctx), gas, costJSONDeserialization)
+	data, evts, attrs, gasUsed, execErr := k.wasmVM.CallCallablePoint(callablePointNameBin, codeInfo.CodeHash, false, emptyBin, env, argsEv, wasmStore, k.cosmwasmAPI(ctx), querier, k.gasMeter(ctx), gas, costJSONDeserialization)
 
 	k.consumeRuntimeGas(ctx, gasUsed)
 	if execErr != nil {
