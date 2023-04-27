@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	sdk "github.com/line/lbm-sdk/types"
 	"github.com/line/wasmd/x/wasm"
 	"github.com/line/wasmd/x/wasm/keeper"
+	"github.com/line/wasmd/x/wasmplus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -479,4 +481,172 @@ func TestDynamicCallCalleeFails(t *testing.T) {
 	res, err = h(data.ctx, &executeMsg)
 	assert.ErrorContains(t, err, "Error in dynamic link")
 	assert.ErrorContains(t, err, "RuntimeError: unreachable")
+}
+
+// This tests callCallablePoint in inactive contract
+func TestCallInActiveContractFails(t *testing.T) {
+	// setup
+	data := setupTest(t)
+
+	h := data.module.Route().Handler()
+
+	// store dynamic callee code
+	storeCalleeMsg := &wasm.MsgStoreCode{
+		Sender:       addr1,
+		WASMByteCode: calleeContract,
+	}
+	res, err := h(data.ctx, storeCalleeMsg)
+	require.NoError(t, err)
+
+	calleeCodeId := uint64(1)
+	assertStoreCodeResponse(t, res.Data, calleeCodeId)
+
+	// store dynamic caller code
+	storeCallerMsg := &wasm.MsgStoreCode{
+		Sender:       addr1,
+		WASMByteCode: callerContract,
+	}
+	res, err = h(data.ctx, storeCallerMsg)
+	require.NoError(t, err)
+
+	callerCodeId := uint64(2)
+	assertStoreCodeResponse(t, res.Data, callerCodeId)
+
+	// instantiate callee contract
+	instantiateCalleeMsg := &wasm.MsgInstantiateContract{
+		Sender: addr1,
+		CodeID: calleeCodeId,
+		Label:  "callee",
+		Msg:    []byte(`{}`),
+		Funds:  nil,
+	}
+	res, err = h(data.ctx, instantiateCalleeMsg)
+	require.NoError(t, err)
+
+	calleeContractAddress := parseInitResponse(t, res.Data)
+
+	// instantiate caller contract
+	cosmwasmInstantiateCallerMsg := fmt.Sprintf(`{"callee_addr":"%s"}`, calleeContractAddress)
+	instantiateCallerMsg := &wasm.MsgInstantiateContract{
+		Sender: addr1,
+		CodeID: callerCodeId,
+		Label:  "caller",
+		Msg:    []byte(cosmwasmInstantiateCallerMsg),
+		Funds:  nil,
+	}
+	res, err = h(data.ctx, instantiateCallerMsg)
+	require.NoError(t, err)
+
+	callerContractAddress := parseInitResponse(t, res.Data)
+
+	// add contract to inactive
+	src := types.DeactivateContractProposal{
+		Title:       "Foo",
+		Description: "Bar",
+		Contract:    calleeContractAddress,
+	}
+	storedProposal, err := data.govKeeper.SubmitProposal(data.ctx, &src)
+	require.NoError(t, err)
+	handler := data.govKeeper.Router().GetRoute(storedProposal.ProposalRoute())
+	err = handler(data.ctx.WithEventManager(sdk.NewEventManager()), storedProposal.GetContent())
+	require.NoError(t, err)
+	calleeContractSdkAddress, err := sdk.AccAddressFromBech32(calleeContractAddress)
+	require.NoError(t, err)
+	isInactive := data.keeper.IsInactiveContract(data.ctx, calleeContractSdkAddress)
+	require.True(t, isInactive)
+
+	// execute ping
+	cosmwasmExecuteMsg := `{"ping":{"ping_num":"100"}}`
+	executeMsg := wasm.MsgExecuteContract{
+		Sender:   addr1,
+		Contract: callerContractAddress,
+		Msg:      []byte(cosmwasmExecuteMsg),
+		Funds:    nil,
+	}
+	_, err = h(data.ctx, &executeMsg)
+	assert.ErrorContains(t, err, "called contract cannot be executed")
+}
+
+// This tests validateInterface in inactive contract 
+func TestValidateInActiveContractFails(t *testing.T) {
+	// setup
+	data := setupTest(t)
+
+	h := data.module.Route().Handler()
+
+	// store dynamic callee code
+	storeCalleeMsg := &wasm.MsgStoreCode{
+		Sender:       addr1,
+		WASMByteCode: calleeContract,
+	}
+	res, err := h(data.ctx, storeCalleeMsg)
+	require.NoError(t, err)
+
+	calleeCodeId := uint64(1)
+	assertStoreCodeResponse(t, res.Data, calleeCodeId)
+
+	// store dynamic caller code
+	storeCallerMsg := &wasm.MsgStoreCode{
+		Sender:       addr1,
+		WASMByteCode: callerContract,
+	}
+	res, err = h(data.ctx, storeCallerMsg)
+	require.NoError(t, err)
+
+	callerCodeId := uint64(2)
+	assertStoreCodeResponse(t, res.Data, callerCodeId)
+
+	// instantiate callee contract
+	instantiateCalleeMsg := &wasm.MsgInstantiateContract{
+		Sender: addr1,
+		CodeID: calleeCodeId,
+		Label:  "callee",
+		Msg:    []byte(`{}`),
+		Funds:  nil,
+	}
+	res, err = h(data.ctx, instantiateCalleeMsg)
+	require.NoError(t, err)
+
+	calleeContractAddress := parseInitResponse(t, res.Data)
+
+	// instantiate caller contract
+	cosmwasmInstantiateCallerMsg := fmt.Sprintf(`{"callee_addr":"%s"}`, calleeContractAddress)
+	instantiateCallerMsg := &wasm.MsgInstantiateContract{
+		Sender: addr1,
+		CodeID: callerCodeId,
+		Label:  "caller",
+		Msg:    []byte(cosmwasmInstantiateCallerMsg),
+		Funds:  nil,
+	}
+	res, err = h(data.ctx, instantiateCallerMsg)
+	require.NoError(t, err)
+
+	callerContractAddress := parseInitResponse(t, res.Data)
+
+	// add contract to inactive
+	src := types.DeactivateContractProposal{
+		Title:       "Foo",
+		Description: "Bar",
+		Contract:    calleeContractAddress,
+	}
+	storedProposal, err := data.govKeeper.SubmitProposal(data.ctx, &src)
+	require.NoError(t, err)
+	handler := data.govKeeper.Router().GetRoute(storedProposal.ProposalRoute())
+	err = handler(data.ctx.WithEventManager(sdk.NewEventManager()), storedProposal.GetContent())
+	require.NoError(t, err)
+	calleeContractSdkAddress, err := sdk.AccAddressFromBech32(calleeContractAddress)
+	require.NoError(t, err)
+	isInactive := data.keeper.IsInactiveContract(data.ctx, calleeContractSdkAddress)
+	require.True(t, isInactive)
+
+	// execute validate interface
+	cosmwasmExecuteMsg := `{"validate_interface":{}}`
+	executeMsg := wasm.MsgExecuteContract{
+		Sender:   addr1,
+		Contract: callerContractAddress,
+		Msg:      []byte(cosmwasmExecuteMsg),
+		Funds:    nil,
+	}
+	_, err = h(data.ctx, &executeMsg)
+	assert.ErrorContains(t, err, "try to validate a contract cannot be executed")
 }
