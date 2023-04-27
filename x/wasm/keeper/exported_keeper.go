@@ -31,6 +31,10 @@ func (k Keeper) GetWasmVMQueryHandler() WasmVMQueryHandler {
 	return k.wasmVMQueryHandler
 }
 
-func (k Keeper) GetPluskeeper() PlusKeeper {
-	return k.pluskeeper
+func (k Keeper) GetCosmwasmAPIGenerator() CosmwasmAPIGenerator {
+	return k.cosmwasmAPIGenerator
+}
+
+func (k *Keeper) SetCosmwasmAPIGenerator(generator CosmwasmAPIGenerator) {
+	k.cosmwasmAPIGenerator = generator
 }
