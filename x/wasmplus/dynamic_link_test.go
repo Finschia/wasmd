@@ -567,7 +567,7 @@ func TestCallInActiveContractFails(t *testing.T) {
 	assert.ErrorContains(t, err, "called contract cannot be executed")
 }
 
-// This tests validateInterface in inactive contract 
+// This tests validateInterface in inactive contract
 func TestValidateInActiveContractFails(t *testing.T) {
 	// setup
 	data := setupTest(t)

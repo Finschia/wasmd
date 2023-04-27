@@ -30,7 +30,7 @@ func (a cosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 
 func (a cosmwasmAPIImpl) validateInterface(contractAddrStr string, expectedInterface []byte) ([]byte, uint64, error) {
 	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
-	
+
 	if a.keeper.IsInactiveContract(*a.ctx, contractAddr) {
 		return nil, 0, fmt.Errorf("try to validate a contract cannot be executed")
 	}
