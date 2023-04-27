@@ -15,6 +15,7 @@ import (
 	"github.com/line/lbm-sdk/types/module"
 	authkeeper "github.com/line/lbm-sdk/x/auth/keeper"
 	bankkeeper "github.com/line/lbm-sdk/x/bank/keeper"
+	govkeeper "github.com/line/lbm-sdk/x/gov/keeper"
 	stakingkeeper "github.com/line/lbm-sdk/x/staking/keeper"
 	"github.com/line/ostracon/crypto"
 	"github.com/line/ostracon/crypto/ed25519"
@@ -33,6 +34,7 @@ type testData struct {
 	bankKeeper    bankkeeper.Keeper
 	stakingKeeper stakingkeeper.Keeper
 	faucet        *wasmkeeper.TestFaucet
+	govKeeper     govkeeper.Keeper
 }
 
 func setupTest(t *testing.T) testData {
@@ -46,6 +48,7 @@ func setupTest(t *testing.T) testData {
 		bankKeeper:    keepers.BankKeeper,
 		stakingKeeper: keepers.StakingKeeper,
 		faucet:        keepers.Faucet,
+		govKeeper:     keepers.GovKeeper,
 	}
 	return data
 }
