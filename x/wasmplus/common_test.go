@@ -16,13 +16,6 @@ func assertStoreCodeResponse(t *testing.T, data []byte, expected uint64) {
 	require.Equal(t, pStoreResp.CodeID, expected)
 }
 
-// ensure execution returns the expected data
-func assertExecuteResponse(t *testing.T, data []byte, expected []byte) {
-	var pExecResp wasm.MsgExecuteContractResponse
-	require.NoError(t, pExecResp.Unmarshal(data))
-	require.Equal(t, pExecResp.Data, expected)
-}
-
 // ensures this returns a valid bech32 address and returns it
 func parseInitResponse(t *testing.T, data []byte) string {
 	var pInstResp wasm.MsgInstantiateContractResponse
