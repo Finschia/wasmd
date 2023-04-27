@@ -69,9 +69,9 @@ func NewKeeper(
 		homeDir,
 		wasmConfig,
 		availableCapabilities,
-		&result,
 		opts...,
 	)
+	result.SetCosmwasmAPIGenerator(cosmwasmAPIGeneratorImpl{keeper: &result})
 	return result
 }
 
