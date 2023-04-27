@@ -15,7 +15,7 @@ func BenchmarkAPI(b *testing.B) {
 	wasmConfig := types.WasmConfig{MemoryCacheSize: 0}
 	ctx, keepers := createTestInput(b, false, AvailableCapabilities, wasmConfig, dbm.NewMemDB())
 	example := InstantiateHackatomExampleContract(b, ctx, keepers)
-	api := keepers.WasmKeeper.CosmwasmAPI(ctx)
+	api := keepers.WasmKeeper.GetCosmwasmAPIGenerator().Generate(&ctx)
 	addrStr := example.Contract.String()
 	addrBytes, err := sdk.AccAddressFromBech32(example.Contract.String())
 	require.NoError(b, err)
