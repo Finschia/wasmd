@@ -686,7 +686,6 @@ func setupKeeper(t *testing.T) (*Keeper, sdk.Context, []sdk.StoreKey) {
 		tempDir,
 		wasmConfig,
 		AvailableCapabilities,
-		&mockpluskeeper{},
 	)
 	return &srcKeeper, ctx, []sdk.StoreKey{keyWasm, keyParams}
 }

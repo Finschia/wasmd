@@ -71,7 +71,6 @@ import (
 	"github.com/line/ostracon/crypto/ed25519"
 	"github.com/line/ostracon/libs/log"
 	"github.com/line/ostracon/libs/rand"
-	wasmvm "github.com/line/wasmvm"
 
 	wasmappparams "github.com/line/wasmd/app/params"
 	"github.com/line/wasmd/x/wasm/keeper/wasmtesting"
@@ -197,21 +196,6 @@ func CreateDefaultTestInput(t testing.TB) (sdk.Context, TestKeepers) {
 func CreateTestInput(t testing.TB, isCheckTx bool, availableCapabilities string, opts ...Option) (sdk.Context, TestKeepers) {
 	// Load default wasm config
 	return createTestInput(t, isCheckTx, availableCapabilities, types.DefaultWasmConfig(), dbm.NewMemDB(), opts...)
-}
-
-type mockpluskeeper struct{}
-
-func (m *mockpluskeeper) CosmwasmAPI(ctx sdk.Context) wasmvm.GoAPI {
-	return wasmvm.GoAPI{
-		HumanAddress:     humanAddress,
-		CanonicalAddress: canonicalAddress,
-		CallCallablePoint: func(s string, b1, b2 []byte, b3 bool, b4 []byte, u uint64) ([]byte, uint64, error) {
-			return nil, 0, fmt.Errorf("mock does not implement CallCallablePoint")
-		},
-		ValidateInterface: func(s string, b []byte) ([]byte, uint64, error) {
-			return nil, 0, fmt.Errorf("mock does not implement ValidateInterface")
-		},
-	}
 }
 
 // encoders can be nil to accept the defaults, or set it to override some of the message handlers (like default)
@@ -408,7 +392,6 @@ func createTestInput(
 		tempDir,
 		wasmConfig,
 		availableCapabilities,
-		&mockpluskeeper{},
 		opts...,
 	)
 	keeper.SetParams(ctx, types.DefaultParams())

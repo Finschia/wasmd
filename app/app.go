@@ -108,7 +108,6 @@ import (
 	"github.com/line/wasmd/x/wasm"
 	wasmclient "github.com/line/wasmd/x/wasm/client"
 	wasmkeeper "github.com/line/wasmd/x/wasm/keeper"
-	wasmpluskeeper "github.com/line/wasmd/x/wasmplus/keeper"
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/line/lbm-sdk/client/docs/statik"
@@ -521,7 +520,6 @@ func NewWasmApp(
 		wasmDir,
 		wasmConfig,
 		availableCapabilities,
-		&wasmpluskeeper.Keeper{},
 		wasmOpts...,
 	)
 
