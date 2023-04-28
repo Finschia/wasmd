@@ -56,7 +56,7 @@ func canonicalAddress(human string) ([]byte, uint64, error) {
 
 func (a CosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, args []byte, isReadonly bool, callstack []byte, gasLimit uint64) ([]byte, uint64, error) {
 	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
-	contractInfo, codeInfo, prefixStore, err := a.keeper.ContractInstance(*a.ctx, contractAddr)
+	contractInfo, codeInfo, prefixStore, err := a.keeper.contractInstance(*a.ctx, contractAddr)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -64,8 +64,8 @@ func (a CosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 	env := types.NewEnv(*a.ctx, contractAddr)
 	wasmStore := wasmplustypes.NewWasmStore(prefixStore)
 	gasRegister := a.keeper.GetGasRegister()
-	querier := NewQueryHandler(*a.ctx, a.keeper.GetWasmVMQueryHandler(), contractAddr, gasRegister)
-	gasMeter := a.keeper.GasMeter(*a.ctx)
+	querier := NewQueryHandler(*a.ctx, a.keeper.wasmVMQueryHandler, contractAddr, gasRegister)
+	gasMeter := a.keeper.gasMeter(*a.ctx)
 	api := a.keeper.cosmwasmAPIGenerator.Generate(a.ctx)
 
 	instantiateCost := gasRegister.ToWasmVMGas(gasRegister.InstantiateContractCosts(a.keeper.IsPinnedCode(*a.ctx, contractInfo.CodeID), len(args)))
@@ -74,7 +74,7 @@ func (a CosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 	}
 	wasmGasLimit := gasLimit - instantiateCost
 
-	result, events, attrs, gas, err := a.keeper.GetWasmVM().CallCallablePoint(name, codeInfo.CodeHash, isReadonly, callstack, env, args, wasmStore, api, querier, gasMeter, wasmGasLimit, CostJSONDeserialization)
+	result, events, attrs, gas, err := a.keeper.wasmVM.CallCallablePoint(name, codeInfo.CodeHash, isReadonly, callstack, env, args, wasmStore, api, querier, gasMeter, wasmGasLimit, costJSONDeserialization)
 	gas += instantiateCost
 	if err != nil {
 		return nil, gas, err
@@ -106,12 +106,12 @@ func (a CosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 func (a CosmwasmAPIImpl) validateInterface(contractAddrStr string, expectedInterface []byte) ([]byte, uint64, error) {
 	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
 
-	_, codeInfo, _, err := a.keeper.ContractInstance(*a.ctx, contractAddr)
+	_, codeInfo, _, err := a.keeper.contractInstance(*a.ctx, contractAddr)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	result, err := a.keeper.GetWasmVM().ValidateDynamicLinkInterface(codeInfo.CodeHash, expectedInterface)
+	result, err := a.keeper.wasmVM.ValidateDynamicLinkInterface(codeInfo.CodeHash, expectedInterface)
 
 	return result, 0, err
 }

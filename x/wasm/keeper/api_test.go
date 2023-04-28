@@ -30,13 +30,13 @@ func TestAPIHumanAddress(t *testing.T) {
 		result, gas, err := api.HumanAddress(bz)
 		require.NoError(t, err)
 		assert.Equal(t, addr, result)
-		assert.Equal(t, CostHumanize, gas)
+		assert.Equal(t, costHumanize, gas)
 	})
 
 	t.Run("invalid address", func(t *testing.T) {
 		_, gas, err := api.HumanAddress([]byte("invalid_address"))
 		require.Error(t, err)
-		assert.Equal(t, CostHumanize, gas)
+		assert.Equal(t, costHumanize, gas)
 	})
 }
 
@@ -51,13 +51,13 @@ func TestAPICanonicalAddress(t *testing.T) {
 		result, gas, err := api.CanonicalAddress(addr)
 		require.NoError(t, err)
 		assert.Equal(t, expected.Bytes(), result)
-		assert.Equal(t, CostCanonical, gas)
+		assert.Equal(t, costCanonical, gas)
 	})
 
 	t.Run("invalid address", func(t *testing.T) {
 		_, gas, err := api.CanonicalAddress("invalid_address")
 		assert.Error(t, err)
-		assert.Equal(t, CostCanonical, gas)
+		assert.Equal(t, costCanonical, gas)
 	})
 }
 
