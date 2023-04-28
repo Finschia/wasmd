@@ -8,6 +8,7 @@ import (
 	sdk "github.com/line/lbm-sdk/types"
 	wasmvm "github.com/line/wasmvm"
 
+	"github.com/line/wasmd/x/wasm/keeper"
 	wasmkeeper "github.com/line/wasmd/x/wasm/keeper"
 	wasmvmtypes "github.com/line/wasmvm/types"
 	"github.com/stretchr/testify/assert"
@@ -129,7 +130,7 @@ func TestCallCallablePoint(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(`null`), res)
 
-		eventsExpected, err := newCustomCallablePointEvents(eventsIn, contractAddr, callstackBin)
+		eventsExpected, err := keeper.NewCustomCallablePointEvents(eventsIn, contractAddr, callstackBin)
 		require.NoError(t, err)
 		for _, e := range eventsExpected {
 			assert.Contains(t, em.Events(), e)

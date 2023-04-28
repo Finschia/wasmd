@@ -29,7 +29,7 @@ var (
 	}
 )
 
-type cosmwasmAPIImpl struct {
+type CosmwasmAPIImpl struct {
 	keeper *Keeper
 	ctx    *sdk.Context
 }
@@ -54,7 +54,7 @@ func canonicalAddress(human string) ([]byte, uint64, error) {
 	return bz, costCanonical, err
 }
 
-func (a cosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, args []byte, isReadonly bool, callstack []byte, gasLimit uint64) ([]byte, uint64, error) {
+func (a CosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, args []byte, isReadonly bool, callstack []byte, gasLimit uint64) ([]byte, uint64, error) {
 	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
 	contractInfo, codeInfo, prefixStore, err := a.keeper.ContractInstance(*a.ctx, contractAddr)
 	if err != nil {
@@ -103,7 +103,7 @@ func (a cosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 }
 
 // returns result, gas used, error
-func (a cosmwasmAPIImpl) validateInterface(contractAddrStr string, expectedInterface []byte) ([]byte, uint64, error) {
+func (a CosmwasmAPIImpl) validateInterface(contractAddrStr string, expectedInterface []byte) ([]byte, uint64, error) {
 	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
 
 	_, codeInfo, _, err := a.keeper.ContractInstance(*a.ctx, contractAddr)
@@ -117,7 +117,7 @@ func (a cosmwasmAPIImpl) validateInterface(contractAddrStr string, expectedInter
 }
 
 func (c cosmwasmAPIGeneratorImpl) Generate(ctx *sdk.Context) wasmvm.GoAPI {
-	x := cosmwasmAPIImpl{
+	x := CosmwasmAPIImpl{
 		keeper: c.keeper,
 		ctx:    ctx,
 	}
