@@ -11,6 +11,7 @@
 * [\#35](https://github.com/Finschia/wasmd/pull/35) stop wrap twice the response of handling non-plus wasm message in plus handler
 
 ### Breaking Changes
+* [\#41](https://github.com/Finschia/wasmd/pull/41) add `cosmwasmAPIGenerator` to keeper
 
 ### Build, CI
 
