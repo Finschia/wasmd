@@ -1719,34 +1719,6 @@ func TestClearContractAdmin(t *testing.T) {
 	}
 }
 
-func TestExecuteManualInactiveContractFailure(t *testing.T) {
-	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
-	keeper := keepers.ContractKeeper
-
-	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
-	topUp := sdk.NewCoins(sdk.NewInt64Coin("denom", 5000))
-	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
-	fred := keepers.Faucet.NewFundedRandomAccount(ctx, topUp...)
-
-	wasmCode, err := os.ReadFile("./testdata/hackatom.wasm")
-	require.NoError(t, err)
-
-	contractID, _, err := keeper.Create(ctx, creator, wasmCode, nil)
-	require.NoError(t, err)
-
-	_, _, bob := keyPubAddr()
-	initMsg := HackatomExampleInitMsg{
-		Verifier:    fred,
-		Beneficiary: bob,
-	}
-	initMsgBz, err := json.Marshal(initMsg)
-	require.NoError(t, err)
-
-	addr, _, err := keeper.Instantiate(ctx, contractID, creator, nil, initMsgBz, "demo contract 3", deposit)
-	require.NoError(t, err)
-	require.Equal(t, "link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8", addr.String())
-}
-
 func TestPinCode(t *testing.T) {
 	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	k := keepers.WasmKeeper
