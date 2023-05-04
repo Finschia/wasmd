@@ -14,6 +14,7 @@
 ### Build, CI
 
 ### Document Updates
+* [\#44](https://github.com/Finschia/wasmd/pull/44) update notice
 
 
 ## [v0.1.3](https://github.com/Finschia/wasmd/releases/tag/v0.1.3) - 2023.04.19
