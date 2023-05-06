@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"strconv"
@@ -46,6 +47,7 @@ func GetTxCmd() *cobra.Command {
 		InstantiateContractCmd(),
 		StoreCodeAndInstantiateContractCmd(),
 		ExecuteContractCmd(),
+		ExecuteCallablePointCmd(),
 		MigrateContractCmd(),
 		UpdateContractAdminCmd(),
 		ClearContractAdminCmd(),
@@ -387,5 +389,57 @@ func parseExecuteArgs(contractAddr string, execMsg string, sender sdk.AccAddress
 		Contract: contractAddr,
 		Funds:    amount,
 		Msg:      []byte(execMsg),
+	}, nil
+}
+
+func ExecuteCallablePointCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "execute_callable_point [contract_callee_addr_bech32] [json_encoded_callable_point_name] [json_encoded_callable_point_args] --amount [coins,optional]",
+		Short:   "Call callable point on a wasm contract with dynamic link",
+		Aliases: []string{"run-callable-point", "call-callable-point", "exec-callable-point", "ex-callable-point", "e-callable-point"},
+		Args:    cobra.ArbitraryArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg, err := parseExecuteCallablePointArgs(args)
+			if err != nil {
+				return err
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
+		},
+	}
+
+	return cmd
+}
+
+func parseExecuteCallablePointArgs(args []string) (types.MsgExecuteCallablePoint, error) {
+	if len(args) < 3 {
+		return types.MsgExecuteCallablePoint{},
+			fmt.Errorf("three or more arguments are expected. Only %d arguments were specified", len(args))
+	}
+	var contractAddr string
+	var callablePoint string
+	var callableArgsBuffer bytes.Buffer
+	for i, arg := range args {
+		if i == 0 {
+			contractAddr = arg
+			continue
+		}
+		if i == 1 {
+			callablePoint = arg
+			continue
+		}
+		callableArgsBuffer.Write([]byte(arg))
+	}
+	return types.MsgExecuteCallablePoint{
+		Contract:          contractAddr,
+		CallablePoint:     callablePoint,
+		CallablePointArgs: callableArgsBuffer.Bytes(),
 	}, nil
 }

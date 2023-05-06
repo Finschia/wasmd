@@ -101,6 +101,8 @@ type (
 	MsgStoreCodeAndInstantiateContractResponse = lbmtypes.MsgStoreCodeAndInstantiateContractResponse
 	MsgExecuteContract                         = types.MsgExecuteContract
 	MsgExecuteContractResponse                 = types.MsgExecuteContractResponse
+	MsgExecuteCallablePoint                    = types.MsgExecuteCallablePoint
+	MsgExecuteCallablePointResponse            = types.MsgExecuteCallablePointResponse
 	MsgMigrateContract                         = types.MsgMigrateContract
 	MsgMigrateContractResponse                 = types.MsgMigrateContractResponse
 	MsgUpdateAdmin                             = types.MsgUpdateAdmin

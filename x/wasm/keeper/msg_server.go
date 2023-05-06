@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/json"
 
 	sdk "github.com/line/lbm-sdk/types"
 	sdkerrors "github.com/line/lbm-sdk/types/errors"
@@ -136,6 +137,32 @@ func (m msgServer) ExecuteContract(goCtx context.Context, msg *types.MsgExecuteC
 	}
 
 	return &types.MsgExecuteContractResponse{
+		Data: data,
+	}, nil
+}
+
+func (m msgServer) ExecuteCallablePoint(goCtx context.Context, msg *types.MsgExecuteCallablePoint) (*types.MsgExecuteCallablePointResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	contractAddr, err := sdk.AccAddressFromBech32(msg.Contract)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "contract")
+	}
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		sdk.EventTypeMessage,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+	))
+
+	argsBz, err := json.Marshal(msg.CallablePointArgs)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+	data, err := m.keeper.ExecuteCallablePoint(ctx, contractAddr, argsBz, msg.CallablePoint)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgExecuteCallablePointResponse{
 		Data: data,
 	}, nil
 }

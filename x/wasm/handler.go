@@ -39,6 +39,8 @@ func NewHandler(k types.ContractOpsKeeper) sdk.Handler {
 			res, err = lbmMsgServer.StoreCodeAndInstantiateContract(sdk.WrapSDKContext(ctx), msg)
 		case *MsgExecuteContract:
 			res, err = msgServer.ExecuteContract(sdk.WrapSDKContext(ctx), msg)
+		case *MsgExecuteCallablePoint:
+			res, err = msgServer.ExecuteCallablePoint(sdk.WrapSDKContext(ctx), msg)
 		case *MsgMigrateContract:
 			res, err = msgServer.MigrateContract(sdk.WrapSDKContext(ctx), msg)
 		case *MsgUpdateAdmin:

@@ -163,6 +163,18 @@ func (msg MsgExecuteContract) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{senderAddr}
 }
 
+func (msg MsgExecuteCallablePoint) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Contract); err != nil {
+		return sdkerrors.Wrap(err, "contract")
+	}
+
+	return nil
+}
+
+func (msg MsgExecuteCallablePoint) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{}
+}
+
 func (msg MsgMigrateContract) Route() string {
 	return RouterKey
 }

@@ -20,6 +20,7 @@ type ViewKeeper interface {
 	IterateCodeInfos(ctx sdk.Context, cb func(uint64, CodeInfo) bool)
 	GetByteCode(ctx sdk.Context, codeID uint64) ([]byte, error)
 	IsPinnedCode(ctx sdk.Context, codeID uint64) bool
+	CallCallablePoint(ctx sdk.Context, contractAddress sdk.AccAddress, argsEv []byte, callablePointName string, isReadonly bool) ([]byte, error)
 	IterateInactiveContracts(ctx sdk.Context, fn func(contractAddress sdk.AccAddress) bool)
 	IsInactiveContract(ctx sdk.Context, contractAddress sdk.AccAddress) bool
 }
@@ -34,6 +35,9 @@ type ContractOpsKeeper interface {
 
 	// Execute executes the contract instance
 	Execute(ctx sdk.Context, contractAddress sdk.AccAddress, caller sdk.AccAddress, msg []byte, coins sdk.Coins) ([]byte, error)
+
+	// ExecuteCallablePoint executes `callable_point` the dynamic_link contract instance
+	ExecuteCallablePoint(ctx sdk.Context, contractAddress sdk.AccAddress, argsEv []byte, funcNameWithCallablePoint string) ([]byte, error)
 
 	// Migrate allows to upgrade a contract to a new code with data migration.
 	Migrate(ctx sdk.Context, contractAddress sdk.AccAddress, caller sdk.AccAddress, newCodeID uint64, msg []byte) ([]byte, error)

@@ -10,17 +10,20 @@ const (
 	// prefix for custom events from callable point
 	CustomCallablePointEventPrefix = "wasm-callablepoint-"
 
-	EventTypeStoreCode         = "store_code"
-	EventTypeInstantiate       = "instantiate"
-	EventTypeExecute           = "execute"
-	EventTypeMigrate           = "migrate"
-	EventTypeUpdateAdmin       = "update_admin"
-	EventTypeClearAdmin        = "clear_admin"
-	EventTypePinCode           = "pin_code"
-	EventTypeUnpinCode         = "unpin_code"
-	EventTypeSudo              = "sudo"
-	EventTypeReply             = "reply"
-	EventTypeGovContractResult = "gov_contract_result"
+	EventTypeStoreCode                        = "store_code"
+	EventTypeInstantiate                      = "instantiate"
+	EventTypeExecute                          = "execute"
+	EventTypeMigrate                          = "migrate"
+	EventTypeUpdateAdmin                      = "update_admin"
+	EventTypeClearAdmin                       = "clear_admin"
+	EventTypePinCode                          = "pin_code"
+	EventTypeUnpinCode                        = "unpin_code"
+	EventTypeSudo                             = "sudo"
+	EventTypeReply                            = "reply"
+	EventTypeGovContractResult                = "gov_contract_result"
+	WasmModuleEventTypeForCallablePoint       = "wasm-callable_point"
+	CustomContractEventPrefixForCallablePoint = "wasm-callable_point-"
+	EventTypeCallablePoint                    = "callable_point"
 )
 
 // event attributes returned from contract execution

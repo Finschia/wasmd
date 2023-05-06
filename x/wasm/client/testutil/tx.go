@@ -167,6 +167,58 @@ func (s *IntegrationTestSuite) TestExecuteContractCmd() {
 	}
 }
 
+func (s *IntegrationTestSuite) TestExecuteCallablePointCmd() {
+	val := s.network.Validators[0]
+
+	params := fmt.Sprintf("{\"verifier\": \"%s\", \"beneficiary\": \"%s\"}", s.network.Validators[0].Address.String(), keeper.RandomAccountAddress(s.T()))
+	contractAddr := s.instantiate(s.codeID, params)
+
+	testCases := map[string]struct {
+		args  []string
+		valid bool
+	}{
+		"valid execute callable point": {
+			[]string{
+				contractAddr,
+				"{\"release\":{}}",
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+			},
+			true,
+		},
+		"wrong param": {
+			[]string{
+				contractAddr,
+				"{release:{}}",
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+			},
+			false,
+		},
+		"no contract address": {
+			[]string{
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+			},
+			false,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		s.Run(name, func() {
+			cmd := cli.ExecuteCallablePointCmd()
+			out, err := clitestutil.ExecTestCLICmd(val.ClientCtx, cmd, append(tc.args, commonArgs...))
+			if !tc.valid {
+				s.Require().Error(err)
+				return
+			}
+			s.Require().NoError(err)
+
+			var res sdk.TxResponse
+			s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &res), out.String())
+			s.Require().EqualValues(0, res.Code, out.String())
+		})
+	}
+}
 func (s *IntegrationTestSuite) TestStoreCodeAndInstantiateContractCmd() {
 	val := s.network.Validators[0]
 	owner := val.Address.String()
