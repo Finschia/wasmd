@@ -17,6 +17,8 @@ service Msg {
       returns (MsgInstantiateContractResponse);
   // Execute submits the given message data to a smart contract
   rpc ExecuteContract(MsgExecuteContract) returns (MsgExecuteContractResponse);
+
+  rpc ExecuteCallablePoint(MsgExecuteCallablePoint) returns (MsgExecuteCallablePointResponse);
   // Migrate runs a code upgrade/ downgrade for a smart contract
   rpc MigrateContract(MsgMigrateContract) returns (MsgMigrateContractResponse);
   // UpdateAdmin sets a new   admin for a smart contract
@@ -85,10 +87,27 @@ message MsgExecuteContract {
   ];
 }
 
+// MsgExecuteContract submits the given message data to a smart contract
+message MsgExecuteCallablePoint {
+  // Contract is the address of the smart contract
+  string contract = 2;
+  // CallablePoint is the function name with `callable_point`
+  string callable_point = 3;
+  // CallablePointArgs is the function args with `callable_point`
+  bytes callable_point_args = 4;
+}
+
 // MsgExecuteContractResponse returns execution result data.
 message MsgExecuteContractResponse {
   // Data contains base64-encoded bytes to returned from the contract
   bytes data = 1;
+}
+
+message MsgExecuteCallablePointResponse {
+  // Data contains base64-encoded bytes to returned from the contract
+  string events = 1;
+  string events_attri = 2;
+  bytes data = 3;
 }
 
 // MsgMigrateContract runs a code upgrade/ downgrade for a smart contract

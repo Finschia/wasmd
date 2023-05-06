@@ -20,6 +20,8 @@
 - [cosmwasm/wasm/v1/tx.proto](#cosmwasm/wasm/v1/tx.proto)
     - [MsgClearAdmin](#cosmwasm.wasm.v1.MsgClearAdmin)
     - [MsgClearAdminResponse](#cosmwasm.wasm.v1.MsgClearAdminResponse)
+    - [MsgExecuteCallablePoint](#cosmwasm.wasm.v1.MsgExecuteCallablePoint)
+    - [MsgExecuteCallablePointResponse](#cosmwasm.wasm.v1.MsgExecuteCallablePointResponse)
     - [MsgExecuteContract](#cosmwasm.wasm.v1.MsgExecuteContract)
     - [MsgExecuteContractResponse](#cosmwasm.wasm.v1.MsgExecuteContractResponse)
     - [MsgInstantiateContract](#cosmwasm.wasm.v1.MsgInstantiateContract)
@@ -61,6 +63,8 @@
     - [CodeInfoResponse](#cosmwasm.wasm.v1.CodeInfoResponse)
     - [QueryAllContractStateRequest](#cosmwasm.wasm.v1.QueryAllContractStateRequest)
     - [QueryAllContractStateResponse](#cosmwasm.wasm.v1.QueryAllContractStateResponse)
+    - [QueryCallablePointRequest](#cosmwasm.wasm.v1.QueryCallablePointRequest)
+    - [QueryCallablePointResponse](#cosmwasm.wasm.v1.QueryCallablePointResponse)
     - [QueryCodeRequest](#cosmwasm.wasm.v1.QueryCodeRequest)
     - [QueryCodeResponse](#cosmwasm.wasm.v1.QueryCodeResponse)
     - [QueryCodesRequest](#cosmwasm.wasm.v1.QueryCodesRequest)
@@ -322,6 +326,40 @@ MsgClearAdminResponse returns empty data
 
 
 
+<a name="cosmwasm.wasm.v1.MsgExecuteCallablePoint"></a>
+
+### MsgExecuteCallablePoint
+MsgExecuteContract submits the given message data to a smart contract
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `contract` | [string](#string) |  | Contract is the address of the smart contract |
+| `callable_point` | [string](#string) |  | CallablePoint is the function name with `callable_point` |
+| `callable_point_args` | [bytes](#bytes) |  | CallablePointArgs is the function args with `callable_point` |
+
+
+
+
+
+
+<a name="cosmwasm.wasm.v1.MsgExecuteCallablePointResponse"></a>
+
+### MsgExecuteCallablePointResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `events` | [string](#string) |  | Data contains base64-encoded bytes to returned from the contract |
+| `events_attri` | [string](#string) |  |  |
+| `data` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="cosmwasm.wasm.v1.MsgExecuteContract"></a>
 
 ### MsgExecuteContract
@@ -500,6 +538,7 @@ Msg defines the wasm Msg service.
 | `StoreCode` | [MsgStoreCode](#cosmwasm.wasm.v1.MsgStoreCode) | [MsgStoreCodeResponse](#cosmwasm.wasm.v1.MsgStoreCodeResponse) | StoreCode to submit Wasm code to the system | |
 | `InstantiateContract` | [MsgInstantiateContract](#cosmwasm.wasm.v1.MsgInstantiateContract) | [MsgInstantiateContractResponse](#cosmwasm.wasm.v1.MsgInstantiateContractResponse) | Instantiate creates a new smart contract instance for the given code id. | |
 | `ExecuteContract` | [MsgExecuteContract](#cosmwasm.wasm.v1.MsgExecuteContract) | [MsgExecuteContractResponse](#cosmwasm.wasm.v1.MsgExecuteContractResponse) | Execute submits the given message data to a smart contract | |
+| `ExecuteCallablePoint` | [MsgExecuteCallablePoint](#cosmwasm.wasm.v1.MsgExecuteCallablePoint) | [MsgExecuteCallablePointResponse](#cosmwasm.wasm.v1.MsgExecuteCallablePointResponse) |  | |
 | `MigrateContract` | [MsgMigrateContract](#cosmwasm.wasm.v1.MsgMigrateContract) | [MsgMigrateContractResponse](#cosmwasm.wasm.v1.MsgMigrateContractResponse) | Migrate runs a code upgrade/ downgrade for a smart contract | |
 | `UpdateAdmin` | [MsgUpdateAdmin](#cosmwasm.wasm.v1.MsgUpdateAdmin) | [MsgUpdateAdminResponse](#cosmwasm.wasm.v1.MsgUpdateAdminResponse) | UpdateAdmin sets a new admin for a smart contract | |
 | `ClearAdmin` | [MsgClearAdmin](#cosmwasm.wasm.v1.MsgClearAdmin) | [MsgClearAdminResponse](#cosmwasm.wasm.v1.MsgClearAdminResponse) | ClearAdmin removes any admin stored for a smart contract | |
@@ -946,6 +985,40 @@ Query/AllContractState RPC method
 
 
 
+<a name="cosmwasm.wasm.v1.QueryCallablePointRequest"></a>
+
+### QueryCallablePointRequest
+QueryCallablePointRequest is the request type for the Contract with CallablePoint
+This is a request to call a contract function with callable_point as readOnly.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `contract` | [string](#string) |  | Contract is the address of the smart contract |
+| `callable_point` | [string](#string) |  | CallablePoint is the function name with `callable_point` |
+| `callable_point_args` | [bytes](#bytes) |  | CallablePointArgs is the function args with `callable_point` |
+
+
+
+
+
+
+<a name="cosmwasm.wasm.v1.QueryCallablePointResponse"></a>
+
+### QueryCallablePointResponse
+QueryCallablePointResponse is the response type for the
+Query/CallCallablePoint RPC method
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `data` | [bytes](#bytes) |  | Data contains base64-encoded bytes to returned from the contract |
+
+
+
+
+
+
 <a name="cosmwasm.wasm.v1.QueryCodeRequest"></a>
 
 ### QueryCodeRequest
@@ -1230,6 +1303,7 @@ Query provides defines the gRPC querier service
 | `Code` | [QueryCodeRequest](#cosmwasm.wasm.v1.QueryCodeRequest) | [QueryCodeResponse](#cosmwasm.wasm.v1.QueryCodeResponse) | Code gets the binary code and metadata for a singe wasm code | GET|/cosmwasm/wasm/v1/code/{code_id}|
 | `Codes` | [QueryCodesRequest](#cosmwasm.wasm.v1.QueryCodesRequest) | [QueryCodesResponse](#cosmwasm.wasm.v1.QueryCodesResponse) | Codes gets the metadata for all stored wasm codes | GET|/cosmwasm/wasm/v1/code|
 | `PinnedCodes` | [QueryPinnedCodesRequest](#cosmwasm.wasm.v1.QueryPinnedCodesRequest) | [QueryPinnedCodesResponse](#cosmwasm.wasm.v1.QueryPinnedCodesResponse) | PinnedCodes gets the pinned code ids | GET|/cosmwasm/wasm/v1/codes/pinned|
+| `CallCallablePoint` | [QueryCallablePointRequest](#cosmwasm.wasm.v1.QueryCallablePointRequest) | [QueryCallablePointResponse](#cosmwasm.wasm.v1.QueryCallablePointResponse) | CallCallablePoint gets the read-only dynamic link contract info | GET|/cosmwasm/wasm/v1/contract/{contract}/callable_point/{callable_point}/callable_point_args/{callable_point_args}|
 
  <!-- end services -->
 

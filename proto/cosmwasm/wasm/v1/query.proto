@@ -58,6 +58,11 @@ service Query {
   rpc PinnedCodes(QueryPinnedCodesRequest) returns (QueryPinnedCodesResponse) {
     option (google.api.http).get = "/cosmwasm/wasm/v1/codes/pinned";
   }
+
+  // CallCallablePoint gets the read-only dynamic link contract info
+  rpc CallCallablePoint(QueryCallablePointRequest) returns (QueryCallablePointResponse) {
+    option (google.api.http).get = "/cosmwasm/wasm/v1/contract/{contract}/callable_point/{callable_point}/callable_point_args/{callable_point_args}";
+  }
 }
 
 // QueryContractInfoRequest is the request type for the Query/ContractInfo RPC
@@ -221,4 +226,23 @@ message QueryPinnedCodesResponse {
       [ (gogoproto.nullable) = false, (gogoproto.customname) = "CodeIDs" ];
   // pagination defines the pagination in the response.
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryCallablePointRequest is the request type for the Contract with CallablePoint
+// This is a request to call a contract function with callable_point as readOnly.
+message QueryCallablePointRequest {
+  // Contract is the address of the smart contract
+  string contract = 2;
+  // CallablePoint is the function name with `callable_point`
+  string callable_point = 3;
+  // CallablePointArgs is the function args with `callable_point`
+  bytes callable_point_args = 4;
+}
+
+
+// QueryCallablePointResponse is the response type for the
+// Query/CallCallablePoint RPC method
+message QueryCallablePointResponse {
+  // Data contains base64-encoded bytes to returned from the contract
+  bytes data = 1;
 }
