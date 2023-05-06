@@ -490,6 +490,10 @@ func (k Keeper) CallCallablePoint(ctx sdk.Context, contractAddress sdk.AccAddres
 		return nil, sdkerrors.Wrap(types.ErrExecuteFailed, execErr.Error())
 	}
 
+	if isReadonly {
+		return data, nil
+	}
+
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeCallablePoint,
 		sdk.NewAttribute(types.AttributeKeyContractAddr, contractAddress.String()),

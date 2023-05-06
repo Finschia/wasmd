@@ -313,6 +313,23 @@ func (q GrpcQuerier) PinnedCodes(c context.Context, req *types.QueryPinnedCodesR
 	}, nil
 }
 
+func (q GrpcQuerier) CallCallablePoint(c context.Context, req *types.QueryCallablePointRequest) (*types.QueryCallablePointResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+	ctx := sdk.UnwrapSDKContext(c)
+
+	contractAddr, err := sdk.AccAddressFromBech32(req.Contract)
+	if err != nil {
+		return nil, err
+	}
+	rsp, err := q.keeper.CallCallablePoint(ctx, contractAddr, req.CallablePointArgs, req.CallablePoint, true)
+	if err != nil {
+		return nil, err
+	}
+	return &types.QueryCallablePointResponse{Data: rsp}, nil
+}
+
 func (q GrpcQuerier) InactiveContracts(c context.Context, req *lbmtypes.QueryInactiveContractsRequest) (*lbmtypes.QueryInactiveContractsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")

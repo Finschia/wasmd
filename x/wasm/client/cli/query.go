@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/hex"
@@ -42,6 +43,7 @@ func GetQueryCmd() *cobra.Command {
 		GetCmdLibVersion(),
 		GetCmdListInactiveContracts(),
 		GetCmdIsInactiveContract(),
+		GetCmdCallablePoint(),
 	)
 	return queryCmd
 }
@@ -604,4 +606,69 @@ func GetCmdIsInactiveContract() *cobra.Command {
 	}
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
+}
+
+func GetCmdCallablePoint() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "callable-point [callable_point_name] [callable_point_args]",
+		Short:   "Call a read-only function with callable_point and deps as an argument",
+		Long:    "Call a read-only function with callable_point. The values you specify are the function name as `[callable_point_name]` and the arguments as `[callable_point_args]` to assign to the function.",
+		Aliases: []string{"dyna"},
+		Args:    cobra.ArbitraryArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			_, err = sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return err
+			}
+
+			if len(args) < 2 {
+				return fmt.Errorf("three or more arguments are expected. Only %d arguments were specified", len(args))
+			}
+
+			req := parseCallablePointArgs(args[1:])
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.CallCallablePoint(
+				context.Background(),
+				&req,
+			)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	return cmd
+}
+
+// Create arguments to pass to the `callable_point` function
+func parseCallablePointArgs(args []string) types.QueryCallablePointRequest {
+	var contractAddr string
+	var callablePoint string
+	var callableArgsBuffer bytes.Buffer
+	for i, arg := range args {
+		if i == 0 {
+			contractAddr = arg
+			continue
+		}
+		if i == 1 {
+			callablePoint = arg
+			continue
+		}
+		callableArgsBuffer.Write([]byte(arg))
+	}
+	return types.QueryCallablePointRequest{
+		Contract:          contractAddr,
+		CallablePoint:     callablePoint,
+		CallablePointArgs: callableArgsBuffer.Bytes(),
+	}
 }

@@ -42,6 +42,10 @@ var (
 	invalidSyntaxError = &strconv.NumError{Func: "ParseUint", Num: "", Err: strconv.ErrSyntax}
 	invalidAddrError   = errors.New("empty address string is not allowed")
 	invalidQueryError  = errors.New("query data must be json")
+
+	callablePointArgs          = "a"
+	callablePointName          = "number"
+	insufficientArgumentsError = errors.New("three or more arguments are expected. Only 1 arguments were specified")
 )
 
 type testcase []struct {
@@ -316,6 +320,36 @@ func TestGetCmdGetContractStateSmart(t *testing.T) {
 				assert.Nilf(t, actual, "GetCmdGetContractStateSmart()")
 			} else {
 				assert.Equalf(t, tt.want.Error(), actual.Error(), "GetCmdGetContractStateSmart()")
+			}
+		})
+	}
+}
+
+func TestGetCmdGetContractCallablePoint(t *testing.T) {
+	res := types.QueryCallablePointResponse{}
+	bz, err := res.Marshal()
+	require.NoError(t, err)
+	ctx := makeContext(bz)
+	// inout data for each test case
+	argsSuccess := []string{accAddress, callablePointName, callablePointArgs}
+	argsInvalidAddr := []string{"", callablePointName, callablePointArgs}
+	argsInsufficient := []string{accAddress}
+	tests := testcase{
+		{"success", nil, ctx, nil, argsSuccess},
+		{"invalid address", invalidAddrError, ctx, nil, argsInvalidAddr},
+		{"insufficient number of arguments", insufficientArgumentsError, ctx, nil, argsInsufficient},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := GetCmdCallablePoint()
+			err := cmd.ParseFlags(tt.flags)
+			require.NoError(t, err)
+			cmd.SetContext(tt.ctx)
+			actual := cmd.RunE(cmd, tt.args)
+			if tt.want == nil {
+				assert.Nilf(t, actual, "GetCmdCallablePoint()")
+			} else {
+				assert.Equalf(t, tt.want.Error(), actual.Error(), "GetCmdCallablePoint()")
 			}
 		})
 	}
