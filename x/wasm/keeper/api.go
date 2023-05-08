@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/line/lbm-sdk/types"
 	"github.com/line/wasmd/x/wasm/types"
-	wasmplustypes "github.com/line/wasmd/x/wasmplus/types"
 	wasmvm "github.com/line/wasmvm"
 	wasmvmtypes "github.com/line/wasmvm/types"
 )
@@ -62,7 +61,7 @@ func (a CosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 	}
 
 	env := types.NewEnv(*a.ctx, contractAddr)
-	wasmStore := wasmplustypes.NewWasmStore(prefixStore)
+	wasmStore := types.NewWasmStore(prefixStore)
 	gasRegister := a.keeper.GetGasRegister()
 	querier := NewQueryHandler(*a.ctx, a.keeper.wasmVMQueryHandler, contractAddr, gasRegister)
 	gasMeter := a.keeper.gasMeter(*a.ctx)
