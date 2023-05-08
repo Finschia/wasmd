@@ -53,6 +53,8 @@ func canonicalAddress(human string) ([]byte, uint64, error) {
 	return bz, costCanonical, err
 }
 
+// callCallablePoint is a wrapper function of `wasmvm`
+// returns result, gas used, error
 func (a CosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, args []byte, isReadonly bool, callstack []byte, gasLimit uint64) ([]byte, uint64, error) {
 	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
 	contractInfo, codeInfo, prefixStore, err := a.keeper.contractInstance(*a.ctx, contractAddr)
@@ -101,6 +103,7 @@ func (a CosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 	return result, gas, err
 }
 
+// validateInterface is a wrapper function of `wasmvm`
 // returns result, gas used, error
 func (a CosmwasmAPIImpl) validateInterface(contractAddrStr string, expectedInterface []byte) ([]byte, uint64, error) {
 	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
