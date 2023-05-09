@@ -301,12 +301,12 @@ find out the entire path for the events.
 | update_contract_admin | new_admin_address | {adminAddress}     |      |
 
 #### MsgClearAdmin
-| Type                  | Attribute Key     | Attribute Value    | Note |
-|-----------------------|-------------------|--------------------|------|
-| message               | module            | wasm               |      |
-| message               | sender            | {senderAddress}    |      |
-| update_contract_admin | _contract_address | {contract_address} |      |
-| update_contract_admin | new_admin_address | {adminAddress}     |      |
+| Type                  | Attribute Key     | Attribute Value    | Note         |
+|-----------------------|-------------------|--------------------|--------------|
+| message               | module            | wasm               |              |
+| message               | sender            | {senderAddress}    |              |
+| update_contract_admin | _contract_address | {contract_address} |              |
+| update_contract_admin | new_admin_address | ""                 | empty string |
 
 ### Keeper Events
 In addition to message events, the wasm keeper will produce events when the following methods are called (or any method which ends up calling them)
