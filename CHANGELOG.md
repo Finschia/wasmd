@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/Finschia/wasmd/compare/v0.1.3...HEAD)
 
 ### Features
+* [\#46](https://github.com/Finschia/wasmd/pull/46) add admin-related events
 
 ### Improvements
 
