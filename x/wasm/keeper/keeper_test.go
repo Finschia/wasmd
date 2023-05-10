@@ -13,6 +13,7 @@ import (
 	fuzz "github.com/google/gofuzz"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/Finschia/finschia-sdk/baseapp"
@@ -2069,6 +2070,7 @@ func TestSetAccessConfig(t *testing.T) {
 	k := keepers.WasmKeeper
 	creatorAddr := RandomAccountAddress(t)
 	nonCreatorAddr := RandomAccountAddress(t)
+	const codeID = 1
 
 	specs := map[string]struct {
 		authz           AuthorizationPolicy
@@ -2076,18 +2078,27 @@ func TestSetAccessConfig(t *testing.T) {
 		newConfig       types.AccessConfig
 		caller          sdk.AccAddress
 		expErr          bool
+		expEvts         map[string]string
 	}{
 		"user with new permissions == chain permissions": {
 			authz:           DefaultAuthorizationPolicy{},
 			chainPermission: types.AccessTypeEverybody,
 			newConfig:       types.AllowEverybody,
 			caller:          creatorAddr,
+			expEvts: map[string]string{
+				"code_id":         "1",
+				"code_permission": "Everybody",
+			},
 		},
 		"user with new permissions < chain permissions": {
 			authz:           DefaultAuthorizationPolicy{},
 			chainPermission: types.AccessTypeEverybody,
 			newConfig:       types.AllowNobody,
 			caller:          creatorAddr,
+			expEvts: map[string]string{
+				"code_id":         "1",
+				"code_permission": "Nobody",
+			},
 		},
 		"user with new permissions > chain permissions": {
 			authz:           DefaultAuthorizationPolicy{},
@@ -2108,29 +2119,59 @@ func TestSetAccessConfig(t *testing.T) {
 			chainPermission: types.AccessTypeEverybody,
 			newConfig:       types.AllowEverybody,
 			caller:          creatorAddr,
+			expEvts: map[string]string{
+				"code_id":         "1",
+				"code_permission": "Everybody",
+			},
 		},
 		"gov with new permissions < chain permissions": {
 			authz:           GovAuthorizationPolicy{},
 			chainPermission: types.AccessTypeEverybody,
 			newConfig:       types.AllowNobody,
 			caller:          creatorAddr,
+			expEvts: map[string]string{
+				"code_id":         "1",
+				"code_permission": "Nobody",
+			},
 		},
 		"gov with new permissions > chain permissions": {
 			authz:           GovAuthorizationPolicy{},
 			chainPermission: types.AccessTypeNobody,
 			newConfig:       types.AccessTypeOnlyAddress.With(creatorAddr),
 			caller:          creatorAddr,
+			expEvts: map[string]string{
+				"code_id":              "1",
+				"code_permission":      "OnlyAddress",
+				"authorized_addresses": creatorAddr.String(),
+			},
+		},
+		"gov with new permissions > chain permissions - multiple addresses": {
+			authz:           GovAuthorizationPolicy{},
+			chainPermission: types.AccessTypeNobody,
+			newConfig:       types.AccessTypeAnyOfAddresses.With(creatorAddr, nonCreatorAddr),
+			caller:          creatorAddr,
+			expEvts: map[string]string{
+				"code_id":              "1",
+				"code_permission":      "AnyOfAddresses",
+				"authorized_addresses": creatorAddr.String() + "," + nonCreatorAddr.String(),
+			},
 		},
 		"gov without actor": {
 			authz:           GovAuthorizationPolicy{},
 			chainPermission: types.AccessTypeEverybody,
 			newConfig:       types.AllowEverybody,
+			expEvts: map[string]string{
+				"code_id":         "1",
+				"code_permission": "Everybody",
+			},
 		},
 	}
-	const codeID = 1
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			ctx, _ := parentCtx.CacheContext()
+			em := sdk.NewEventManager()
+			ctx = ctx.WithEventManager(em)
+
 			newParams := types.DefaultParams()
 			newParams.InstantiateDefaultPermission = spec.chainPermission
 			k.SetParams(ctx, newParams)
@@ -2143,6 +2184,10 @@ func TestSetAccessConfig(t *testing.T) {
 				return
 			}
 			require.NoError(t, gotErr)
+			// and event emitted
+			require.Len(t, em.Events(), 1)
+			assert.Equal(t, "update_code_access_config", em.Events()[0].Type)
+			assert.Equal(t, spec.expEvts, attrsToStringMap(em.Events()[0].Attributes))
 		})
 	}
 }
@@ -2260,4 +2305,78 @@ func TestKeeper_GetByteCode(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestSetContractAdmin(t *testing.T) {
+	parentCtx, keepers := CreateTestInput(t, false, AvailableCapabilities)
+	k := keepers.WasmKeeper
+	myAddr := RandomAccountAddress(t)
+	example := InstantiateReflectExampleContract(t, parentCtx, keepers)
+	specs := map[string]struct {
+		newAdmin sdk.AccAddress
+		caller   sdk.AccAddress
+		policy   AuthorizationPolicy
+		expAdmin string
+		expErr   bool
+	}{
+		"update admin": {
+			newAdmin: myAddr,
+			caller:   example.CreatorAddr,
+			policy:   DefaultAuthorizationPolicy{},
+			expAdmin: myAddr.String(),
+		},
+		"update admin - unauthorized": {
+			newAdmin: myAddr,
+			caller:   RandomAccountAddress(t),
+			policy:   DefaultAuthorizationPolicy{},
+			expErr:   true,
+		},
+		"clear admin - default policy": {
+			caller:   example.CreatorAddr,
+			policy:   DefaultAuthorizationPolicy{},
+			expAdmin: "",
+		},
+		"clear admin - unauthorized": {
+			expAdmin: "",
+			policy:   DefaultAuthorizationPolicy{},
+			caller:   RandomAccountAddress(t),
+			expErr:   true,
+		},
+		"clear admin - gov policy": {
+			newAdmin: nil,
+			policy:   GovAuthorizationPolicy{},
+			caller:   example.CreatorAddr,
+			expAdmin: "",
+		},
+	}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			ctx, _ := parentCtx.CacheContext()
+			em := sdk.NewEventManager()
+			ctx = ctx.WithEventManager(em)
+			gotErr := k.setContractAdmin(ctx, example.Contract, spec.caller, spec.newAdmin, spec.policy)
+			if spec.expErr {
+				require.Error(t, gotErr)
+				return
+			}
+			require.NoError(t, gotErr)
+			assert.Equal(t, spec.expAdmin, k.GetContractInfo(ctx, example.Contract).Admin)
+			// and event emitted
+			require.Len(t, em.Events(), 1)
+			assert.Equal(t, "update_contract_admin", em.Events()[0].Type)
+			exp := map[string]string{
+				"_contract_address": example.Contract.String(),
+				"new_admin_address": spec.expAdmin,
+			}
+			assert.Equal(t, exp, attrsToStringMap(em.Events()[0].Attributes))
+		})
+	}
+}
+
+func attrsToStringMap(attrs []abci.EventAttribute) map[string]string {
+	r := make(map[string]string, len(attrs))
+	for _, v := range attrs {
+		r[string(v.Key)] = string(v.Value)
+	}
+	return r
 }
