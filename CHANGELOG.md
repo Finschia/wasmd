@@ -5,6 +5,7 @@
 ### Features
 
 ### Improvements
+* [\#43](https://github.com/Finschia/wasmd/pull/43) delete unnecessary test 
 
 ### Bug Fixes
 * [\#35](https://github.com/Finschia/wasmd/pull/35) stop wrap twice the response of handling non-plus wasm message in plus handler
