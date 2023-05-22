@@ -1,6 +1,21 @@
 # Changelog
 
-## [Unreleased](https://github.com/Finschia/wasmd/compare/v0.1.3...HEAD)
+## [Unreleased](https://github.com/Finschia/wasmd/compare/v0.1.4...HEAD)
+
+### Features
+
+### Improvements
+
+### Bug Fixes
+
+### Breaking Changes
+
+### Build, CI
+
+### Document Updates
+
+
+## [v0.1.4](https://github.com/Finschia/wasmd/releases/tag/v0.1.4) - 2023.05.22
 
 ### Features
 * [\#46](https://github.com/Finschia/wasmd/pull/46) add admin-related events
@@ -10,10 +25,6 @@
 
 ### Bug Fixes
 * [\#35](https://github.com/Finschia/wasmd/pull/35) stop wrap twice the response of handling non-plus wasm message in plus handler
-
-### Breaking Changes
-
-### Build, CI
 
 ### Document Updates
 * [\#44](https://github.com/Finschia/wasmd/pull/44) update notice
