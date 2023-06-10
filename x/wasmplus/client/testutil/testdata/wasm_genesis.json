@@ -51,9 +51,6 @@
       "address": "",
       "permission": "Everybody"
     },
-    "compile_cost": "3",
-    "gas_multiplier": "140000000",
-    "instance_cost": "60000",
     "instantiate_default_permission": "Everybody"
   },
   "sequences":
@@ -67,5 +64,4 @@
       "value": "2"
     }
   ]
-}
 }
