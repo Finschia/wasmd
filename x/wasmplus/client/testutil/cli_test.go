@@ -1,5 +1,5 @@
-//go:build norace
-// +build norace
+//go:build cli_test
+// +build cli_test
 
 package testutil
 

@@ -122,7 +122,7 @@ distclean: clean
 
 
 test: test-unit
-test-all: check test-race test-cover
+test-all: test-race test-cover test-integration
 
 test-unit:
 	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock' ./...
@@ -132,6 +132,9 @@ test-race:
 
 test-cover:
 	@go test -mod=readonly -timeout 30m -race -coverprofile=coverage.txt -covermode=atomic -tags='ledger test_ledger_mock' ./...
+
+test-integration:
+	@go test -mod=readonly -tags="cli_test" ./.../testutil/...
 
 benchmark:
 	@go test -mod=readonly -bench=. ./...
