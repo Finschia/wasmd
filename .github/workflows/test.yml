@@ -43,7 +43,7 @@ jobs:
         run: make test-race
         if: env.GIT_DIFF
       - name: Test integration
-        run: make test-integration
+        run: make test-cli
         if: env.GIT_DIFF
 
   test-cover:
