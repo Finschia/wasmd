@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/line/lbm-sdk/types"
-	wasmvmtypes "github.com/line/wasmvm/types"
+	sdk "github.com/Finschia/finschia-sdk/types"
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 
-	"github.com/line/wasmd/x/wasm/types"
+	"github.com/Finschia/wasmd/x/wasm/types"
 )
 
 func TestHasWasmModuleEvent(t *testing.T) {

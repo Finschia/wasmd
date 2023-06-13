@@ -1,8 +1,8 @@
 package types
 
 import (
-	storetypes "github.com/line/lbm-sdk/store/types"
-	wasmvm "github.com/line/wasmvm"
+	storetypes "github.com/Finschia/finschia-sdk/store/types"
+	wasmvm "github.com/Finschia/wasmvm"
 )
 
 var _ wasmvm.KVStore = (*WasmStore)(nil)

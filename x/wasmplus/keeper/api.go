@@ -3,9 +3,9 @@ package keeper
 import (
 	"fmt"
 
-	sdk "github.com/line/lbm-sdk/types"
-	wasmkeeper "github.com/line/wasmd/x/wasm/keeper"
-	wasmvm "github.com/line/wasmvm"
+	sdk "github.com/Finschia/finschia-sdk/types"
+	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
+	wasmvm "github.com/Finschia/wasmvm"
 )
 
 type cosmwasmAPIImpl struct {

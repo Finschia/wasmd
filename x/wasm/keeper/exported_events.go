@@ -1,8 +1,8 @@
 package keeper
 
 import (
-	sdk "github.com/line/lbm-sdk/types"
-	wasmvmtypes "github.com/line/wasmvm/types"
+	sdk "github.com/Finschia/finschia-sdk/types"
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 )
 
 func NewCustomCallablePointEvents(evts wasmvmtypes.Events, contractAddr sdk.AccAddress, callstack []byte) (sdk.Events, error) {

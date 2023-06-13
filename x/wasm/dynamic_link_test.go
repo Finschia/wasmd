@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/line/wasmd/x/wasm/keeper"
+	"github.com/Finschia/wasmd/x/wasm/keeper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 var (
-	// These come from https://github.com/line/cosmwasm/tree/main/contracts.
+	// These come from https://github.com/Finschia/cosmwasm/tree/main/contracts.
 	// Hashes of them are in testdata directory.
 	calleeContract     = mustLoad("./testdata/dynamic_callee_contract.wasm")
 	callerContract     = mustLoad("./testdata/dynamic_caller_contract.wasm")

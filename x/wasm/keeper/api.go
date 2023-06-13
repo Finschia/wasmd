@@ -3,10 +3,10 @@ package keeper
 import (
 	"fmt"
 
-	sdk "github.com/line/lbm-sdk/types"
-	"github.com/line/wasmd/x/wasm/types"
-	wasmvm "github.com/line/wasmvm"
-	wasmvmtypes "github.com/line/wasmvm/types"
+	sdk "github.com/Finschia/finschia-sdk/types"
+	"github.com/Finschia/wasmd/x/wasm/types"
+	wasmvm "github.com/Finschia/wasmvm"
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 )
 
 const (

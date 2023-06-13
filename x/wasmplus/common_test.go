@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/line/lbm-sdk/types"
-	"github.com/line/wasmd/x/wasm"
+	sdk "github.com/Finschia/finschia-sdk/types"
+	"github.com/Finschia/wasmd/x/wasm"
 )
 
 // ensure store code returns the expected response

@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"testing"
 
-	sdk "github.com/line/lbm-sdk/types"
-	"github.com/line/wasmd/x/wasm"
-	"github.com/line/wasmd/x/wasm/keeper"
-	"github.com/line/wasmd/x/wasmplus/types"
+	sdk "github.com/Finschia/finschia-sdk/types"
+	"github.com/Finschia/wasmd/x/wasm"
+	"github.com/Finschia/wasmd/x/wasm/keeper"
+	"github.com/Finschia/wasmd/x/wasmplus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 var (
-	// These come from https://github.com/line/cosmwasm/tree/main/contracts.
+	// These come from https://github.com/Finschia/cosmwasm/tree/main/contracts.
 	// Hashes of them are in testdata directory.
 	calleeContract     = mustLoad("./testdata/dynamic_callee_contract.wasm")
 	callerContract     = mustLoad("./testdata/dynamic_caller_contract.wasm")

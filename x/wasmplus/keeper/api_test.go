@@ -5,12 +5,12 @@ import (
 	"io/ioutil"
 	"testing"
 
-	sdk "github.com/line/lbm-sdk/types"
-	wasmvm "github.com/line/wasmvm"
+	sdk "github.com/Finschia/finschia-sdk/types"
+	wasmvm "github.com/Finschia/wasmvm"
 
-	"github.com/line/wasmd/x/wasm/keeper"
-	wasmkeeper "github.com/line/wasmd/x/wasm/keeper"
-	wasmvmtypes "github.com/line/wasmvm/types"
+	"github.com/Finschia/wasmd/x/wasm/keeper"
+	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

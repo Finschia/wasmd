@@ -12,6 +12,8 @@
 
 ### Breaking Changes
 * [\#41](https://github.com/Finschia/wasmd/pull/41) add `cosmwasmAPIGenerator` to keeper
+* [\#26](https://github.com/Finschia/wasmd/pull/26) implement CallCallablePoint and ValidateDynamicLinkInterface to cosmwasmAPI
+* [\#29](https://github.com/Finschia/wasmd/pull/29) remove getContractEnv from cosmwasmAPI
 
 ### Build, CI
 
@@ -19,10 +21,6 @@
 
 
 ## [v0.1.3](https://github.com/Finschia/wasmd/releases/tag/v0.1.3) - 2023.04.19
-
-### Breaking Changes
-* [\#26](https://github.com/Finschia/wasmd/pull/26) implement CallCallablePoint and ValidateDynamicLinkInterface to cosmwasmAPI
-* [\#29](https://github.com/Finschia/wasmd/pull/29) remove getContractEnv from cosmwasmAPI
 
 ### Build, CI
 * [\#30](https://github.com/Finschia/wasmd/pull/30) replace line repositories with finschia repositories

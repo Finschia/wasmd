@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/require"
 	dbm "github.com/tendermint/tm-db"
 
-	sdk "github.com/line/lbm-sdk/types"
+	sdk "github.com/Finschia/finschia-sdk/types"
 
-	"github.com/line/wasmd/x/wasm/types"
+	"github.com/Finschia/wasmd/x/wasm/types"
 )
 
 func BenchmarkAPI(b *testing.B) {
