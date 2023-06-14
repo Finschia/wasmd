@@ -293,16 +293,20 @@ find out the entire path for the events.
 | wasm-{customEventType} | {customContractAttributeKey} | {customContractAttributeKey}   | (optional) Defined by wasm contract developer |
 
 #### MsgUpdateAdmin
-| Type    | Attribute Key     | Attribute Value   | Note                      |
-|---------|-------------------|-------------------|---------------------------|
-| message | module            | wasm              |                           |
-| message | sender            | {senderAddress}   |                           |
+| Type                  | Attribute Key     | Attribute Value    | Note |
+|-----------------------|-------------------|--------------------|------|
+| message               | module            | wasm               |      |
+| message               | sender            | {senderAddress}    |      |
+| update_contract_admin | _contract_address | {contract_address} |      |
+| update_contract_admin | new_admin_address | {adminAddress}     |      |
 
 #### MsgClearAdmin
-| Type    | Attribute Key     | Attribute Value   | Note                      |
-|---------|-------------------|-------------------|---------------------------|
-| message | module            | wasm              |                           |
-| message | sender            | {senderAddress}   |                           |
+| Type                  | Attribute Key     | Attribute Value    | Note         |
+|-----------------------|-------------------|--------------------|--------------|
+| message               | module            | wasm               |              |
+| message               | sender            | {senderAddress}    |              |
+| update_contract_admin | _contract_address | {contract_address} |              |
+| update_contract_admin | new_admin_address | ""                 | empty string |
 
 ### Keeper Events
 In addition to message events, the wasm keeper will produce events when the following methods are called (or any method which ends up calling them)
@@ -334,13 +338,26 @@ In addition to message events, the wasm keeper will produce events when the foll
 |------------|---------------|-----------------|------|
 | unpin_code | code_id       | {codeID}        |      |
 
+#### SetContractAdmin
+| Type                  | Attribute Key     | Attribute Value    | Note |
+|-----------------------|-------------------|--------------------|------|
+| update_contract_admin | _contract_address | {contract_address} |      |
+| update_contract_admin | new_admin_address | {adminAddress}     |      |
+
+#### SetAccessConfig
+By governance
+
+| Type                      | Attribute Key   | Attribute Value | Note |
+|---------------------------|-----------------|-----------------|------|
+| update_code_access_config | code_permission | {String}        |      |
+| update_code_access_config | code_id         | {String}        |      |
+
 ### Proposal Events
 If you use wasm proposal, it makes common event like below.
 
 | Type                | Attribute Key | Attribute Value    | Note |
 |---------------------|---------------|--------------------|------|
 | gov_contract_result | result        | {resultOfProposal} |      |
-
 
 ## Messages
 
