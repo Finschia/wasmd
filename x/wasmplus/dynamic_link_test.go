@@ -89,9 +89,9 @@ func TestDynamicPingPongWorks(t *testing.T) {
 	res, err = h(data.ctx, &executeMsg)
 	require.NoError(t, err)
 
-	assert.Equal(t, len(res.Events), 3)
+	assert.Equal(t, 3, len(res.Events))
 	assert.Equal(t, "wasm", res.Events[2].Type)
-	assert.Equal(t, len(res.Events[2].Attributes), 6)
+	assert.Equal(t, 7, len(res.Events[2].Attributes))
 	assertAttribute(t, "returned_pong", "101", res.Events[2].Attributes[1])
 	assertAttribute(t, "returned_pong_with_struct", "hello world 101", res.Events[2].Attributes[2])
 	assertAttribute(t, "returned_pong_with_tuple", "(hello world, 42)", res.Events[2].Attributes[3])
@@ -330,9 +330,9 @@ func TestDynamicCallAndTraditionalQueryWork(t *testing.T) {
 	}
 	res, err = h(data.ctx, &executeMsg)
 	require.NoError(t, err)
-	assert.Equal(t, len(res.Events), 3)
+	assert.Equal(t, 3, len(res.Events))
 	assert.Equal(t, "wasm", res.Events[2].Type)
-	assert.Equal(t, len(res.Events[2].Attributes), 3)
+	assert.Equal(t, 3, len(res.Events[2].Attributes))
 	assertAttribute(t, "value_by_dynamic", "42", res.Events[2].Attributes[1])
 	assertAttribute(t, "value_by_query", "42", res.Events[2].Attributes[2])
 
@@ -343,6 +343,82 @@ func TestDynamicCallAndTraditionalQueryWork(t *testing.T) {
 	qRes, qErr = q(data.ctx, queryPath, dynQueryReq)
 	require.NoError(t, qErr)
 	assert.Equal(t, []byte(`{"value":42}`), qRes)
+}
+
+func TestDynamicCallGetCallerAddressWorksWithThreeContracts(t *testing.T) {
+	// setup
+	data := setupTest(t)
+
+	h := data.module.Route().Handler()
+
+	// store dynamic callee code
+	storeCalleeMsg := &wasm.MsgStoreCode{
+		Sender:       addr1,
+		WASMByteCode: calleeContract,
+	}
+	res, err := h(data.ctx, storeCalleeMsg)
+	require.NoError(t, err)
+
+	calleeCodeId := uint64(1)
+	assertStoreCodeResponse(t, res.Data, calleeCodeId)
+
+	// store dynamic caller code
+	storeCallerMsg := &wasm.MsgStoreCode{
+		Sender:       addr1,
+		WASMByteCode: callerContract,
+	}
+	res, err = h(data.ctx, storeCallerMsg)
+	require.NoError(t, err)
+
+	callerCodeId := uint64(2)
+	assertStoreCodeResponse(t, res.Data, callerCodeId)
+
+	// instantiate callee contract1
+	instantiateCalleeMsg := &wasm.MsgInstantiateContract{
+		Sender: addr1,
+		CodeID: calleeCodeId,
+		Label:  "callee",
+		Msg:    []byte(`{}`),
+		Funds:  nil,
+	}
+	res, err = h(data.ctx, instantiateCalleeMsg)
+	require.NoError(t, err)
+	calleeContractAddress1 := parseInitResponse(t, res.Data)
+
+	// instantiate callee contract2
+	res, err = h(data.ctx, instantiateCalleeMsg)
+	require.NoError(t, err)
+	calleeContractAddress2 := parseInitResponse(t, res.Data)
+
+	// instantiate caller contract
+	cosmwasmInstantiateCallerMsg := fmt.Sprintf(`{"callee_addr":"%s"}`, calleeContractAddress1)
+	instantiateCallerMsg := &wasm.MsgInstantiateContract{
+		Sender: addr1,
+		CodeID: callerCodeId,
+		Label:  "caller",
+		Msg:    []byte(cosmwasmInstantiateCallerMsg),
+		Funds:  nil,
+	}
+	res, err = h(data.ctx, instantiateCallerMsg)
+	require.NoError(t, err)
+	callerContractAddress := parseInitResponse(t, res.Data)
+
+	// execute
+	cosmwasmExecuteMsg := fmt.Sprintf(`{"call_caller_address_of":{"target":"%s"}}`, calleeContractAddress2)
+	executeMsg := wasm.MsgExecuteContract{
+		Sender:   addr1,
+		Contract: callerContractAddress,
+		Msg:      []byte(cosmwasmExecuteMsg),
+		Funds:    nil,
+	}
+
+	res, err = h(data.ctx, &executeMsg)
+	require.NoError(t, err)
+	assert.Equal(t, 3, len(res.Events))
+	assert.Equal(t, "wasm", res.Events[2].Type)
+	assert.Equal(t, 2, len(res.Events[2].Attributes))
+	assertAttribute(t, "call_caller_address_is_as_expected", "true", res.Events[2].Attributes[1])
+
 }
 
 // This tests dynamic call with writing something to storage fails
