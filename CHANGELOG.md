@@ -14,6 +14,7 @@
 ### Build, CI
 
 ### Document Updates
+* [\#54](https://github.com/Finschia/wasmd/pull/54) add documentation about errors (codespace and codes)
 
 
 ## [v0.1.4](https://github.com/Finschia/wasmd/releases/tag/v0.1.4) - 2023.05.22

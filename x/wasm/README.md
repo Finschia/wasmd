@@ -363,6 +363,37 @@ If you use wasm proposal, it makes common event like below.
 
 TODO
 
+## Errors
+
+| Error Name                 |Codespace|Code| Description                                                                         |
+|----------------------------|---------|----|-------------------------------------------------------------------------------------|
+| ErrCreateFailed            | wasm    | 2  | Error for wasm code that has already been uploaded or failed                        |
+| ErrAccountExists           | wasm    | 3  | Error for a contract account that already exists                                    |
+| ErrInstantiateFailed       | wasm    | 4  | Error for rust instantiate contract failure                                         |
+| ErrExecuteFailed           | wasm    | 5  | Error for rust execution contract failure                                           |
+| ErrGasLimit                | wasm    | 6  | Error for out of gas                                                                |
+| ErrInvalidGenesis          | wasm    | 7  | Error for invalid genesis file syntax                                               |
+| ErrNotFound                | wasm    | 8  | Error for an entry not found in the store                                           |
+| ErrQueryFailed             | wasm    | 9  | Error for rust smart query contract failure                                         |
+| ErrInvalidMsg              | wasm    | 10 | Error when we cannot process the error returned from the contract                   |
+| ErrMigrationFailed         | wasm    | 11 | Error for rust execution contract failure                                           |
+| ErrEmpty                   | wasm    | 12 | Error for empty content                                                             |
+| ErrLimit                   | wasm    | 13 | Error for content that exceeds a limit                                              |
+| ErrInvalid                 | wasm    | 14 | Error for content that is invalid in this context                                   |
+| ErrDuplicate               | wasm    | 15 | Error for content that exists                                                       |
+| ErrMaxIBCChannels          | wasm    | 16 | Error for maximum number of ibc channels reached                                    |
+| ErrUnsupportedForContract  | wasm    | 17 | Error when a capability is used that is not supported for/ by this contract         |
+| ErrPinContractFailed       | wasm    | 18 | Error for pinning contract failures                                                 |
+| ErrUnpinContractFailed     | wasm    | 19 | Error for unpinning contract failures                                               |
+| ErrUnknownMsg              | wasm    | 20 | Error by a message handler to show that it is not responsible for this message type |
+| ErrInvalidEvent            | wasm    | 21 | Error if an attribute/event from the contract is invalid                            |
+| _                          | wasm    | 22 | Error if an address does not belong to a contract (just for registration)           |
+| ErrNotAJSONObject          | wasm    | 23 | Error if given data is not a JSON object                                            |
+| ErrNoTopLevelKey           | wasm    | 24 | Error if a JSON object has no top-level key                                         |
+| ErrMultipleTopLevelKeys    | wasm    | 25 | Error if a JSON object has more than one top-level key                              |
+| ErrTopKevelKeyNotAllowed   | wasm    | 26 | Error if a JSON object has a top-level key that is not allowed                      |
+| ErrExceedMaxQueryStackSize | wasm    | 27 | Error if max query stack size is exceeded                                           |
+
 ## CLI
 
 TODO - working, but not the nicest interface (json + bash = bleh). Use to upload, but I suggest to focus on frontend / js tooling
