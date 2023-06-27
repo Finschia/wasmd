@@ -19,6 +19,7 @@
       * [UnpinCode](#unpincode)
     * [Proposal Events](#proposal-events)
   * [Messages](#messages)
+  * [Errors](#errors)
   * [CLI](#cli)
   * [Rest](#rest)
 <!-- TOC -->
