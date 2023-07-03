@@ -8,6 +8,7 @@
 * [\#36](https://github.com/Finschia/wasmd/pull/36) separate `x/wasm` into `x/wasmplus` module of dynamiclink
 
 ### Bug Fixes
+* [\#57](https://github.com/Finschia/wasmd/pull/57) fix dynamic link APIs do not panic with invalid bech32
 * [\#35](https://github.com/Finschia/wasmd/pull/35) stop wrap twice the response of handling non-plus wasm message in plus handler
 
 ### Breaking Changes
