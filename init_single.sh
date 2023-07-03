@@ -15,7 +15,7 @@ then
     mode="testnet"
 fi
 
-WASMD=${WASMD:-wasmplusd}
+WASMD=${WASMD:-wasmd}
 
 # initialize
 rm -rf ~/.wasmplusd
