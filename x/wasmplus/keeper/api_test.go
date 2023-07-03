@@ -227,6 +227,18 @@ func TestCallCallablePoint(t *testing.T) {
 		// reset inactive contracts
 		keepers.WasmKeeper.deleteInactiveContract(ctx, contractAddr)
 	})
+
+	t.Run("fail with invalid callee address", func(t *testing.T) {
+		argsEv := [][]byte{eventsInBin}
+		argsEvBin, err := json.Marshal(argsEv)
+		require.NoError(t, err)
+		name := "add_events_dyn"
+		nameBin, err := json.Marshal(name)
+		require.NoError(t, err)
+		invalidAddr := "invalidAddr"
+		_, _, err = api.CallCallablePoint(invalidAddr, nameBin, argsEvBin, false, callstackBin, gasLimit)
+		assert.ErrorContains(t, err, "specified callee address is invalid")
+	})
 }
 
 func TestValidateDynamicLinkInterface(t *testing.T) {
@@ -287,5 +299,13 @@ func TestValidateDynamicLinkInterface(t *testing.T) {
 
 		// reset inactive contracts
 		keepers.WasmKeeper.deleteInactiveContract(ctx, contractAddr)
+	})
+
+	t.Run("fail with invalid contract address", func(t *testing.T) {
+		validInterface := []byte(`[{"name":"add_event_dyn","ty":{"params":["I32","I32","I32"],"results":[]}},{"name":"add_events_dyn","ty":{"params":["I32","I32"],"results":[]}},{"name":"add_attribute_dyn","ty":{"params":["I32","I32","I32"],"results":[]}},{"name":"add_attributes_dyn","ty":{"params":["I32","I32"],"results":[]}}]`)
+		invalidAddr := "invalidAddr"
+		_, _, err = api.ValidateInterface(invalidAddr, validInterface)
+
+		assert.ErrorContains(t, err, "specified contract address is invalid")
 	})
 }

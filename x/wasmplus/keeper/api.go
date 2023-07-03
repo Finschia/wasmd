@@ -19,7 +19,11 @@ type cosmwasmAPIGeneratorImpl struct {
 }
 
 func (a cosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, args []byte, isReadonly bool, callstack []byte, gasLimit uint64) ([]byte, uint64, error) {
-	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
+	contractAddr, err := sdk.AccAddressFromBech32(contractAddrStr)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("specified callee address is invalid: %s", err)
+	}
 
 	if a.keeper.IsInactiveContract(*a.ctx, contractAddr) {
 		return nil, 0, fmt.Errorf("called contract cannot be executed")
@@ -29,7 +33,11 @@ func (a cosmwasmAPIImpl) callCallablePoint(contractAddrStr string, name []byte, 
 }
 
 func (a cosmwasmAPIImpl) validateInterface(contractAddrStr string, expectedInterface []byte) ([]byte, uint64, error) {
-	contractAddr := sdk.MustAccAddressFromBech32(contractAddrStr)
+	contractAddr, err := sdk.AccAddressFromBech32(contractAddrStr)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("specified contract address is invalid: %s", err)
+	}
 
 	if a.keeper.IsInactiveContract(*a.ctx, contractAddr) {
 		return nil, 0, fmt.Errorf("try to validate a contract cannot be executed")
