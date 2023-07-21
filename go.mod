@@ -1,6 +1,6 @@
 module github.com/Finschia/wasmd
 
-go 1.18
+go 1.20
 
 require (
 	github.com/Finschia/finschia-sdk v0.47.0-rc6
