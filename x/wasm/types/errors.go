@@ -71,7 +71,8 @@ var (
 	ErrInvalidEvent = sdkErrors.Register(DefaultCodespace, 21, "invalid event")
 
 	//  error if an address does not belong to a contract (just for registration)
-	_ = sdkErrors.Register(DefaultCodespace, 22, "no such contract")
+	// CosmWasm/wasmd#1161 would update this line.
+	_ = sdkErrors.Register(DefaultCodespace, 22, "no such contract") //nolint:errcheck
 
 	// ErrNotAJSONObject error if given data is not a JSON object
 	ErrNotAJSONObject = sdkErrors.Register(DefaultCodespace, 23, "not a JSON object")
