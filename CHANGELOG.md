@@ -12,6 +12,7 @@
 ### Breaking Changes
 
 ### Build, CI
+* [\#60](https://github.com/Finschia/wasmd/pull/60) Update golang version to 1.20
 
 ### Document Updates
 * [\#54](https://github.com/Finschia/wasmd/pull/54) add documentation about errors (codespace and codes)
