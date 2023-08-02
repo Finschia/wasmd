@@ -11,8 +11,8 @@ import (
 	"github.com/Finschia/finschia-sdk/store"
 	sdk "github.com/Finschia/finschia-sdk/types"
 	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 
 	"github.com/Finschia/wasmd/x/wasm/keeper/wasmtesting"
 	"github.com/Finschia/wasmd/x/wasm/types"

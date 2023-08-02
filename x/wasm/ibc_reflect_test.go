@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	ibctesting "github.com/cosmos/ibc-go/v4/testing"
-	wasmvmtypes "github.com/Finschia/wasmvm/types"
 
 	wasmibctesting "github.com/Finschia/wasmd/x/wasm/ibctesting"
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"

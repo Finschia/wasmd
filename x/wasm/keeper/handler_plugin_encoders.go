@@ -11,10 +11,10 @@ import (
 	distributiontypes "github.com/Finschia/finschia-sdk/x/distribution/types"
 	govtypes "github.com/Finschia/finschia-sdk/x/gov/types"
 	stakingtypes "github.com/Finschia/finschia-sdk/x/staking/types"
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	wasmvmtypes "github.com/Finschia/wasmvm/types"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )

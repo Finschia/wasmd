@@ -22,6 +22,10 @@ import (
 	capabilitytypes "github.com/Finschia/finschia-sdk/x/capability/types"
 	"github.com/Finschia/finschia-sdk/x/staking/teststaking"
 	stakingtypes "github.com/Finschia/finschia-sdk/x/staking/types"
+	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/Finschia/ostracon/crypto/tmhash"
+	octypes "github.com/Finschia/ostracon/types"
+	ocversion "github.com/Finschia/ostracon/version"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	commitmenttypes "github.com/cosmos/ibc-go/v4/modules/core/23-commitment/types"
@@ -31,10 +35,6 @@ import (
 	ibctmtypes "github.com/cosmos/ibc-go/v4/modules/light-clients/07-tendermint/types"
 	ibctesting "github.com/cosmos/ibc-go/v4/testing"
 	"github.com/cosmos/ibc-go/v4/testing/mock"
-	ocabci "github.com/Finschia/ostracon/abci/types"
-	"github.com/Finschia/ostracon/crypto/tmhash"
-	octypes "github.com/Finschia/ostracon/types"
-	ocversion "github.com/Finschia/ostracon/version"
 
 	"github.com/Finschia/wasmd/app"
 	"github.com/Finschia/wasmd/app/params"
@@ -64,8 +64,8 @@ type TestChain struct {
 	QueryServer   types.QueryServer
 	TxConfig      client.TxConfig
 	Codec         codec.BinaryCodec
-	Vals     *octypes.ValidatorSet
-	NextVals *octypes.ValidatorSet
+	Vals          *octypes.ValidatorSet
+	NextVals      *octypes.ValidatorSet
 
 	// Signers is a map from validator address to the PrivValidator
 	// The map is converted into an array that is the same order as the validators right before signing commit

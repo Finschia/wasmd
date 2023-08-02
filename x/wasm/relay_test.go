@@ -11,12 +11,12 @@ import (
 
 	sdk "github.com/Finschia/finschia-sdk/types"
 	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
+	wasmvm "github.com/Finschia/wasmvm"
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	ibctesting "github.com/cosmos/ibc-go/v4/testing"
-	wasmvm "github.com/Finschia/wasmvm"
-	wasmvmtypes "github.com/Finschia/wasmvm/types"
 
 	wasmibctesting "github.com/Finschia/wasmd/x/wasm/ibctesting"
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"

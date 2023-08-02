@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	ocabci "github.com/Finschia/ostracon/abci/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 	ibctesting "github.com/cosmos/ibc-go/v4/testing"
-	ocabci "github.com/Finschia/ostracon/abci/types"
 
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
 )

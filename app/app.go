@@ -15,6 +15,7 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
+	ocabci "github.com/Finschia/ostracon/abci/types"
 	ica "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/controller/keeper"
 	icacontrollertypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/controller/types"
@@ -35,7 +36,6 @@ import (
 	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
-	ocabci "github.com/Finschia/ostracon/abci/types"
 
 	"github.com/Finschia/finschia-sdk/baseapp"
 	"github.com/Finschia/finschia-sdk/client"
@@ -546,17 +546,17 @@ func NewWasmApp(
 	transferStack = ibcfee.NewIBCMiddleware(transferStack, app.IBCFeeKeeper)
 
 	/*
-	// Create Interchain Accounts Stack
-	// SendPacket, since it is originating from the application to core IBC:
-	// icaAuthModuleKeeper.SendTx -> icaController.SendPacket -> fee.SendPacket -> channel.SendPacket
+		// Create Interchain Accounts Stack
+		// SendPacket, since it is originating from the application to core IBC:
+		// icaAuthModuleKeeper.SendTx -> icaController.SendPacket -> fee.SendPacket -> channel.SendPacket
 
-	// Note: please do your research before using this in production app, this is a demo and not an officially
-	// supported IBC team implementation. Do your own research before using it.
-	var icaControllerStack porttypes.IBCModule
-	// You will likely want to use your own reviewed and maintained ica auth module
-	icaControllerStack = intertx.NewIBCModule(app.InterTxKeeper)
-	icaControllerStack = icacontroller.NewIBCMiddleware(icaControllerStack, app.ICAControllerKeeper)
-	icaControllerStack = ibcfee.NewIBCMiddleware(icaControllerStack, app.IBCFeeKeeper)
+		// Note: please do your research before using this in production app, this is a demo and not an officially
+		// supported IBC team implementation. Do your own research before using it.
+		var icaControllerStack porttypes.IBCModule
+		// You will likely want to use your own reviewed and maintained ica auth module
+		icaControllerStack = intertx.NewIBCModule(app.InterTxKeeper)
+		icaControllerStack = icacontroller.NewIBCMiddleware(icaControllerStack, app.ICAControllerKeeper)
+		icaControllerStack = ibcfee.NewIBCMiddleware(icaControllerStack, app.IBCFeeKeeper)
 	*/
 
 	// RecvPacket, message that originates from core IBC and goes down to app, the flow is:

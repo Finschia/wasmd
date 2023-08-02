@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	wasmvmtypes "github.com/Finschia/wasmvm/types"
 )
 
 func TestMapToWasmVMIBCPacket(t *testing.T) {

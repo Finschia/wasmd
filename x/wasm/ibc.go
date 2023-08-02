@@ -6,11 +6,11 @@ import (
 	sdk "github.com/Finschia/finschia-sdk/types"
 	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
 	capabilitytypes "github.com/Finschia/finschia-sdk/x/capability/types"
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
 	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
-	wasmvmtypes "github.com/Finschia/wasmvm/types"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )
