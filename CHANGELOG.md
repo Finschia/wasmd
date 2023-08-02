@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/Finschia/wasmd/compare/v0.1.4...HEAD)
 
 ### Features
+* [\#61](https://github.com/Finschia/wasmd/pull/61) bumpup ibc-go to v4
 
 ### Improvements
 
@@ -24,7 +25,7 @@
 * [\#46](https://github.com/Finschia/wasmd/pull/46) add admin-related events
 
 ### Improvements
-* [\#43](https://github.com/Finschia/wasmd/pull/43) delete unnecessary test 
+* [\#43](https://github.com/Finschia/wasmd/pull/43) delete unnecessary test
 
 ### Bug Fixes
 * [\#35](https://github.com/Finschia/wasmd/pull/35) stop wrap twice the response of handling non-plus wasm message in plus handler
