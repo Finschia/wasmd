@@ -653,7 +653,7 @@ func NewWasmApp(
 		ibchost.ModuleName,
 		icatypes.ModuleName,
 		ibcfeetypes.ModuleName,
-		//intertxtypes.ModuleName,
+		// intertxtypes.ModuleName,
 		wasm.ModuleName,
 	)
 
