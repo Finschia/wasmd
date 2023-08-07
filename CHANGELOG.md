@@ -8,6 +8,7 @@
 ### Improvements
 
 ### Bug Fixes
+* [\#62](https://github.com/Finschia/wasmd/pull/62) fill ContractHistory querier result's Updated field
 * [\#52](https://github.com/Finschia/wasmd/pull/52) fix cli_test error of wasmplus and add cli_test ci
 
 ### Breaking Changes
