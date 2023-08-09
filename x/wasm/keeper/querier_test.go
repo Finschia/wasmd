@@ -221,7 +221,7 @@ func TestQueryRawContractState(t *testing.T) {
 	specs := map[string]struct {
 		srcQuery *types.QueryRawContractStateRequest
 		expData  []byte
-		expErr   *sdkErrors.Error
+		expErr   error
 	}{
 		"query raw key": {
 			srcQuery: &types.QueryRawContractStateRequest{Address: contractAddr, QueryData: []byte("foo")},
@@ -247,15 +247,19 @@ func TestQueryRawContractState(t *testing.T) {
 			srcQuery: &types.QueryRawContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte("foo")},
 			expErr:   types.ErrNotFound,
 		},
+		"req nil": {
+			srcQuery: nil,
+			expErr:   status.Error(codes.InvalidArgument, "empty request"),
+		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			got, err := q.RawContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
-			require.True(t, spec.expErr.Is(err), err)
 			if spec.expErr != nil {
-				return
+				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
+			} else {
+				assert.Equal(t, spec.expData, got.Data)
 			}
-			assert.Equal(t, spec.expData, got.Data)
 		})
 	}
 }
