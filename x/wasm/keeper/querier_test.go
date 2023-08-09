@@ -323,8 +323,9 @@ func TestQueryContractHistory(t *testing.T) {
 
 	specs := map[string]struct {
 		srcHistory []types.ContractCodeHistoryEntry
-		req        types.QueryContractHistoryRequest
+		req        *types.QueryContractHistoryRequest
 		expContent []types.ContractCodeHistoryEntry
+		expErr     error
 	}{
 		"response with internal fields cleared": {
 			srcHistory: []types.ContractCodeHistoryEntry{{
@@ -333,7 +334,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"init message"`),
 			}},
-			req: types.QueryContractHistoryRequest{Address: myContractBech32Addr},
+			req: &types.QueryContractHistoryRequest{Address: myContractBech32Addr},
 			expContent: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeGenesis,
 				CodeID:    firstCodeID,
@@ -357,7 +358,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"migrate message 2"`),
 			}},
-			req: types.QueryContractHistoryRequest{Address: myContractBech32Addr},
+			req: &types.QueryContractHistoryRequest{Address: myContractBech32Addr},
 			expContent: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeInit,
 				CodeID:    firstCodeID,
@@ -384,7 +385,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"migrate message 1"`),
 			}},
-			req: types.QueryContractHistoryRequest{
+			req: &types.QueryContractHistoryRequest{
 				Address: myContractBech32Addr,
 				Pagination: &query.PageRequest{
 					Offset: 1,
@@ -408,7 +409,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"migrate message 1"`),
 			}},
-			req: types.QueryContractHistoryRequest{
+			req: &types.QueryContractHistoryRequest{
 				Address: myContractBech32Addr,
 				Pagination: &query.PageRequest{
 					Limit: 1,
@@ -421,14 +422,18 @@ func TestQueryContractHistory(t *testing.T) {
 			}},
 		},
 		"unknown contract address": {
-			req: types.QueryContractHistoryRequest{Address: otherBech32Addr},
+			req: &types.QueryContractHistoryRequest{Address: otherBech32Addr},
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeGenesis,
 				CodeID:    firstCodeID,
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"init message"`),
 			}},
-			expContent: nil,
+			expErr: types.ErrEmpty,
+		},
+		"req nil": {
+			req:    nil,
+			expErr: status.Error(codes.InvalidArgument, "empty request"),
 		},
 	}
 	for msg, spec := range specs {
@@ -440,15 +445,19 @@ func TestQueryContractHistory(t *testing.T) {
 
 			// when
 			q := Querier(keeper)
-			got, err := q.ContractHistory(sdk.WrapSDKContext(xCtx), &spec.req)
+			got, err := q.ContractHistory(sdk.WrapSDKContext(xCtx), spec.req)
 
 			// then
-			if spec.expContent == nil {
-				require.Error(t, types.ErrEmpty)
-				return
+			if spec.expErr != nil {
+				if err != nil {
+					assert.Equal(t, spec.expErr, err)
+				} else {
+					require.Error(t, spec.expErr)
+				}
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, spec.expContent, got.Entries)
 			}
-			require.NoError(t, err)
-			assert.Equal(t, spec.expContent, got.Entries)
 		})
 	}
 }
