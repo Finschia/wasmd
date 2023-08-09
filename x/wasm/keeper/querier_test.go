@@ -620,7 +620,7 @@ func TestQueryContractInfo(t *testing.T) {
 		src    *types.QueryContractInfoRequest
 		stored types.ContractInfo
 		expRsp *types.QueryContractInfoResponse
-		expErr bool
+		expErr error
 	}{
 		"found": {
 			src:    &types.QueryContractInfoRequest{Address: contractAddr.String()},
@@ -645,7 +645,11 @@ func TestQueryContractInfo(t *testing.T) {
 		"not found": {
 			src:    &types.QueryContractInfoRequest{Address: RandomBech32AccountAddress(t)},
 			stored: types.ContractInfoFixture(),
-			expErr: true,
+			expErr: types.ErrNotFound,
+		},
+		"req nil": {
+			src:    nil,
+			expErr: status.Error(codes.InvalidArgument, "empty request"),
 		},
 	}
 	for name, spec := range specs {
@@ -654,12 +658,12 @@ func TestQueryContractInfo(t *testing.T) {
 			k.storeContractInfo(xCtx, contractAddr, &spec.stored)
 			// when
 			gotRsp, gotErr := querier.ContractInfo(sdk.WrapSDKContext(xCtx), spec.src)
-			if spec.expErr {
-				require.Error(t, gotErr)
-				return
+			if spec.expErr != nil {
+				require.True(t, errors.Is(gotErr, spec.expErr), "but got %+v", gotErr)
+			} else {
+				require.NoError(t, gotErr)
+				assert.Equal(t, spec.expRsp, gotRsp)
 			}
-			require.NoError(t, gotErr)
-			assert.Equal(t, spec.expRsp, gotRsp)
 		})
 	}
 }
