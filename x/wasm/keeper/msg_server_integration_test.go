@@ -30,6 +30,11 @@ func TestStoreCode(t *testing.T) {
 	// when
 	rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(ctx, msg)
 
+	// check event
+	require.Equal(t, 2, len(rsp.Events))
+	assert.Equal(t, "message", rsp.Events[0].Type)
+	assert.Equal(t, "store_code", rsp.Events[1].Type)
+
 	// then
 	require.NoError(t, err)
 	var result types.MsgStoreCodeResponse
