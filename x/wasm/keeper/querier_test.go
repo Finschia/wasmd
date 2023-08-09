@@ -147,15 +147,19 @@ func TestQuerySmartContractState(t *testing.T) {
 			srcQuery: &types.QuerySmartContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte(`{"verifier":{}}`)},
 			expErr:   types.ErrNotFound,
 		},
+		"req nil": {
+			srcQuery: nil,
+			expErr:   status.Error(codes.InvalidArgument, "empty request"),
+		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			got, err := q.SmartContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
-			require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
 			if spec.expErr != nil {
-				return
+				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
+			} else {
+				assert.JSONEq(t, string(got.Data), spec.expResp)
 			}
-			assert.JSONEq(t, string(got.Data), spec.expResp)
 		})
 	}
 }
