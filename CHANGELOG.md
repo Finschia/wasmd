@@ -6,6 +6,7 @@
 * [\#61](https://github.com/Finschia/wasmd/pull/61) bumpup ibc-go to v4
 
 ### Improvements
+* [\#63](https://github.com/Finschia/wasmd/pull/63) added because there was no event check
 
 ### Bug Fixes
 * [\#52](https://github.com/Finschia/wasmd/pull/52) fix cli_test error of wasmplus and add cli_test ci
