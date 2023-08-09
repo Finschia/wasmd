@@ -43,7 +43,7 @@ func TestQueryAllContractState(t *testing.T) {
 		srcQuery            *types.QueryAllContractStateRequest
 		expModelContains    []types.Model
 		expModelContainsNot []types.Model
-		expErr              *sdkErrors.Error
+		expErr              error
 	}{
 		"query all": {
 			srcQuery:         &types.QueryAllContractStateRequest{Address: contractAddr.String()},
@@ -95,19 +95,23 @@ func TestQueryAllContractState(t *testing.T) {
 				{Key: []byte{0x0, 0x1}, Value: []byte(`{"count":8}`)},
 			},
 		},
+		"req nil": {
+			srcQuery: nil,
+			expErr:   status.Error(codes.InvalidArgument, "empty request"),
+		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			got, err := q.AllContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
-			require.True(t, spec.expErr.Is(err), err)
 			if spec.expErr != nil {
-				return
-			}
-			for _, exp := range spec.expModelContains {
-				assert.Contains(t, got.Models, exp)
-			}
-			for _, exp := range spec.expModelContainsNot {
-				assert.NotContains(t, got.Models, exp)
+				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
+			} else {
+				for _, exp := range spec.expModelContains {
+					assert.Contains(t, got.Models, exp)
+				}
+				for _, exp := range spec.expModelContainsNot {
+					assert.NotContains(t, got.Models, exp)
+				}
 			}
 		})
 	}
