@@ -549,6 +549,7 @@ func TestQueryCodeList(t *testing.T) {
 		storedCodeIDs []uint64
 		req           types.QueryCodesRequest
 		expCodeIDs    []uint64
+		expErr        error
 	}{
 		"none": {},
 		"no gaps": {
@@ -567,6 +568,16 @@ func TestQueryCodeList(t *testing.T) {
 				},
 			},
 			expCodeIDs: []uint64{2, 3},
+		},
+		"with invalid pagination key": {
+			storedCodeIDs: []uint64{1, 2, 3},
+			req: types.QueryCodesRequest{
+				Pagination: &query.PageRequest{
+					Offset: 1,
+					Key:    []byte("test"),
+				},
+			},
+			expErr: fmt.Errorf("invalid request, either offset or key is expected, got both"),
 		},
 		"with pagination limit": {
 			storedCodeIDs: []uint64{1, 2, 3},
@@ -603,6 +614,10 @@ func TestQueryCodeList(t *testing.T) {
 			got, err := q.Codes(sdk.WrapSDKContext(xCtx), &spec.req)
 
 			// then
+			if spec.expErr != nil {
+				assert.Equal(t, spec.expErr, err)
+				return
+			}
 			require.NoError(t, err)
 			require.NotNil(t, got.CodeInfos)
 			require.Len(t, got.CodeInfos, len(spec.expCodeIDs))
