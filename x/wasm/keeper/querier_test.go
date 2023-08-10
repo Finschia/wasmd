@@ -335,6 +335,7 @@ func TestQueryContractHistory(t *testing.T) {
 		srcHistory []types.ContractCodeHistoryEntry
 		req        types.QueryContractHistoryRequest
 		expContent []types.ContractCodeHistoryEntry
+		expErr     error
 	}{
 		"response with internal fields cleared": {
 			srcHistory: []types.ContractCodeHistoryEntry{{
@@ -406,6 +407,23 @@ func TestQueryContractHistory(t *testing.T) {
 				Msg:       []byte(`"migrate message 1"`),
 			}},
 		},
+		"with invalid pagination key": {
+			srcHistory: []types.ContractCodeHistoryEntry{{
+				Operation: types.ContractCodeHistoryOperationTypeGenesis,
+				CodeID:    firstCodeID,
+				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Msg:       []byte(`"init message"`),
+			}},
+			req: types.QueryContractHistoryRequest{
+				Address: myContractBech32Addr,
+				Pagination: &query.PageRequest{
+					Offset: 1,
+					Key:    []byte("test"),
+				},
+			},
+			expErr: fmt.Errorf("invalid request, either offset or key is expected, got both"),
+		},
+
 		"with pagination limit": {
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeInit,
@@ -438,7 +456,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"init message"`),
 			}},
-			expContent: nil,
+			expErr: types.ErrEmpty,
 		},
 	}
 	for msg, spec := range specs {
@@ -453,8 +471,12 @@ func TestQueryContractHistory(t *testing.T) {
 			got, err := q.ContractHistory(sdk.WrapSDKContext(xCtx), &spec.req)
 
 			// then
-			if spec.expContent == nil {
-				require.Error(t, types.ErrEmpty)
+			if spec.expErr != nil {
+				if err != nil {
+					assert.Equal(t, spec.expErr, err)
+				} else {
+					require.Error(t, spec.expErr)
+				}
 				return
 			}
 			require.NoError(t, err)
