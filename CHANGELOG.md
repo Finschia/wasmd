@@ -6,6 +6,7 @@
 * [\#61](https://github.com/Finschia/wasmd/pull/61) bumpup ibc-go to v4
 
 ### Improvements
+* [\#66](https://github.com/Finschia/wasmd/pull/66) add test cases for invalid pagination key in some functions
 
 ### Bug Fixes
 * [\#52](https://github.com/Finschia/wasmd/pull/52) fix cli_test error of wasmplus and add cli_test ci
