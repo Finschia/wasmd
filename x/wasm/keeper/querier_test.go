@@ -95,7 +95,7 @@ func TestQueryAllContractState(t *testing.T) {
 				{Key: []byte{0x0, 0x1}, Value: []byte(`{"count":8}`)},
 			},
 		},
-		"req nil": {
+		"with empty request": {
 			srcQuery: nil,
 			expErr:   status.Error(codes.InvalidArgument, "empty request"),
 		},
@@ -105,13 +105,13 @@ func TestQueryAllContractState(t *testing.T) {
 			got, err := q.AllContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
 			if spec.expErr != nil {
 				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
-			} else {
-				for _, exp := range spec.expModelContains {
-					assert.Contains(t, got.Models, exp)
-				}
-				for _, exp := range spec.expModelContainsNot {
-					assert.NotContains(t, got.Models, exp)
-				}
+				return
+			}
+			for _, exp := range spec.expModelContains {
+				assert.Contains(t, got.Models, exp)
+			}
+			for _, exp := range spec.expModelContainsNot {
+				assert.NotContains(t, got.Models, exp)
 			}
 		})
 	}
@@ -147,7 +147,7 @@ func TestQuerySmartContractState(t *testing.T) {
 			srcQuery: &types.QuerySmartContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte(`{"verifier":{}}`)},
 			expErr:   types.ErrNotFound,
 		},
-		"req nil": {
+		"with empty request": {
 			srcQuery: nil,
 			expErr:   status.Error(codes.InvalidArgument, "empty request"),
 		},
@@ -157,9 +157,9 @@ func TestQuerySmartContractState(t *testing.T) {
 			got, err := q.SmartContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
 			if spec.expErr != nil {
 				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
-			} else {
-				assert.JSONEq(t, string(got.Data), spec.expResp)
+				return
 			}
+			assert.JSONEq(t, string(got.Data), spec.expResp)
 		})
 	}
 }
@@ -251,7 +251,7 @@ func TestQueryRawContractState(t *testing.T) {
 			srcQuery: &types.QueryRawContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte("foo")},
 			expErr:   types.ErrNotFound,
 		},
-		"req nil": {
+		"with empty request": {
 			srcQuery: nil,
 			expErr:   status.Error(codes.InvalidArgument, "empty request"),
 		},
@@ -261,9 +261,9 @@ func TestQueryRawContractState(t *testing.T) {
 			got, err := q.RawContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
 			if spec.expErr != nil {
 				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
-			} else {
-				assert.Equal(t, spec.expData, got.Data)
+				return
 			}
+			assert.Equal(t, spec.expData, got.Data)
 		})
 	}
 }
@@ -443,7 +443,7 @@ func TestQueryContractHistory(t *testing.T) {
 			}},
 			expErr: types.ErrEmpty,
 		},
-		"req nil": {
+		"with empty request": {
 			req:    nil,
 			expErr: status.Error(codes.InvalidArgument, "empty request"),
 		},
@@ -466,10 +466,10 @@ func TestQueryContractHistory(t *testing.T) {
 				} else {
 					require.Error(t, spec.expErr)
 				}
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, spec.expContent, got.Entries)
+				return
 			}
+			require.NoError(t, err)
+			assert.Equal(t, spec.expContent, got.Entries)
 		})
 	}
 }
@@ -580,7 +580,7 @@ func TestQueryCodeList(t *testing.T) {
 			},
 			expCodeIDs: []uint64{2, 3},
 		},
-		"req nil": {
+		"with empty request": {
 			req:    nil,
 			expErr: status.Error(codes.InvalidArgument, "empty request"),
 		},
@@ -602,13 +602,13 @@ func TestQueryCodeList(t *testing.T) {
 			// then
 			if spec.expErr != nil {
 				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, got.CodeInfos)
-				require.Len(t, got.CodeInfos, len(spec.expCodeIDs))
-				for i, exp := range spec.expCodeIDs {
-					assert.EqualValues(t, exp, got.CodeInfos[i].CodeID)
-				}
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, got.CodeInfos)
+			require.Len(t, got.CodeInfos, len(spec.expCodeIDs))
+			for i, exp := range spec.expCodeIDs {
+				assert.EqualValues(t, exp, got.CodeInfos[i].CodeID)
 			}
 		})
 	}
@@ -667,7 +667,7 @@ func TestQueryContractInfo(t *testing.T) {
 			stored: types.ContractInfoFixture(),
 			expErr: types.ErrNotFound,
 		},
-		"req nil": {
+		"with empty request": {
 			src:    nil,
 			expErr: status.Error(codes.InvalidArgument, "empty request"),
 		},
@@ -680,10 +680,10 @@ func TestQueryContractInfo(t *testing.T) {
 			gotRsp, gotErr := querier.ContractInfo(sdk.WrapSDKContext(xCtx), spec.src)
 			if spec.expErr != nil {
 				require.True(t, errors.Is(gotErr, spec.expErr), "but got %+v", gotErr)
-			} else {
-				require.NoError(t, gotErr)
-				assert.Equal(t, spec.expRsp, gotRsp)
+				return
 			}
+			require.NoError(t, gotErr)
+			assert.Equal(t, spec.expRsp, gotRsp)
 		})
 	}
 }
