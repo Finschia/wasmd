@@ -536,21 +536,26 @@ func TestQueryCodeList(t *testing.T) {
 
 	specs := map[string]struct {
 		storedCodeIDs []uint64
-		req           types.QueryCodesRequest
+		req           *types.QueryCodesRequest
 		expCodeIDs    []uint64
+		expErr        error
 	}{
-		"none": {},
+		"none": {
+			req: &types.QueryCodesRequest{},
+		},
 		"no gaps": {
 			storedCodeIDs: []uint64{1, 2, 3},
+			req:           &types.QueryCodesRequest{},
 			expCodeIDs:    []uint64{1, 2, 3},
 		},
 		"with gaps": {
 			storedCodeIDs: []uint64{2, 4, 6},
+			req:           &types.QueryCodesRequest{},
 			expCodeIDs:    []uint64{2, 4, 6},
 		},
 		"with pagination offset": {
 			storedCodeIDs: []uint64{1, 2, 3},
-			req: types.QueryCodesRequest{
+			req: &types.QueryCodesRequest{
 				Pagination: &query.PageRequest{
 					Offset: 1,
 				},
@@ -559,7 +564,7 @@ func TestQueryCodeList(t *testing.T) {
 		},
 		"with pagination limit": {
 			storedCodeIDs: []uint64{1, 2, 3},
-			req: types.QueryCodesRequest{
+			req: &types.QueryCodesRequest{
 				Pagination: &query.PageRequest{
 					Limit: 2,
 				},
@@ -568,12 +573,16 @@ func TestQueryCodeList(t *testing.T) {
 		},
 		"with pagination next key": {
 			storedCodeIDs: []uint64{1, 2, 3},
-			req: types.QueryCodesRequest{
+			req: &types.QueryCodesRequest{
 				Pagination: &query.PageRequest{
 					Key: fromBase64("AAAAAAAAAAI="),
 				},
 			},
 			expCodeIDs: []uint64{2, 3},
+		},
+		"req nil": {
+			req:    nil,
+			expErr: status.Error(codes.InvalidArgument, "empty request"),
 		},
 	}
 
@@ -589,14 +598,17 @@ func TestQueryCodeList(t *testing.T) {
 			}
 			// when
 			q := Querier(keeper)
-			got, err := q.Codes(sdk.WrapSDKContext(xCtx), &spec.req)
-
+			got, err := q.Codes(sdk.WrapSDKContext(xCtx), spec.req)
 			// then
-			require.NoError(t, err)
-			require.NotNil(t, got.CodeInfos)
-			require.Len(t, got.CodeInfos, len(spec.expCodeIDs))
-			for i, exp := range spec.expCodeIDs {
-				assert.EqualValues(t, exp, got.CodeInfos[i].CodeID)
+			if spec.expErr != nil {
+				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, got.CodeInfos)
+				require.Len(t, got.CodeInfos, len(spec.expCodeIDs))
+				for i, exp := range spec.expCodeIDs {
+					assert.EqualValues(t, exp, got.CodeInfos[i].CodeID)
+				}
 			}
 		})
 	}
