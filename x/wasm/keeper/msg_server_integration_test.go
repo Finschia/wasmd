@@ -33,7 +33,17 @@ func TestStoreCode(t *testing.T) {
 	// check event
 	require.Equal(t, 2, len(rsp.Events))
 	assert.Equal(t, "message", rsp.Events[0].Type)
+	assert.Equal(t, 2, len(rsp.Events[0].Attributes))
+	assert.Equal(t, "module", string(rsp.Events[0].Attributes[0].Key))
+	assert.Equal(t, "wasm", string(rsp.Events[0].Attributes[0].Value))
+	assert.Equal(t, "sender", string(rsp.Events[0].Attributes[1].Key))
+	assert.Equal(t, sender.String(), string(rsp.Events[0].Attributes[1].Value))
 	assert.Equal(t, "store_code", rsp.Events[1].Type)
+	assert.Equal(t, 2, len(rsp.Events[1].Attributes))
+	assert.Equal(t, "code_checksum", string(rsp.Events[1].Attributes[0].Key))
+	assert.Equal(t, hex.EncodeToString(expHash[:]), string(rsp.Events[1].Attributes[0].Value))
+	assert.Equal(t, "code_id", string(rsp.Events[1].Attributes[1].Key))
+	assert.Equal(t, "1", string(rsp.Events[1].Attributes[1].Value))
 
 	// then
 	require.NoError(t, err)
