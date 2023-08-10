@@ -6,6 +6,8 @@
 * [\#61](https://github.com/Finschia/wasmd/pull/61) bumpup ibc-go to v4
 
 ### Improvements
+* [\#63](https://github.com/Finschia/wasmd/pull/63) add event checking to TestStoreCode
+* [\#65](https://github.com/Finschia/wasmd/pull/65) add test cases for empty request in each function
 * [\#66](https://github.com/Finschia/wasmd/pull/66) add test cases for invalid pagination key in some functions
 
 ### Bug Fixes

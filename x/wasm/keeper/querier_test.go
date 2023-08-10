@@ -105,12 +105,16 @@ func TestQueryAllContractState(t *testing.T) {
 				{Key: []byte{0x0, 0x1}, Value: []byte(`{"count":8}`)},
 			},
 		},
+		"with empty request": {
+			srcQuery: nil,
+			expErr:   status.Error(codes.InvalidArgument, "empty request"),
+		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			got, err := q.AllContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
 			if spec.expErr != nil {
-				assert.Equal(t, spec.expErr, err)
+				require.Equal(t, spec.expErr, err, "but got %+v", err)
 				return
 			}
 			for _, exp := range spec.expModelContains {
@@ -153,12 +157,16 @@ func TestQuerySmartContractState(t *testing.T) {
 			srcQuery: &types.QuerySmartContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte(`{"verifier":{}}`)},
 			expErr:   types.ErrNotFound,
 		},
+		"with empty request": {
+			srcQuery: nil,
+			expErr:   status.Error(codes.InvalidArgument, "empty request"),
+		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			got, err := q.SmartContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
-			require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
 			if spec.expErr != nil {
+				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
 				return
 			}
 			assert.JSONEq(t, string(got.Data), spec.expResp)
@@ -227,7 +235,7 @@ func TestQueryRawContractState(t *testing.T) {
 	specs := map[string]struct {
 		srcQuery *types.QueryRawContractStateRequest
 		expData  []byte
-		expErr   *sdkErrors.Error
+		expErr   error
 	}{
 		"query raw key": {
 			srcQuery: &types.QueryRawContractStateRequest{Address: contractAddr, QueryData: []byte("foo")},
@@ -253,12 +261,16 @@ func TestQueryRawContractState(t *testing.T) {
 			srcQuery: &types.QueryRawContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte("foo")},
 			expErr:   types.ErrNotFound,
 		},
+		"with empty request": {
+			srcQuery: nil,
+			expErr:   status.Error(codes.InvalidArgument, "empty request"),
+		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			got, err := q.RawContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
-			require.True(t, spec.expErr.Is(err), err)
 			if spec.expErr != nil {
+				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
 				return
 			}
 			assert.Equal(t, spec.expData, got.Data)
@@ -333,7 +345,7 @@ func TestQueryContractHistory(t *testing.T) {
 
 	specs := map[string]struct {
 		srcHistory []types.ContractCodeHistoryEntry
-		req        types.QueryContractHistoryRequest
+		req        *types.QueryContractHistoryRequest
 		expContent []types.ContractCodeHistoryEntry
 		expErr     error
 	}{
@@ -344,7 +356,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"init message"`),
 			}},
-			req: types.QueryContractHistoryRequest{Address: myContractBech32Addr},
+			req: &types.QueryContractHistoryRequest{Address: myContractBech32Addr},
 			expContent: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeGenesis,
 				CodeID:    firstCodeID,
@@ -368,7 +380,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"migrate message 2"`),
 			}},
-			req: types.QueryContractHistoryRequest{Address: myContractBech32Addr},
+			req: &types.QueryContractHistoryRequest{Address: myContractBech32Addr},
 			expContent: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeInit,
 				CodeID:    firstCodeID,
@@ -395,7 +407,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"migrate message 1"`),
 			}},
-			req: types.QueryContractHistoryRequest{
+			req: &types.QueryContractHistoryRequest{
 				Address: myContractBech32Addr,
 				Pagination: &query.PageRequest{
 					Offset: 1,
@@ -414,7 +426,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"init message"`),
 			}},
-			req: types.QueryContractHistoryRequest{
+			req: &types.QueryContractHistoryRequest{
 				Address: myContractBech32Addr,
 				Pagination: &query.PageRequest{
 					Offset: 1,
@@ -436,7 +448,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   types.NewAbsoluteTxPosition(ctx),
 				Msg:       []byte(`"migrate message 1"`),
 			}},
-			req: types.QueryContractHistoryRequest{
+			req: &types.QueryContractHistoryRequest{
 				Address: myContractBech32Addr,
 				Pagination: &query.PageRequest{
 					Limit: 1,
@@ -449,7 +461,7 @@ func TestQueryContractHistory(t *testing.T) {
 			}},
 		},
 		"unknown contract address": {
-			req: types.QueryContractHistoryRequest{Address: otherBech32Addr},
+			req: &types.QueryContractHistoryRequest{Address: otherBech32Addr},
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeGenesis,
 				CodeID:    firstCodeID,
@@ -457,6 +469,10 @@ func TestQueryContractHistory(t *testing.T) {
 				Msg:       []byte(`"init message"`),
 			}},
 			expErr: types.ErrEmpty,
+		},
+		"with empty request": {
+			req:    nil,
+			expErr: status.Error(codes.InvalidArgument, "empty request"),
 		},
 	}
 	for msg, spec := range specs {
@@ -468,12 +484,12 @@ func TestQueryContractHistory(t *testing.T) {
 
 			// when
 			q := Querier(keeper)
-			got, err := q.ContractHistory(sdk.WrapSDKContext(xCtx), &spec.req)
+			got, err := q.ContractHistory(sdk.WrapSDKContext(xCtx), spec.req)
 
 			// then
 			if spec.expErr != nil {
 				if err != nil {
-					assert.Equal(t, spec.expErr, err)
+					require.Equal(t, spec.expErr, err, "but got %+v", err)
 				} else {
 					require.Error(t, spec.expErr)
 				}
@@ -547,22 +563,26 @@ func TestQueryCodeList(t *testing.T) {
 
 	specs := map[string]struct {
 		storedCodeIDs []uint64
-		req           types.QueryCodesRequest
+		req           *types.QueryCodesRequest
 		expCodeIDs    []uint64
 		expErr        error
 	}{
-		"none": {},
+		"none": {
+			req: &types.QueryCodesRequest{},
+		},
 		"no gaps": {
 			storedCodeIDs: []uint64{1, 2, 3},
+			req:           &types.QueryCodesRequest{},
 			expCodeIDs:    []uint64{1, 2, 3},
 		},
 		"with gaps": {
 			storedCodeIDs: []uint64{2, 4, 6},
+			req:           &types.QueryCodesRequest{},
 			expCodeIDs:    []uint64{2, 4, 6},
 		},
 		"with pagination offset": {
 			storedCodeIDs: []uint64{1, 2, 3},
-			req: types.QueryCodesRequest{
+			req: &types.QueryCodesRequest{
 				Pagination: &query.PageRequest{
 					Offset: 1,
 				},
@@ -571,7 +591,7 @@ func TestQueryCodeList(t *testing.T) {
 		},
 		"with invalid pagination key": {
 			storedCodeIDs: []uint64{1, 2, 3},
-			req: types.QueryCodesRequest{
+			req: &types.QueryCodesRequest{
 				Pagination: &query.PageRequest{
 					Offset: 1,
 					Key:    []byte("test"),
@@ -581,7 +601,7 @@ func TestQueryCodeList(t *testing.T) {
 		},
 		"with pagination limit": {
 			storedCodeIDs: []uint64{1, 2, 3},
-			req: types.QueryCodesRequest{
+			req: &types.QueryCodesRequest{
 				Pagination: &query.PageRequest{
 					Limit: 2,
 				},
@@ -590,12 +610,16 @@ func TestQueryCodeList(t *testing.T) {
 		},
 		"with pagination next key": {
 			storedCodeIDs: []uint64{1, 2, 3},
-			req: types.QueryCodesRequest{
+			req: &types.QueryCodesRequest{
 				Pagination: &query.PageRequest{
 					Key: fromBase64("AAAAAAAAAAI="),
 				},
 			},
 			expCodeIDs: []uint64{2, 3},
+		},
+		"with empty request": {
+			req:    nil,
+			expErr: status.Error(codes.InvalidArgument, "empty request"),
 		},
 	}
 
@@ -611,11 +635,10 @@ func TestQueryCodeList(t *testing.T) {
 			}
 			// when
 			q := Querier(keeper)
-			got, err := q.Codes(sdk.WrapSDKContext(xCtx), &spec.req)
-
+			got, err := q.Codes(sdk.WrapSDKContext(xCtx), spec.req)
 			// then
 			if spec.expErr != nil {
-				assert.Equal(t, spec.expErr, err)
+				require.Equal(t, spec.expErr, err, "but got %+v", err)
 				return
 			}
 			require.NoError(t, err)
@@ -654,7 +677,7 @@ func TestQueryContractInfo(t *testing.T) {
 		src    *types.QueryContractInfoRequest
 		stored types.ContractInfo
 		expRsp *types.QueryContractInfoResponse
-		expErr bool
+		expErr error
 	}{
 		"found": {
 			src:    &types.QueryContractInfoRequest{Address: contractAddr.String()},
@@ -679,7 +702,11 @@ func TestQueryContractInfo(t *testing.T) {
 		"not found": {
 			src:    &types.QueryContractInfoRequest{Address: RandomBech32AccountAddress(t)},
 			stored: types.ContractInfoFixture(),
-			expErr: true,
+			expErr: types.ErrNotFound,
+		},
+		"with empty request": {
+			src:    nil,
+			expErr: status.Error(codes.InvalidArgument, "empty request"),
 		},
 	}
 	for name, spec := range specs {
@@ -688,8 +715,8 @@ func TestQueryContractInfo(t *testing.T) {
 			k.storeContractInfo(xCtx, contractAddr, &spec.stored)
 			// when
 			gotRsp, gotErr := querier.ContractInfo(sdk.WrapSDKContext(xCtx), spec.src)
-			if spec.expErr {
-				require.Error(t, gotErr)
+			if spec.expErr != nil {
+				require.True(t, errors.Is(gotErr, spec.expErr), "but got %+v", gotErr)
 				return
 			}
 			require.NoError(t, gotErr)
