@@ -9,9 +9,11 @@
 * [\#63](https://github.com/Finschia/wasmd/pull/63) add event checking to TestStoreCode
 * [\#65](https://github.com/Finschia/wasmd/pull/65) add test cases for empty request in each function
 * [\#66](https://github.com/Finschia/wasmd/pull/66) add test cases for invalid pagination key in some functions
+* [\#64](https://github.com/Finschia/wasmd/pull/64) test: add test cases to confirm output for PinnedCodes
 * [\#70](https://github.com/Finschia/wasmd/pull/70) add event checking to TestInstantiateContract
 
 ### Bug Fixes
+* [\#62](https://github.com/Finschia/wasmd/pull/62) fill ContractHistory querier result's Updated field
 * [\#52](https://github.com/Finschia/wasmd/pull/52) fix cli_test error of wasmplus and add cli_test ci
 
 ### Breaking Changes
