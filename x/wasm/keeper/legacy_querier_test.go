@@ -233,12 +233,13 @@ func TestLegacyQueryContractHistory(t *testing.T) {
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeGenesis,
 				CodeID:    firstCodeID,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 				Msg:       []byte(`"init message"`),
 			}},
 			expContent: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeGenesis,
 				CodeID:    firstCodeID,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 				Msg:       []byte(`"init message"`),
 			}},
 		},
@@ -246,30 +247,33 @@ func TestLegacyQueryContractHistory(t *testing.T) {
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeInit,
 				CodeID:    firstCodeID,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 				Msg:       []byte(`"init message"`),
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    2,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
 				Msg:       []byte(`"migrate message 1"`),
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    3,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 5, TxIndex: 6},
 				Msg:       []byte(`"migrate message 2"`),
 			}},
 			expContent: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeInit,
 				CodeID:    firstCodeID,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 				Msg:       []byte(`"init message"`),
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    2,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
 				Msg:       []byte(`"migrate message 1"`),
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    3,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 5, TxIndex: 6},
 				Msg:       []byte(`"migrate message 2"`),
 			}},
 		},
@@ -278,7 +282,7 @@ func TestLegacyQueryContractHistory(t *testing.T) {
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeGenesis,
 				CodeID:    firstCodeID,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 				Msg:       []byte(`"init message"`),
 			}},
 			expContent: []types.ContractCodeHistoryEntry{},

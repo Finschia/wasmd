@@ -144,10 +144,6 @@ func queryCodeList(ctx sdk.Context, keeper types.ViewKeeper) ([]types.CodeInfoRe
 //nolint:unparam
 func queryContractHistory(ctx sdk.Context, contractAddr sdk.AccAddress, keeper types.ViewKeeper) ([]types.ContractCodeHistoryEntry, error) {
 	history := keeper.GetContractHistory(ctx, contractAddr)
-	// redact response
-	for i := range history {
-		history[i].Updated = nil
-	}
 	return history, nil
 }
 
