@@ -501,6 +501,7 @@ func TestQueryContractHistory(t *testing.T) {
 				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
 				Msg:       []byte(`"migrate message 1"`),
 			}},
+			expPaginationTotal: 0,
 		},
 		"unknown contract address": {
 			req: &types.QueryContractHistoryRequest{Address: otherBech32Addr},
