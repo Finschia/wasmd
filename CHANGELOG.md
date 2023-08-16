@@ -36,6 +36,7 @@
 
 ### Bug Fixes
 * [\#35](https://github.com/Finschia/wasmd/pull/35) stop wrap twice the response of handling non-plus wasm message in plus handler
+* [\#77](https://github.com/Finschia/wasmd/pull/77) use ctx cache in msg server integration test
 
 ### Document Updates
 * [\#44](https://github.com/Finschia/wasmd/pull/44) update notice
