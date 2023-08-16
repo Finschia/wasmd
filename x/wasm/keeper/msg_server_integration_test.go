@@ -4,11 +4,13 @@ import (
 	"crypto/sha256"
 	_ "embed"
 	"encoding/hex"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	types1 "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/Finschia/finschia-sdk/testutil/testdata"
@@ -139,4 +141,112 @@ func TestInstantiateContract(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestClearAdmin(t *testing.T) {
+	wasmApp := app.Setup(false)
+	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
+
+	var (
+		myAddress       sdk.AccAddress = make([]byte, types.ContractAddrLen)
+		_, _, otherAddr                = testdata.KeyTestPubAddr()
+	)
+
+	// setup
+	storeMsg := &types.MsgStoreCode{
+		Sender:                myAddress.String(),
+		WASMByteCode:          wasmContract,
+		InstantiatePermission: &types.AllowEverybody,
+	}
+	rsp, err := wasmApp.MsgServiceRouter().Handler(storeMsg)(ctx, storeMsg)
+	require.NoError(t, err)
+	var storeCodeResult types.MsgStoreCodeResponse
+	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &storeCodeResult))
+	codeID := storeCodeResult.CodeID
+
+	initMsg := &types.MsgInstantiateContract{
+		Sender: myAddress.String(),
+		Admin:  myAddress.String(),
+		CodeID: codeID,
+		Label:  "test",
+		Msg:    []byte(`{}`),
+		Funds:  sdk.Coins{},
+	}
+	rsp, err = wasmApp.MsgServiceRouter().Handler(initMsg)(ctx, initMsg)
+	require.NoError(t, err)
+
+	var instantiateContractResult types.MsgInstantiateContractResponse
+	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateContractResult))
+	contractAddress := instantiateContractResult.Address
+
+	specs := map[string]struct {
+		addr      string
+		expErr    bool
+		expEvents []types1.Event
+	}{
+		"admin can clear admin": {
+			addr:   myAddress.String(),
+			expErr: false,
+			expEvents: createExpEvents(myAddress,
+				[]types1.Event{
+					{
+						Type: "update_contract_admin",
+						Attributes: []types1.EventAttribute{
+							{
+								Key:   []byte("_contract_address"),
+								Value: []byte(contractAddress),
+							},
+							{
+								Key:   []byte("new_admin_address"),
+								Value: []byte{},
+							},
+						},
+					},
+				},
+			),
+		},
+		"other address cannot clear admin": {
+			addr:   otherAddr.String(),
+			expErr: true,
+		},
+	}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			xCtx, _ := ctx.CacheContext()
+			// when
+			msgClearAdmin := &types.MsgClearAdmin{
+				Sender:   spec.addr,
+				Contract: contractAddress,
+			}
+			rsp, err = wasmApp.MsgServiceRouter().Handler(msgClearAdmin)(xCtx, msgClearAdmin)
+
+			// then
+			if spec.expErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.True(t, reflect.DeepEqual(spec.expEvents, rsp.Events))
+		})
+	}
+}
+
+func createExpEvents(sender sdk.AccAddress, specEvent []types1.Event) []types1.Event {
+	// origin event
+	expEvents := []types1.Event{
+		{
+			Type: "message",
+			Attributes: []types1.EventAttribute{
+				{
+					Key:   []byte("module"),
+					Value: []byte("wasm"),
+				},
+				{
+					Key:   []byte("sender"),
+					Value: []byte(sender.String()),
+				},
+			},
+		},
+	}
+	return append(expEvents, specEvent...)
 }
