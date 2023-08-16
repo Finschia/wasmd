@@ -63,6 +63,85 @@ func TestStoreCode(t *testing.T) {
 	assert.Equal(t, types.DefaultParams().InstantiateDefaultPermission.With(sender), info.InstantiateConfig)
 }
 
+func TestInstantiateContract(t *testing.T) {
+	wasmApp := app.Setup(false)
+	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
+
+	var (
+		myAddress sdk.AccAddress = make([]byte, types.ContractAddrLen)
+	)
+
+	specs := map[string]struct {
+		addr       string
+		permission *types.AccessConfig
+		expErr     bool
+	}{
+		"address can instantiate a contract when permission is everybody": {
+			addr:       myAddress.String(),
+			permission: &types.AllowEverybody,
+			expErr:     false,
+		},
+		"address cannot instantiate a contract when permission is nobody": {
+			addr:       myAddress.String(),
+			permission: &types.AllowNobody,
+			expErr:     true,
+		},
+	}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			xCtx, _ := ctx.CacheContext()
+			// setup
+			_, _, sender := testdata.KeyTestPubAddr()
+			msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
+				m.WASMByteCode = wasmContract
+				m.Sender = sender.String()
+				m.InstantiatePermission = spec.permission
+			})
+
+			// store code
+			rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(xCtx, msg)
+			require.NoError(t, err)
+			var result types.MsgStoreCodeResponse
+			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &result))
+
+			// when
+			msgInstantiate := &types.MsgInstantiateContract{
+				Sender: spec.addr,
+				Admin:  myAddress.String(),
+				CodeID: result.CodeID,
+				Label:  "test",
+				Msg:    []byte(`{}`),
+				Funds:  sdk.Coins{},
+			}
+			rsp, err = wasmApp.MsgServiceRouter().Handler(msgInstantiate)(xCtx, msgInstantiate)
+
+			//then
+			if spec.expErr {
+				require.Error(t, err)
+				return
+			}
+
+			// check event
+			events := rsp.Events
+			assert.Equal(t, 2, len(events))
+			assert.Equal(t, "message", events[0].Type)
+			assert.Equal(t, 2, len(events[0].Attributes))
+			assert.Equal(t, "module", string(events[0].Attributes[0].Key))
+			assert.Equal(t, "wasm", string(events[0].Attributes[0].Value))
+			assert.Equal(t, "sender", string(events[0].Attributes[1].Key))
+			assert.Equal(t, myAddress.String(), string(events[0].Attributes[1].Value))
+			assert.Equal(t, "instantiate", events[1].Type)
+			assert.Equal(t, 2, len(events[1].Attributes))
+			assert.Equal(t, "_contract_address", string(events[1].Attributes[0].Key))
+			assert.Contains(t, string(rsp.Data), string(events[1].Attributes[0].Value))
+			assert.Equal(t, "code_id", string(events[1].Attributes[1].Key))
+			assert.Equal(t, "1", string(events[1].Attributes[1].Value))
+
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestInstantiateContract2(t *testing.T) {
 	wasmApp := app.Setup(false)
 	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
