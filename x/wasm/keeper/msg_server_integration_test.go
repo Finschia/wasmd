@@ -172,7 +172,6 @@ func TestMigrateContract(t *testing.T) {
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			xCtx, _ := ctx.CacheContext()
-
 			// setup
 			_, _, sender := testdata.KeyTestPubAddr()
 			msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
