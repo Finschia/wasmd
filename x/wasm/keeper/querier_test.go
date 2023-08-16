@@ -528,7 +528,6 @@ func TestQueryContractHistory(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, spec.expContent, got.Entries)
-			fmt.Println(base64.StdEncoding.EncodeToString(got.Pagination.NextKey))
 		})
 	}
 }
