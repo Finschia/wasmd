@@ -94,6 +94,7 @@ func TestInstantiateContract(t *testing.T) {
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
+			xCtx, _ := ctx.CacheContext()
 			// setup
 			_, _, sender := testdata.KeyTestPubAddr()
 			msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
@@ -103,7 +104,7 @@ func TestInstantiateContract(t *testing.T) {
 			})
 
 			// store code
-			rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(ctx, msg)
+			rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(xCtx, msg)
 			require.NoError(t, err)
 			var result types.MsgStoreCodeResponse
 			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &result))
@@ -117,7 +118,7 @@ func TestInstantiateContract(t *testing.T) {
 				Msg:    []byte(`{}`),
 				Funds:  sdk.Coins{},
 			}
-			rsp, err = wasmApp.MsgServiceRouter().Handler(msgInstantiate)(ctx, msgInstantiate)
+			rsp, err = wasmApp.MsgServiceRouter().Handler(msgInstantiate)(xCtx, msgInstantiate)
 
 			//then
 			if spec.expErr {
