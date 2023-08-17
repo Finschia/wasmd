@@ -477,6 +477,32 @@ func TestQueryContractHistory(t *testing.T) {
 			}},
 			expPaginationTotal: 0,
 		},
+		"with pagination next key": {
+			srcHistory: []types.ContractCodeHistoryEntry{{
+				Operation: types.ContractCodeHistoryOperationTypeInit,
+				CodeID:    firstCodeID,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
+				Msg:       []byte(`"init message"`),
+			}, {
+				Operation: types.ContractCodeHistoryOperationTypeMigrate,
+				CodeID:    2,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
+				Msg:       []byte(`"migrate message 1"`),
+			}},
+			req: &types.QueryContractHistoryRequest{
+				Address: myContractBech32Addr,
+				Pagination: &query.PageRequest{
+					Key: fromBase64("AAAAAAAAAAI="),
+				},
+			},
+			expContent: []types.ContractCodeHistoryEntry{{
+				Operation: types.ContractCodeHistoryOperationTypeMigrate,
+				CodeID:    2,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
+				Msg:       []byte(`"migrate message 1"`),
+			}},
+			expPaginationTotal: 0,
+		},
 		"unknown contract address": {
 			req: &types.QueryContractHistoryRequest{Address: otherBech32Addr},
 			srcHistory: []types.ContractCodeHistoryEntry{{

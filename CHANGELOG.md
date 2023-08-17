@@ -12,6 +12,8 @@
 * [\#64](https://github.com/Finschia/wasmd/pull/64) test: add test cases to confirm output for PinnedCodes
 * [\#70](https://github.com/Finschia/wasmd/pull/70) add event checking to TestInstantiateContract
 * [\#73](https://github.com/Finschia/wasmd/pull/73) test: add the check for expPaginationTotal
+* [\#72](https://github.com/Finschia/wasmd/pull/72) add pagination next key test in ContractHistory
+* [\#75](https://github.com/Finschia/wasmd/pull/75) test: add the test case for InactiveContract
 * [\#79](https://github.com/Finschia/wasmd/pull/79) add an integration test for TestStoreAndInstantiateContract
 
 ### Bug Fixes
