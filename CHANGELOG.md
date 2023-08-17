@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/Finschia/wasmd/compare/v0.1.4...HEAD)
 
 ### Features
+* [\#84](https://github.com/Finschia/wasmd/pull/84) add AcceptlistStaragteQuerier
 
 ### Improvements
 
