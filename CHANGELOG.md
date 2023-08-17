@@ -13,8 +13,6 @@
 * [\#70](https://github.com/Finschia/wasmd/pull/70) add event checking to TestInstantiateContract
 * [\#73](https://github.com/Finschia/wasmd/pull/73) test: add the check for expPaginationTotal
 * [\#74](https://github.com/Finschia/wasmd/pull/74) add event checking to TestInstantiateContract2
-
-
 ### Bug Fixes
 * [\#62](https://github.com/Finschia/wasmd/pull/62) fill ContractHistory querier result's Updated field
 * [\#52](https://github.com/Finschia/wasmd/pull/52) fix cli_test error of wasmplus and add cli_test ci
