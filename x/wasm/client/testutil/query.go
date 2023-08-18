@@ -394,6 +394,8 @@ func (s *IntegrationTestSuite) TestGetCmdGetContractHistory() {
 
 	codeID, err := strconv.ParseUint(s.codeID, 10, 64)
 	s.Require().NoError(err)
+	s.Require().True(s.setupHeight > 0)
+	codeUpdateHeight := uint64(s.setupHeight)
 
 	testCases := map[string]struct {
 		args     []string
@@ -410,7 +412,7 @@ func (s *IntegrationTestSuite) TestGetCmdGetContractHistory() {
 					{
 						Operation: types.ContractCodeHistoryOperationTypeInit,
 						CodeID:    codeID,
-						Updated:   nil,
+						Updated:   &types.AbsoluteTxPosition{BlockHeight: codeUpdateHeight, TxIndex: 0},
 						Msg:       []byte(fmt.Sprintf("{\"verifier\":\"%s\",\"beneficiary\":\"%s\"}", s.verifier, s.beneficiary)),
 					},
 				},
