@@ -15,6 +15,9 @@
 * [\#72](https://github.com/Finschia/wasmd/pull/72) add pagination next key test in ContractHistory
 * [\#75](https://github.com/Finschia/wasmd/pull/75) test: add the test case for InactiveContract
 * [\#74](https://github.com/Finschia/wasmd/pull/74) add event checking to TestInstantiateContract2
+* [\#78](https://github.com/Finschia/wasmd/pull/78) add the check for TestMigrateContract
+* [\#69](https://github.com/Finschia/wasmd/pull/69) refactor: refactor test cases for Params
+* [\#71](https://github.com/Finschia/wasmd/pull/71) add test cases in ContractsByCode
 
 ### Bug Fixes
 * [\#62](https://github.com/Finschia/wasmd/pull/62) fill ContractHistory querier result's Updated field
