@@ -205,6 +205,9 @@ func TestInstantiateContract2(t *testing.T) {
 				return
 			}
 
+			var instantiateResponse types.MsgInstantiateContractResponse
+			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
+
 			// check event
 			events := rsp.Events
 			assert.Equal(t, 2, len(events))
@@ -217,7 +220,7 @@ func TestInstantiateContract2(t *testing.T) {
 			assert.Equal(t, "instantiate", events[1].Type)
 			assert.Equal(t, 2, len(events[1].Attributes))
 			assert.Equal(t, "_contract_address", string(events[1].Attributes[0].Key))
-			assert.Contains(t, string(rsp.Data), string(events[1].Attributes[0].Value))
+			assert.Equal(t, instantiateResponse.Address, string(events[1].Attributes[0].Value))
 			assert.Equal(t, "code_id", string(events[1].Attributes[1].Key))
 			assert.Equal(t, "1", string(events[1].Attributes[1].Value))
 
