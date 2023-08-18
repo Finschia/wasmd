@@ -311,6 +311,9 @@ func TestQueryContractsByCode(t *testing.T) {
 		return contractAddr
 	}
 
+	// related link: https://github.com/CosmWasm/wasmd/issues/1559
+	// When not set with a block, the contract will return results based on the order of address rather than instantiation (timestamp).
+	// Since this function will test results for pagination, it is necessary to ensure that the results are returned in the order of instantiation.
 	// manage some realistic block settings
 	meter := sdk.NewGasMeter(1000000)
 	ctx = ctx.WithGasMeter(meter)
