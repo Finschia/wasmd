@@ -146,6 +146,7 @@ func TestInstantiateContract(t *testing.T) {
 		})
 	}
 }
+
 func TestInstantiateContract2(t *testing.T) {
 	wasmApp := app.Setup(false)
 	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
