@@ -205,7 +205,6 @@ func TestMigrateContract(t *testing.T) {
 			require.NoError(t, err)
 			var instantiateResponse types.MsgInstantiateContractResponse
 			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
-			contract_addr := rsp.Data
 
 			// when
 			migMsg := struct {
@@ -241,7 +240,7 @@ func TestMigrateContract(t *testing.T) {
 			assert.Equal(t, "code_id", string(events[1].Attributes[0].Key))
 			assert.Equal(t, "1", string(events[1].Attributes[0].Value))
 			assert.Equal(t, "_contract_address", string(events[1].Attributes[1].Key))
-			assert.Contains(t, string(contract_addr), string(events[1].Attributes[1].Value))
+			assert.Equal(t, instantiateResponse.Address, string(events[1].Attributes[1].Value))
 
 			require.NoError(t, err)
 		})
