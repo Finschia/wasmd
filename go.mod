@@ -3,9 +3,9 @@ module github.com/Finschia/wasmd
 go 1.18
 
 require (
-	github.com/Finschia/finschia-sdk v0.47.0-rc6
+	github.com/Finschia/finschia-sdk v0.47.3-0.20230810063358-e669c6fe02c2
 	github.com/Finschia/ibc-go/v3 v3.3.3
-	github.com/Finschia/ostracon v1.0.10-0.20230417090415-bc3f5693b6a1
+	github.com/Finschia/ostracon v1.1.0
 	github.com/Finschia/wasmvm v1.1.1-0.11.2.0.20230418093236-ce70a3856778
 	github.com/cosmos/iavl v0.19.4
 	github.com/dvsekhvalnov/jose2go v1.5.0
