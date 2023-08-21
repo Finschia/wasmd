@@ -23,8 +23,8 @@ import (
 	authtypes "github.com/Finschia/finschia-sdk/x/auth/types"
 	banktypes "github.com/Finschia/finschia-sdk/x/bank/types"
 	stakingtypes "github.com/Finschia/finschia-sdk/x/staking/types"
-	channeltypes "github.com/Finschia/ibc-go/v3/modules/core/04-channel/types"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 
 	"github.com/Finschia/wasmd/app"
 	"github.com/Finschia/wasmd/x/wasm/keeper"

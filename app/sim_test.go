@@ -34,9 +34,9 @@ import (
 	"github.com/Finschia/finschia-sdk/x/simulation"
 	slashingtypes "github.com/Finschia/finschia-sdk/x/slashing/types"
 	stakingtypes "github.com/Finschia/finschia-sdk/x/staking/types"
-	ibctransfertypes "github.com/Finschia/ibc-go/v3/modules/apps/transfer/types"
-	ibchost "github.com/Finschia/ibc-go/v3/modules/core/24-host"
 	"github.com/Finschia/ostracon/libs/log"
+	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 
 	"github.com/Finschia/wasmd/x/wasm"
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"

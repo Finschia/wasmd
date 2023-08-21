@@ -1,6 +1,6 @@
 # docker build . -t finschia/wasmd:latest
 # docker run --rm -it finschia/wasmd:latest /bin/sh
-FROM golang:1.18-alpine3.15 AS go-builder
+FROM golang:1.20-alpine AS go-builder
 ARG arch=x86_64
 
 # this comes from standard alpine nightly file

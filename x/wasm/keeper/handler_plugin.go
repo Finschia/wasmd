@@ -8,9 +8,9 @@ import (
 	codectypes "github.com/Finschia/finschia-sdk/codec/types"
 	sdk "github.com/Finschia/finschia-sdk/types"
 	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
-	channeltypes "github.com/Finschia/ibc-go/v3/modules/core/04-channel/types"
-	host "github.com/Finschia/ibc-go/v3/modules/core/24-host"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )

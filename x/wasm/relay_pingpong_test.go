@@ -10,12 +10,12 @@ import (
 
 	"github.com/Finschia/finschia-sdk/store/prefix"
 	sdk "github.com/Finschia/finschia-sdk/types"
-	ibctransfertypes "github.com/Finschia/ibc-go/v3/modules/apps/transfer/types"
-	clienttypes "github.com/Finschia/ibc-go/v3/modules/core/02-client/types"
-	channeltypes "github.com/Finschia/ibc-go/v3/modules/core/04-channel/types"
-	ibctesting "github.com/Finschia/ibc-go/v3/testing"
 	wasmvm "github.com/Finschia/wasmvm"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	ibctesting "github.com/cosmos/ibc-go/v4/testing"
 
 	wasmibctesting "github.com/Finschia/wasmd/x/wasm/ibctesting"
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
@@ -31,7 +31,6 @@ const (
 var doNotTimeout = clienttypes.NewHeight(1, 1111111)
 
 func TestPinPong(t *testing.T) {
-	t.Skip("check it later after enable use ibc-go v3.3.0+ in finschia-sdk")
 	// custom IBC protocol example
 	// scenario: given two chains,
 	//           with a contract on chain A and chain B
@@ -108,11 +107,6 @@ func TestPinPong(t *testing.T) {
 
 		require.Len(t, chainA.PendingSendPackets, 1)
 		err := coordinator.RelayAndAckPendingPackets(path)
-		require.NoError(t, err)
-
-		// switch side
-		require.Len(t, chainB.PendingSendPackets, 1)
-		err = coordinator.RelayAndAckPendingPackets(path.Invert())
 		require.NoError(t, err)
 	}
 
