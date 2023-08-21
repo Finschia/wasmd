@@ -306,7 +306,6 @@ func TestQueryContractsByCode(t *testing.T) {
 		adminAddr := contract.CreatorAddr
 		label := "demo contract to query"
 		contractAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, contract.CodeID, contract.CreatorAddr, adminAddr, initMsgBz, label, initialAmount)
-		fmt.Println(contract.CodeID)
 		require.NoError(t, err)
 		return contractAddr
 	}
