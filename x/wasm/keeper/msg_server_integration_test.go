@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	_ "embed"
 	"encoding/hex"
-	"reflect"
 	"testing"
 	"time"
 
@@ -227,7 +226,7 @@ func TestClearAdmin(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			assert.True(t, reflect.DeepEqual(spec.expEvents, rsp.Events))
+			assert.Equal(t, spec.expEvents, rsp.Events)
 		})
 	}
 }
