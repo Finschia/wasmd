@@ -12,6 +12,12 @@
 * [\#64](https://github.com/Finschia/wasmd/pull/64) test: add test cases to confirm output for PinnedCodes
 * [\#70](https://github.com/Finschia/wasmd/pull/70) add event checking to TestInstantiateContract
 * [\#73](https://github.com/Finschia/wasmd/pull/73) test: add the check for expPaginationTotal
+* [\#72](https://github.com/Finschia/wasmd/pull/72) add pagination next key test in ContractHistory
+* [\#75](https://github.com/Finschia/wasmd/pull/75) test: add the test case for InactiveContract
+* [\#74](https://github.com/Finschia/wasmd/pull/74) add event checking to TestInstantiateContract2
+* [\#78](https://github.com/Finschia/wasmd/pull/78) add the check for TestMigrateContract
+* [\#69](https://github.com/Finschia/wasmd/pull/69) refactor: refactor test cases for Params
+* [\#71](https://github.com/Finschia/wasmd/pull/71) add test cases in ContractsByCode
 * [\#76](https://github.com/Finschia/wasmd/pull/76) add an integration test for ClearAdmin
 
 ### Bug Fixes
