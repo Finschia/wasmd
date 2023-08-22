@@ -343,6 +343,39 @@ func TestExecuteContract(t *testing.T) {
 		_, _, otherAddr                = testdata.KeyTestPubAddr()
 	)
 
+	// setup
+	_, _, sender := testdata.KeyTestPubAddr()
+	msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
+		m.WASMByteCode = hackatomContract
+		m.Sender = sender.String()
+	})
+
+	// store code
+	rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(ctx, msg)
+	require.NoError(t, err)
+	var storeCodeResponse types.MsgStoreCodeResponse
+	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &storeCodeResponse))
+
+	// instantiate contract
+	initMsg := keeper.HackatomExampleInitMsg{
+		Verifier:    myAddress,
+		Beneficiary: otherAddr,
+	}
+	initMsgBz, err := json.Marshal(initMsg)
+	require.NoError(t, err)
+	msgInstantiate := types.MsgInstantiateContractFixture(func(m *types.MsgInstantiateContract) {
+		m.Sender = sender.String()
+		m.Admin = myAddress.String()
+		m.CodeID = storeCodeResponse.CodeID
+		m.Label = "test"
+		m.Msg = initMsgBz
+		m.Funds = sdk.Coins{}
+	})
+	rsp, err = wasmApp.MsgServiceRouter().Handler(msgInstantiate)(ctx, msgInstantiate)
+	require.NoError(t, err)
+	var instantiateResponse types.MsgInstantiateContractResponse
+	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
+
 	specs := map[string]struct {
 		addr   string
 		expErr bool
@@ -359,45 +392,14 @@ func TestExecuteContract(t *testing.T) {
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			xCtx, _ := ctx.CacheContext()
-			// setup
-			_, _, sender := testdata.KeyTestPubAddr()
-			msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
-				m.WASMByteCode = hackatomContract
-				m.Sender = sender.String()
+
+			// when
+			msgExecuteContract := types.MsgExecuteContractFixture(func(m *types.MsgExecuteContract) {
+				m.Sender = spec.addr
+				m.Msg = []byte(`{"release":{}}`)
+				m.Contract = instantiateResponse.Address
+				m.Funds = sdk.Coins{}
 			})
-
-			// store code
-			rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(xCtx, msg)
-			require.NoError(t, err)
-			var storeCodeResponse types.MsgStoreCodeResponse
-			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &storeCodeResponse))
-
-			// instantiate contract
-			initMsg := keeper.HackatomExampleInitMsg{
-				Verifier:    myAddress,
-				Beneficiary: otherAddr,
-			}
-			initMsgBz, err := json.Marshal(initMsg)
-			require.NoError(t, err)
-			msgInstantiate := &types.MsgInstantiateContract{
-				Sender: spec.addr,
-				Admin:  myAddress.String(),
-				CodeID: storeCodeResponse.CodeID,
-				Label:  "test",
-				Msg:    initMsgBz,
-				Funds:  sdk.Coins{},
-			}
-			rsp, err = wasmApp.MsgServiceRouter().Handler(msgInstantiate)(xCtx, msgInstantiate)
-			require.NoError(t, err)
-			var instantiateResponse types.MsgInstantiateContractResponse
-			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
-
-			msgExecuteContract := &types.MsgExecuteContract{
-				Sender:   spec.addr,
-				Msg:      []byte(`{"release":{}}`),
-				Contract: instantiateResponse.Address,
-				Funds:    sdk.Coins{},
-			}
 			rsp, err = wasmApp.MsgServiceRouter().Handler(msgExecuteContract)(xCtx, msgExecuteContract)
 
 			// then
