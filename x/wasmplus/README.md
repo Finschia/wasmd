@@ -1,6 +1,6 @@
 # wasmplus
 
-Extended module of [finschia/wasmd/x/wasm](https://github.com/Finschia/wasmd/tree/cae21ecd251cea44f56209e0a4586ca2979c6c87/x/wasm) module.
+Extended module of [finschia/wasmd/x/wasm](../wasm) module.
 
 ## Concepts
 
@@ -26,10 +26,10 @@ Through `ActivateContractProposal`, you can release restrictions on the use of i
 #### queries
 ##### InactiveContracts
 * Query API to query a list of all disabled smart contract addresses with pagination
-* [Detailed specification](../../docs/proto/proto-docs.md#activatecontractproposal)
+* [Detailed specification](../../docs/proto/proto-docs.md#queryinactivecontractsrequest)
 ##### InactiveContract
 * Query API to check if a specific smart contract address is disabled
-* [Detailed specification](../../docs/proto/proto-docs.md#deactivatecontractproposal)
+* [Detailed specification](../../docs/proto/proto-docs.md#queryinactivecontractrequest)
 
 ### Msg/StoreCodeAndInstantiateContract
 `Msg/StoreCodeAndInstantiateContract` allows `StoreCode` and `InstantiateContract` to be processed as one tx message.

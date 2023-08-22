@@ -284,6 +284,126 @@ func TestQueryRawContractState(t *testing.T) {
 	}
 }
 
+func TestQueryContractsByCode(t *testing.T) {
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
+	keeper := keepers.WasmKeeper
+	q := Querier(keeper)
+
+	// store contract
+	contract := StoreHackatomExampleContract(t, ctx, keepers)
+
+	createInitMsg := func(ctx sdk.Context, keepers TestKeepers) sdk.AccAddress {
+		_, _, verifierAddr := keyPubAddr()
+		fundAccounts(t, ctx, keepers.AccountKeeper, keepers.BankKeeper, verifierAddr, contract.InitialAmount)
+
+		_, _, beneficiaryAddr := keyPubAddr()
+		initMsgBz := HackatomExampleInitMsg{
+			Verifier:    verifierAddr,
+			Beneficiary: beneficiaryAddr,
+		}.GetBytes(t)
+		initialAmount := sdk.NewCoins(sdk.NewInt64Coin("denom", 100))
+
+		adminAddr := contract.CreatorAddr
+		label := "demo contract to query"
+		contractAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, contract.CodeID, contract.CreatorAddr, adminAddr, initMsgBz, label, initialAmount)
+		require.NoError(t, err)
+		return contractAddr
+	}
+
+	// related link: https://github.com/CosmWasm/wasmd/issues/1559
+	// When not set with a block, the contract will return results based on the order of address rather than instantiation (timestamp).
+	// Since this function will test results for pagination, it is necessary to ensure that the results are returned in the order of instantiation.
+	// manage some realistic block settings
+	meter := sdk.NewGasMeter(1000000)
+	ctx = ctx.WithGasMeter(meter)
+	ctx = ctx.WithBlockGasMeter(meter)
+
+	// create 2 contracts with real block/gas setup
+	exampleContractAddr1 := createInitMsg(ctx, keepers).String()
+	exampleContractAddr2 := createInitMsg(ctx, keepers).String()
+
+	specs := map[string]struct {
+		req                *types.QueryContractsByCodeRequest
+		expAddr            []string
+		expPaginationTotal uint64
+		expErr             error
+	}{
+		"with empty request": {
+			req:    nil,
+			expErr: status.Error(codes.InvalidArgument, "empty request"),
+		},
+		"req.CodeId=0": {
+			req:    &types.QueryContractsByCodeRequest{CodeId: 0},
+			expErr: sdkErrors.Wrap(types.ErrInvalid, "code id"),
+		},
+		"not exist codeID": {
+			req:                &types.QueryContractsByCodeRequest{CodeId: 2},
+			expAddr:            []string{},
+			expPaginationTotal: 0,
+		},
+		"query all": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+			},
+			expAddr:            []string{exampleContractAddr1, exampleContractAddr2},
+			expPaginationTotal: 2,
+		},
+		"with pagination offset": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+				Pagination: &query.PageRequest{
+					Offset: 1,
+				},
+			},
+			expAddr:            []string{exampleContractAddr2},
+			expPaginationTotal: 2,
+		},
+		"with invalid pagination key": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+				Pagination: &query.PageRequest{
+					Offset: 1,
+					Key:    []byte("test"),
+				},
+			},
+			expErr: fmt.Errorf("invalid request, either offset or key is expected, got both"),
+		},
+		"with pagination limit": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+				Pagination: &query.PageRequest{
+					Limit: 1,
+				},
+			},
+			expAddr:            []string{exampleContractAddr1},
+			expPaginationTotal: 0,
+		},
+		"with pagination next key": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+				Pagination: &query.PageRequest{
+					Key: fromBase64("AAAAAAAS1ocAAAAAAASY0YcuhNIMvyvID4NhhfROlbQNuZ0fl0clmBPoWHtKYazH"),
+				},
+			},
+			expAddr:            []string{exampleContractAddr2},
+			expPaginationTotal: 0,
+		},
+	}
+	for msg, spec := range specs {
+		t.Run(msg, func(t *testing.T) {
+			got, err := q.ContractsByCode(sdk.WrapSDKContext(ctx), spec.req)
+
+			if spec.expErr != nil {
+				assert.NotNil(t, err)
+				assert.EqualError(t, err, spec.expErr.Error())
+				return
+			}
+			assert.EqualValues(t, spec.expPaginationTotal, got.Pagination.Total)
+			assert.NotNil(t, got)
+			assert.Equal(t, spec.expAddr, got.Contracts)
+		})
+	}
+}
 func TestQueryContractListByCodeOrdering(t *testing.T) {
 	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	keeper := keepers.WasmKeeper
@@ -735,20 +855,16 @@ func TestQueryContractInfo(t *testing.T) {
 			src:    &types.QueryContractInfoRequest{Address: contractAddr.String()},
 			stored: types.ContractInfoFixture(),
 			expRsp: &types.QueryContractInfoResponse{
-				Address: contractAddr.String(),
-				ContractInfo: types.ContractInfoFixture(func(info *types.ContractInfo) {
-					info.Created = nil // not returned on queries
-				}),
+				Address:      contractAddr.String(),
+				ContractInfo: types.ContractInfoFixture(),
 			},
 		},
 		"with extension": {
 			src:    &types.QueryContractInfoRequest{Address: contractAddr.String()},
 			stored: types.ContractInfoFixture(myExtension),
 			expRsp: &types.QueryContractInfoResponse{
-				Address: contractAddr.String(),
-				ContractInfo: types.ContractInfoFixture(myExtension, func(info *types.ContractInfo) {
-					info.Created = nil // not returned on queries
-				}),
+				Address:      contractAddr.String(),
+				ContractInfo: types.ContractInfoFixture(myExtension),
 			},
 		},
 		"not found": {
@@ -862,26 +978,39 @@ func TestQueryParams(t *testing.T) {
 
 	q := Querier(keeper)
 
-	paramsResponse, err := q.Params(sdk.WrapSDKContext(ctx), &types.QueryParamsRequest{})
-	require.NoError(t, err)
-	require.NotNil(t, paramsResponse)
+	specs := map[string]struct {
+		setParams types.Params
+		expParams types.Params
+		expErr    error
+	}{
+		"allowEverybody(DefaultParams)": {
+			setParams: types.DefaultParams(),
+			expParams: types.DefaultParams(),
+		},
+		"allowNobody": {
+			setParams: types.Params{
+				CodeUploadAccess:             types.AllowNobody,
+				InstantiateDefaultPermission: types.AccessTypeNobody,
+			},
+			expParams: types.Params{
+				CodeUploadAccess:             types.AllowNobody,
+				InstantiateDefaultPermission: types.AccessTypeNobody,
+			},
+		},
+	}
+	for msg, spec := range specs {
+		t.Run(msg, func(t *testing.T) {
+			xCtx, _ := ctx.CacheContext()
+			keeper.SetParams(xCtx, spec.setParams)
 
-	defaultParams := types.DefaultParams()
+			paramsResponse, err := q.Params(sdk.WrapSDKContext(xCtx), &types.QueryParamsRequest{})
 
-	require.Equal(t, paramsResponse.Params.CodeUploadAccess, defaultParams.CodeUploadAccess)
-	require.Equal(t, paramsResponse.Params.InstantiateDefaultPermission, defaultParams.InstantiateDefaultPermission)
-
-	keeper.SetParams(ctx, types.Params{
-		CodeUploadAccess:             types.AllowNobody,
-		InstantiateDefaultPermission: types.AccessTypeNobody,
-	})
-
-	paramsResponse, err = q.Params(sdk.WrapSDKContext(ctx), &types.QueryParamsRequest{})
-	require.NoError(t, err)
-	require.NotNil(t, paramsResponse)
-
-	require.Equal(t, paramsResponse.Params.CodeUploadAccess, types.AllowNobody)
-	require.Equal(t, paramsResponse.Params.InstantiateDefaultPermission, types.AccessTypeNobody)
+			require.NoError(t, err)
+			require.NotNil(t, paramsResponse)
+			require.Equal(t, spec.expParams.CodeUploadAccess, paramsResponse.Params.CodeUploadAccess)
+			require.Equal(t, spec.expParams.InstantiateDefaultPermission, paramsResponse.Params.InstantiateDefaultPermission)
+		})
+	}
 }
 
 func TestQueryCodeInfo(t *testing.T) {
