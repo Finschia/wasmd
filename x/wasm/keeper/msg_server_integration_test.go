@@ -379,23 +379,22 @@ func TestClearAdmin(t *testing.T) {
 		"admin can clear admin": {
 			addr:   myAddress.String(),
 			expErr: false,
-			expEvents: createExpEvents(myAddress,
-				[]abci.Event{
-					{
-						Type: "update_contract_admin",
-						Attributes: []abci.EventAttribute{
-							{
-								Key:   []byte("_contract_address"),
-								Value: []byte(contractAddress),
-							},
-							{
-								Key:   []byte("new_admin_address"),
-								Value: []byte{},
-							},
+			expEvents: []abci.Event{
+				createMsgEvent(myAddress),
+				{
+					Type: "update_contract_admin",
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("_contract_address"),
+							Value: []byte(contractAddress),
+						},
+						{
+							Key:   []byte("new_admin_address"),
+							Value: []byte{},
 						},
 					},
 				},
-			),
+			},
 		},
 		"other address cannot clear admin": {
 			addr:   otherAddr.String(),
@@ -423,22 +422,19 @@ func TestClearAdmin(t *testing.T) {
 	}
 }
 
-func createExpEvents(sender sdk.AccAddress, specEvent []abci.Event) []abci.Event {
-	// origin event
-	expEvents := []abci.Event{
-		{
-			Type: "message",
-			Attributes: []abci.EventAttribute{
-				{
-					Key:   []byte("module"),
-					Value: []byte("wasm"),
-				},
-				{
-					Key:   []byte("sender"),
-					Value: []byte(sender.String()),
-				},
+func createMsgEvent(sender sdk.AccAddress) abci.Event {
+	// msg event
+	return abci.Event{
+		Type: "message",
+		Attributes: []abci.EventAttribute{
+			{
+				Key:   []byte("module"),
+				Value: []byte("wasm"),
+			},
+			{
+				Key:   []byte("sender"),
+				Value: []byte(sender.String()),
 			},
 		},
 	}
-	return append(expEvents, specEvent...)
 }
