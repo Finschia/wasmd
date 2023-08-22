@@ -345,25 +345,25 @@ func TestClearAdmin(t *testing.T) {
 	)
 
 	// setup
-	storeMsg := &types.MsgStoreCode{
-		Sender:                myAddress.String(),
-		WASMByteCode:          wasmContract,
-		InstantiatePermission: &types.AllowEverybody,
-	}
+	_, _, sender := testdata.KeyTestPubAddr()
+	storeMsg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
+		m.Sender = sender.String()
+		m.WASMByteCode = wasmContract
+	})
 	rsp, err := wasmApp.MsgServiceRouter().Handler(storeMsg)(ctx, storeMsg)
 	require.NoError(t, err)
 	var storeCodeResult types.MsgStoreCodeResponse
 	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &storeCodeResult))
 	codeID := storeCodeResult.CodeID
 
-	initMsg := &types.MsgInstantiateContract{
-		Sender: myAddress.String(),
-		Admin:  myAddress.String(),
-		CodeID: codeID,
-		Label:  "test",
-		Msg:    []byte(`{}`),
-		Funds:  sdk.Coins{},
-	}
+	initMsg := types.MsgInstantiateContractFixture(func(m *types.MsgInstantiateContract) {
+		m.Sender = myAddress.String()
+		m.Admin = myAddress.String()
+		m.CodeID = codeID
+		m.Label = "test"
+		m.Msg = []byte(`{}`)
+		m.Funds = sdk.Coins{}
+	})
 	rsp, err = wasmApp.MsgServiceRouter().Handler(initMsg)(ctx, initMsg)
 	require.NoError(t, err)
 
