@@ -140,6 +140,8 @@ func (s *IntegrationTestSuite) TestGetCmdGetContractInfo() {
 
 	codeID, err := strconv.ParseUint(s.codeID, 10, 64)
 	s.Require().NoError(err)
+	s.Require().True(s.setupHeight > 0)
+	codeUpdateHeight := uint64(s.setupHeight)
 
 	testCases := map[string]struct {
 		args     []string
@@ -158,7 +160,7 @@ func (s *IntegrationTestSuite) TestGetCmdGetContractInfo() {
 					Creator:   val.Address.String(),
 					Admin:     val.Address.String(),
 					Label:     "TestContract",
-					Created:   nil,
+					Created:   &types.AbsoluteTxPosition{BlockHeight: codeUpdateHeight, TxIndex: 0},
 					IBCPortID: "",
 					Extension: nil,
 				},
