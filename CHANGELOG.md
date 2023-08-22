@@ -18,11 +18,14 @@
 * [\#78](https://github.com/Finschia/wasmd/pull/78) add the check for TestMigrateContract
 * [\#69](https://github.com/Finschia/wasmd/pull/69) refactor: refactor test cases for Params
 * [\#71](https://github.com/Finschia/wasmd/pull/71) add test cases in ContractsByCode
+* [\#82](https://github.com/Finschia/wasmd/pull/82) add test case to QueryInactiveContracts
 * [\#87](https://github.com/Finschia/wasmd/pull/87) add an integration test for TestExecuteContract 
 
 ### Bug Fixes
 * [\#62](https://github.com/Finschia/wasmd/pull/62) fill ContractHistory querier result's Updated field
 * [\#52](https://github.com/Finschia/wasmd/pull/52) fix cli_test error of wasmplus and add cli_test ci
+* [\#89](https://github.com/Finschia/wasmd/pull/89) fill ContractInfo querier result's Updated field
+* [\#90](https://github.com/Finschia/wasmd/pull/90) delete output in TestQueryContractsByCode
 
 ### Breaking Changes
 
@@ -31,6 +34,7 @@
 
 ### Document Updates
 * [\#54](https://github.com/Finschia/wasmd/pull/54) add documentation about errors (codespace and codes)
+* [\#92](https://github.com/Finschia/wasmd/pull/92) modify links in x/wasmplus README.md
 
 
 ## [v0.1.4](https://github.com/Finschia/wasmd/releases/tag/v0.1.4) - 2023.05.22
