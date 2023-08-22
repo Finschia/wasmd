@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	types1 "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/Finschia/finschia-sdk/testutil/testdata"
@@ -374,16 +374,16 @@ func TestClearAdmin(t *testing.T) {
 	specs := map[string]struct {
 		addr      string
 		expErr    bool
-		expEvents []types1.Event
+		expEvents []abci.Event
 	}{
 		"admin can clear admin": {
 			addr:   myAddress.String(),
 			expErr: false,
 			expEvents: createExpEvents(myAddress,
-				[]types1.Event{
+				[]abci.Event{
 					{
 						Type: "update_contract_admin",
-						Attributes: []types1.EventAttribute{
+						Attributes: []abci.EventAttribute{
 							{
 								Key:   []byte("_contract_address"),
 								Value: []byte(contractAddress),
@@ -423,12 +423,12 @@ func TestClearAdmin(t *testing.T) {
 	}
 }
 
-func createExpEvents(sender sdk.AccAddress, specEvent []types1.Event) []types1.Event {
+func createExpEvents(sender sdk.AccAddress, specEvent []abci.Event) []abci.Event {
 	// origin event
-	expEvents := []types1.Event{
+	expEvents := []abci.Event{
 		{
 			Type: "message",
-			Attributes: []types1.EventAttribute{
+			Attributes: []abci.EventAttribute{
 				{
 					Key:   []byte("module"),
 					Value: []byte("wasm"),
