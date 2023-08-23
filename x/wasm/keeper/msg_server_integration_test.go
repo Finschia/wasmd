@@ -86,7 +86,7 @@ func TestUpdateAdmin(t *testing.T) {
 	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &storeCodeResult))
 	codeID := storeCodeResult.CodeID
 
-	initMsg := &types.MsgInstantiateContract{
+	initMsg :=types.MsgInstantiateContractFixture(func(m *types.MsgInstantiateContract) {
 		Sender: myAddress.String(),
 		Admin:  myAddress.String(),
 		CodeID: codeID,
