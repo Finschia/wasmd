@@ -485,7 +485,7 @@ func TestClearAdmin(t *testing.T) {
 			addr:   myAddress.String(),
 			expErr: false,
 			expEvents: []abci.Event{
-				types.CreateMsgEvent(myAddress),
+				createMsgEvent(myAddress),
 				{
 					Type: "update_contract_admin",
 					Attributes: []abci.EventAttribute{
@@ -524,5 +524,23 @@ func TestClearAdmin(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, spec.expEvents, rsp.Events)
 		})
+	}
+}
+
+// This function is utilized to generate the msg event for event checking in integration tests
+// It will be deleted in release/v0.1.x
+func createMsgEvent(sender sdk.AccAddress) abci.Event {
+	return abci.Event{
+		Type: "message",
+		Attributes: []abci.EventAttribute{
+			{
+				Key:   []byte("module"),
+				Value: []byte("wasm"),
+			},
+			{
+				Key:   []byte("sender"),
+				Value: []byte(sender.String()),
+			},
+		},
 	}
 }
