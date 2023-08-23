@@ -31,6 +31,7 @@
 * [\#52](https://github.com/Finschia/wasmd/pull/52) fix cli_test error of wasmplus and add cli_test ci
 * [\#89](https://github.com/Finschia/wasmd/pull/89) fill ContractInfo querier result's Updated field
 * [\#90](https://github.com/Finschia/wasmd/pull/90) delete output in TestQueryContractsByCode
+* [\#95](https://github.com/Finschia/wasmd/pull/95) add a test case to verify ContractInfo gets correct IBCPortID
 
 ### Breaking Changes
 
