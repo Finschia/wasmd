@@ -485,7 +485,7 @@ func TestClearAdmin(t *testing.T) {
 			addr:   myAddress.String(),
 			expErr: false,
 			expEvents: []abci.Event{
-				createMsgEvent(myAddress),
+				types.CreateMsgEvent(myAddress),
 				{
 					Type: "update_contract_admin",
 					Attributes: []abci.EventAttribute{
@@ -524,22 +524,5 @@ func TestClearAdmin(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, spec.expEvents, rsp.Events)
 		})
-	}
-}
-
-func createMsgEvent(sender sdk.AccAddress) abci.Event {
-	// msg event
-	return abci.Event{
-		Type: "message",
-		Attributes: []abci.EventAttribute{
-			{
-				Key:   []byte("module"),
-				Value: []byte("wasm"),
-			},
-			{
-				Key:   []byte("sender"),
-				Value: []byte(sender.String()),
-			},
-		},
 	}
 }

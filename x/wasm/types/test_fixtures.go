@@ -7,6 +7,7 @@ import (
 	"math/rand"
 
 	sdk "github.com/Finschia/finschia-sdk/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func GenesisFixture(mutators ...func(*GenesisState)) GenesisState {
@@ -328,4 +329,21 @@ func ClearAdminProposalFixture(mutators ...func(p *ClearAdminProposal)) *ClearAd
 		m(p)
 	}
 	return p
+}
+
+// This function is utilized to generate the msg event for event checking in integration tests.
+func CreateMsgEvent(sender sdk.AccAddress) abci.Event {
+	return abci.Event{
+		Type: "message",
+		Attributes: []abci.EventAttribute{
+			{
+				Key:   []byte("module"),
+				Value: []byte("wasm"),
+			},
+			{
+				Key:   []byte("sender"),
+				Value: []byte(sender.String()),
+			},
+		},
+	}
 }
