@@ -59,7 +59,7 @@ func TestStoreAndInstantiateContract(t *testing.T) {
 			}
 			rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(xCtx, msg)
 
-			//then
+			// then
 			if spec.expErr {
 				require.Error(t, err)
 				return
