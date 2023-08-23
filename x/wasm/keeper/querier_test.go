@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/btcutil/bech32"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -54,6 +55,10 @@ func TestQueryAllContractState(t *testing.T) {
 		"query all with unknown address": {
 			srcQuery: &types.QueryAllContractStateRequest{Address: RandomBech32AccountAddress(t)},
 			expErr:   types.ErrNotFound,
+		},
+		"query all with invalid address": {
+			srcQuery: &types.QueryAllContractStateRequest{Address: "abcde"},
+			expErr:   fmt.Errorf("decoding bech32 failed: %w", bech32.ErrInvalidLength(5)),
 		},
 		"with pagination offset": {
 			srcQuery: &types.QueryAllContractStateRequest{
@@ -163,6 +168,10 @@ func TestQuerySmartContractState(t *testing.T) {
 			srcQuery: &types.QuerySmartContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte(`{"verifier":{}}`)},
 			expErr:   types.ErrNotFound,
 		},
+		"query smart with invalid address": {
+			srcQuery: &types.QuerySmartContractStateRequest{Address: "abcde", QueryData: []byte(`{"verifier":{}}`)},
+			expErr:   bech32.ErrInvalidLength(5),
+		},
 		"with empty request": {
 			srcQuery: nil,
 			expErr:   status.Error(codes.InvalidArgument, "empty request"),
@@ -266,6 +275,10 @@ func TestQueryRawContractState(t *testing.T) {
 		"query raw with unknown address": {
 			srcQuery: &types.QueryRawContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte("foo")},
 			expErr:   types.ErrNotFound,
+		},
+		"query raw with invalid address": {
+			srcQuery: &types.QueryRawContractStateRequest{Address: "abcde", QueryData: []byte("foo")},
+			expErr:   bech32.ErrInvalidLength(5),
 		},
 		"with empty request": {
 			srcQuery: nil,
@@ -633,6 +646,16 @@ func TestQueryContractHistory(t *testing.T) {
 			}},
 			expErr: types.ErrEmpty,
 		},
+		"query with invalid address": {
+			req: &types.QueryContractHistoryRequest{Address: "abcde"},
+			srcHistory: []types.ContractCodeHistoryEntry{{
+				Operation: types.ContractCodeHistoryOperationTypeGenesis,
+				CodeID:    firstCodeID,
+				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Msg:       []byte(`"init message"`),
+			}},
+			expErr: fmt.Errorf("decoding bech32 failed: %w", bech32.ErrInvalidLength(5)),
+		},
 		"with empty request": {
 			req:    nil,
 			expErr: status.Error(codes.InvalidArgument, "empty request"),
@@ -871,6 +894,10 @@ func TestQueryContractInfo(t *testing.T) {
 			src:    &types.QueryContractInfoRequest{Address: RandomBech32AccountAddress(t)},
 			stored: types.ContractInfoFixture(),
 			expErr: types.ErrNotFound,
+		},
+		"query with invalid address": {
+			src:    &types.QueryContractInfoRequest{Address: "abcde"},
+			expErr: bech32.ErrInvalidLength(5),
 		},
 		"with empty request": {
 			src:    nil,
