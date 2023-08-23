@@ -4,6 +4,7 @@
 
 ### Features
 * [\#61](https://github.com/Finschia/wasmd/pull/61) bumpup ibc-go to v4
+* [\#84](https://github.com/Finschia/wasmd/pull/84) add AcceptlistStaragteQuerier
 
 ### Improvements
 * [\#63](https://github.com/Finschia/wasmd/pull/63) add event checking to TestStoreCode
@@ -20,6 +21,7 @@
 * [\#71](https://github.com/Finschia/wasmd/pull/71) add test cases in ContractsByCode
 * [\#82](https://github.com/Finschia/wasmd/pull/82) add test case to QueryInactiveContracts
 * [\#87](https://github.com/Finschia/wasmd/pull/87) add an integration test for TestExecuteContract 
+* [\#79](https://github.com/Finschia/wasmd/pull/79) add an integration test for TestStoreAndInstantiateContract
 * [\#76](https://github.com/Finschia/wasmd/pull/76) add an integration test for ClearAdmin
 
 ### Bug Fixes
