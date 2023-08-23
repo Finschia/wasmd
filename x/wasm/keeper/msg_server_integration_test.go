@@ -77,23 +77,21 @@ func TestUpdateAdmin(t *testing.T) {
 	// setup
 	storeMsg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
 		m.WASMByteCode = wasmContract
-		m.Sender = sender.String()
+		m.Sender = myAddress.String()
 	})
-	}
 	rsp, err := wasmApp.MsgServiceRouter().Handler(storeMsg)(ctx, storeMsg)
 	require.NoError(t, err)
 	var storeCodeResult types.MsgStoreCodeResponse
 	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &storeCodeResult))
 	codeID := storeCodeResult.CodeID
 
-	initMsg :=types.MsgInstantiateContractFixture(func(m *types.MsgInstantiateContract) {
-		Sender: myAddress.String(),
-		Admin:  myAddress.String(),
-		CodeID: codeID,
-		Label:  "test",
-		Msg:    []byte(`{}`),
-		Funds:  sdk.Coins{},
-	}
+	initMsg := types.MsgInstantiateContractFixture(func(m *types.MsgInstantiateContract) {
+		m.Sender = myAddress.String()
+		m.Admin  = myAddress.String()
+		m.CodeID = codeID
+		m.Msg    = []byte(`{}`)
+		m.Funds  = sdk.Coins{}
+	})
 	rsp, err = wasmApp.MsgServiceRouter().Handler(initMsg)(ctx, initMsg)
 	require.NoError(t, err)
 
