@@ -75,10 +75,10 @@ func TestUpdateAdmin(t *testing.T) {
 	)
 
 	// setup
-	storeMsg := &types.MsgStoreCode{
-		Sender:                myAddress.String(),
-		WASMByteCode:          wasmContract,
-		InstantiatePermission: &types.AllowEverybody,
+	storeMsg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
+		m.WASMByteCode = wasmContract
+		m.Sender = sender.String()
+	})
 	}
 	rsp, err := wasmApp.MsgServiceRouter().Handler(storeMsg)(ctx, storeMsg)
 	require.NoError(t, err)
