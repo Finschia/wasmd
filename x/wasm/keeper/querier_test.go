@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/btcutil/bech32"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -43,15 +44,21 @@ func TestQueryAllContractState(t *testing.T) {
 		srcQuery            *types.QueryAllContractStateRequest
 		expModelContains    []types.Model
 		expModelContainsNot []types.Model
+		expPaginationTotal  uint64
 		expErr              error
 	}{
 		"query all": {
-			srcQuery:         &types.QueryAllContractStateRequest{Address: contractAddr.String()},
-			expModelContains: contractModel,
+			srcQuery:           &types.QueryAllContractStateRequest{Address: contractAddr.String()},
+			expModelContains:   contractModel,
+			expPaginationTotal: 3,
 		},
 		"query all with unknown address": {
 			srcQuery: &types.QueryAllContractStateRequest{Address: RandomBech32AccountAddress(t)},
 			expErr:   types.ErrNotFound,
+		},
+		"query all with invalid address": {
+			srcQuery: &types.QueryAllContractStateRequest{Address: "abcde"},
+			expErr:   fmt.Errorf("decoding bech32 failed: %w", bech32.ErrInvalidLength(5)),
 		},
 		"with pagination offset": {
 			srcQuery: &types.QueryAllContractStateRequest{
@@ -66,6 +73,17 @@ func TestQueryAllContractState(t *testing.T) {
 			expModelContainsNot: []types.Model{
 				{Key: []byte{0x0, 0x1}, Value: []byte(`{"count":8}`)},
 			},
+			expPaginationTotal: 3,
+		},
+		"with invalid pagination key": {
+			srcQuery: &types.QueryAllContractStateRequest{
+				Address: contractAddr.String(),
+				Pagination: &query.PageRequest{
+					Offset: 1,
+					Key:    []byte("test"),
+				},
+			},
+			expErr: fmt.Errorf("invalid request, either offset or key is expected, got both"),
 		},
 		"with pagination limit": {
 			srcQuery: &types.QueryAllContractStateRequest{
@@ -80,6 +98,7 @@ func TestQueryAllContractState(t *testing.T) {
 			expModelContainsNot: []types.Model{
 				{Key: []byte("foo"), Value: []byte(`"bar"`)},
 			},
+			expPaginationTotal: 0,
 		},
 		"with pagination next key": {
 			srcQuery: &types.QueryAllContractStateRequest{
@@ -94,6 +113,7 @@ func TestQueryAllContractState(t *testing.T) {
 			expModelContainsNot: []types.Model{
 				{Key: []byte{0x0, 0x1}, Value: []byte(`{"count":8}`)},
 			},
+			expPaginationTotal: 0,
 		},
 		"with empty request": {
 			srcQuery: nil,
@@ -104,7 +124,7 @@ func TestQueryAllContractState(t *testing.T) {
 		t.Run(msg, func(t *testing.T) {
 			got, err := q.AllContractState(sdk.WrapSDKContext(ctx), spec.srcQuery)
 			if spec.expErr != nil {
-				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
+				require.Equal(t, spec.expErr, err, "but got %+v", err)
 				return
 			}
 			for _, exp := range spec.expModelContains {
@@ -113,6 +133,7 @@ func TestQueryAllContractState(t *testing.T) {
 			for _, exp := range spec.expModelContainsNot {
 				assert.NotContains(t, got.Models, exp)
 			}
+			assert.EqualValues(t, spec.expPaginationTotal, got.Pagination.Total)
 		})
 	}
 }
@@ -146,6 +167,10 @@ func TestQuerySmartContractState(t *testing.T) {
 		"query smart with unknown address": {
 			srcQuery: &types.QuerySmartContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte(`{"verifier":{}}`)},
 			expErr:   types.ErrNotFound,
+		},
+		"query smart with invalid address": {
+			srcQuery: &types.QuerySmartContractStateRequest{Address: "abcde", QueryData: []byte(`{"verifier":{}}`)},
+			expErr:   bech32.ErrInvalidLength(5),
 		},
 		"with empty request": {
 			srcQuery: nil,
@@ -251,6 +276,10 @@ func TestQueryRawContractState(t *testing.T) {
 			srcQuery: &types.QueryRawContractStateRequest{Address: RandomBech32AccountAddress(t), QueryData: []byte("foo")},
 			expErr:   types.ErrNotFound,
 		},
+		"query raw with invalid address": {
+			srcQuery: &types.QueryRawContractStateRequest{Address: "abcde", QueryData: []byte("foo")},
+			expErr:   bech32.ErrInvalidLength(5),
+		},
 		"with empty request": {
 			srcQuery: nil,
 			expErr:   status.Error(codes.InvalidArgument, "empty request"),
@@ -268,6 +297,126 @@ func TestQueryRawContractState(t *testing.T) {
 	}
 }
 
+func TestQueryContractsByCode(t *testing.T) {
+	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
+	keeper := keepers.WasmKeeper
+	q := Querier(keeper)
+
+	// store contract
+	contract := StoreHackatomExampleContract(t, ctx, keepers)
+
+	createInitMsg := func(ctx sdk.Context, keepers TestKeepers) sdk.AccAddress {
+		_, _, verifierAddr := keyPubAddr()
+		fundAccounts(t, ctx, keepers.AccountKeeper, keepers.BankKeeper, verifierAddr, contract.InitialAmount)
+
+		_, _, beneficiaryAddr := keyPubAddr()
+		initMsgBz := HackatomExampleInitMsg{
+			Verifier:    verifierAddr,
+			Beneficiary: beneficiaryAddr,
+		}.GetBytes(t)
+		initialAmount := sdk.NewCoins(sdk.NewInt64Coin("denom", 100))
+
+		adminAddr := contract.CreatorAddr
+		label := "demo contract to query"
+		contractAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, contract.CodeID, contract.CreatorAddr, adminAddr, initMsgBz, label, initialAmount)
+		require.NoError(t, err)
+		return contractAddr
+	}
+
+	// related link: https://github.com/CosmWasm/wasmd/issues/1559
+	// When not set with a block, the contract will return results based on the order of address rather than instantiation (timestamp).
+	// Since this function will test results for pagination, it is necessary to ensure that the results are returned in the order of instantiation.
+	// manage some realistic block settings
+	meter := sdk.NewGasMeter(1000000)
+	ctx = ctx.WithGasMeter(meter)
+	ctx = ctx.WithBlockGasMeter(meter)
+
+	// create 2 contracts with real block/gas setup
+	exampleContractAddr1 := createInitMsg(ctx, keepers).String()
+	exampleContractAddr2 := createInitMsg(ctx, keepers).String()
+
+	specs := map[string]struct {
+		req                *types.QueryContractsByCodeRequest
+		expAddr            []string
+		expPaginationTotal uint64
+		expErr             error
+	}{
+		"with empty request": {
+			req:    nil,
+			expErr: status.Error(codes.InvalidArgument, "empty request"),
+		},
+		"req.CodeId=0": {
+			req:    &types.QueryContractsByCodeRequest{CodeId: 0},
+			expErr: sdkErrors.Wrap(types.ErrInvalid, "code id"),
+		},
+		"not exist codeID": {
+			req:                &types.QueryContractsByCodeRequest{CodeId: 2},
+			expAddr:            []string{},
+			expPaginationTotal: 0,
+		},
+		"query all": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+			},
+			expAddr:            []string{exampleContractAddr1, exampleContractAddr2},
+			expPaginationTotal: 2,
+		},
+		"with pagination offset": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+				Pagination: &query.PageRequest{
+					Offset: 1,
+				},
+			},
+			expAddr:            []string{exampleContractAddr2},
+			expPaginationTotal: 2,
+		},
+		"with invalid pagination key": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+				Pagination: &query.PageRequest{
+					Offset: 1,
+					Key:    []byte("test"),
+				},
+			},
+			expErr: fmt.Errorf("invalid request, either offset or key is expected, got both"),
+		},
+		"with pagination limit": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+				Pagination: &query.PageRequest{
+					Limit: 1,
+				},
+			},
+			expAddr:            []string{exampleContractAddr1},
+			expPaginationTotal: 0,
+		},
+		"with pagination next key": {
+			req: &types.QueryContractsByCodeRequest{
+				CodeId: 1,
+				Pagination: &query.PageRequest{
+					Key: fromBase64("AAAAAAAS1ocAAAAAAASY0YcuhNIMvyvID4NhhfROlbQNuZ0fl0clmBPoWHtKYazH"),
+				},
+			},
+			expAddr:            []string{exampleContractAddr2},
+			expPaginationTotal: 0,
+		},
+	}
+	for msg, spec := range specs {
+		t.Run(msg, func(t *testing.T) {
+			got, err := q.ContractsByCode(sdk.WrapSDKContext(ctx), spec.req)
+
+			if spec.expErr != nil {
+				assert.NotNil(t, err)
+				assert.EqualError(t, err, spec.expErr.Error())
+				return
+			}
+			assert.EqualValues(t, spec.expPaginationTotal, got.Pagination.Total)
+			assert.NotNil(t, got)
+			assert.Equal(t, spec.expAddr, got.Contracts)
+		})
+	}
+}
 func TestQueryContractListByCodeOrdering(t *testing.T) {
 	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	keeper := keepers.WasmKeeper
@@ -334,16 +483,17 @@ func TestQueryContractHistory(t *testing.T) {
 	)
 
 	specs := map[string]struct {
-		srcHistory []types.ContractCodeHistoryEntry
-		req        *types.QueryContractHistoryRequest
-		expContent []types.ContractCodeHistoryEntry
-		expErr     error
+		srcHistory         []types.ContractCodeHistoryEntry
+		req                *types.QueryContractHistoryRequest
+		expContent         []types.ContractCodeHistoryEntry
+		expPaginationTotal uint64
+		expErr             error
 	}{
 		"response with internal fields cleared": {
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeGenesis,
 				CodeID:    firstCodeID,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 				Msg:       []byte(`"init message"`),
 			}},
 			req: &types.QueryContractHistoryRequest{Address: myContractBech32Addr},
@@ -351,23 +501,25 @@ func TestQueryContractHistory(t *testing.T) {
 				Operation: types.ContractCodeHistoryOperationTypeGenesis,
 				CodeID:    firstCodeID,
 				Msg:       []byte(`"init message"`),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 			}},
+			expPaginationTotal: 1,
 		},
 		"response with multiple entries": {
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeInit,
 				CodeID:    firstCodeID,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 				Msg:       []byte(`"init message"`),
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    2,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
 				Msg:       []byte(`"migrate message 1"`),
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    3,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 5, TxIndex: 6},
 				Msg:       []byte(`"migrate message 2"`),
 			}},
 			req: &types.QueryContractHistoryRequest{Address: myContractBech32Addr},
@@ -375,26 +527,30 @@ func TestQueryContractHistory(t *testing.T) {
 				Operation: types.ContractCodeHistoryOperationTypeInit,
 				CodeID:    firstCodeID,
 				Msg:       []byte(`"init message"`),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    2,
 				Msg:       []byte(`"migrate message 1"`),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    3,
 				Msg:       []byte(`"migrate message 2"`),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 5, TxIndex: 6},
 			}},
+			expPaginationTotal: 3,
 		},
 		"with pagination offset": {
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeInit,
 				CodeID:    firstCodeID,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 				Msg:       []byte(`"init message"`),
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    2,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
 				Msg:       []byte(`"migrate message 1"`),
 			}},
 			req: &types.QueryContractHistoryRequest{
@@ -407,18 +563,37 @@ func TestQueryContractHistory(t *testing.T) {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    2,
 				Msg:       []byte(`"migrate message 1"`),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
 			}},
+			expPaginationTotal: 2,
 		},
+		"with invalid pagination key": {
+			srcHistory: []types.ContractCodeHistoryEntry{{
+				Operation: types.ContractCodeHistoryOperationTypeGenesis,
+				CodeID:    firstCodeID,
+				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Msg:       []byte(`"init message"`),
+			}},
+			req: &types.QueryContractHistoryRequest{
+				Address: myContractBech32Addr,
+				Pagination: &query.PageRequest{
+					Offset: 1,
+					Key:    []byte("test"),
+				},
+			},
+			expErr: fmt.Errorf("invalid request, either offset or key is expected, got both"),
+		},
+
 		"with pagination limit": {
 			srcHistory: []types.ContractCodeHistoryEntry{{
 				Operation: types.ContractCodeHistoryOperationTypeInit,
 				CodeID:    firstCodeID,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 				Msg:       []byte(`"init message"`),
 			}, {
 				Operation: types.ContractCodeHistoryOperationTypeMigrate,
 				CodeID:    2,
-				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
 				Msg:       []byte(`"migrate message 1"`),
 			}},
 			req: &types.QueryContractHistoryRequest{
@@ -431,7 +606,35 @@ func TestQueryContractHistory(t *testing.T) {
 				Operation: types.ContractCodeHistoryOperationTypeInit,
 				CodeID:    firstCodeID,
 				Msg:       []byte(`"init message"`),
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
 			}},
+			expPaginationTotal: 0,
+		},
+		"with pagination next key": {
+			srcHistory: []types.ContractCodeHistoryEntry{{
+				Operation: types.ContractCodeHistoryOperationTypeInit,
+				CodeID:    firstCodeID,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 1, TxIndex: 2},
+				Msg:       []byte(`"init message"`),
+			}, {
+				Operation: types.ContractCodeHistoryOperationTypeMigrate,
+				CodeID:    2,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
+				Msg:       []byte(`"migrate message 1"`),
+			}},
+			req: &types.QueryContractHistoryRequest{
+				Address: myContractBech32Addr,
+				Pagination: &query.PageRequest{
+					Key: fromBase64("AAAAAAAAAAI="),
+				},
+			},
+			expContent: []types.ContractCodeHistoryEntry{{
+				Operation: types.ContractCodeHistoryOperationTypeMigrate,
+				CodeID:    2,
+				Updated:   &types.AbsoluteTxPosition{BlockHeight: 3, TxIndex: 4},
+				Msg:       []byte(`"migrate message 1"`),
+			}},
+			expPaginationTotal: 0,
 		},
 		"unknown contract address": {
 			req: &types.QueryContractHistoryRequest{Address: otherBech32Addr},
@@ -442,6 +645,16 @@ func TestQueryContractHistory(t *testing.T) {
 				Msg:       []byte(`"init message"`),
 			}},
 			expErr: types.ErrEmpty,
+		},
+		"query with invalid address": {
+			req: &types.QueryContractHistoryRequest{Address: "abcde"},
+			srcHistory: []types.ContractCodeHistoryEntry{{
+				Operation: types.ContractCodeHistoryOperationTypeGenesis,
+				CodeID:    firstCodeID,
+				Updated:   types.NewAbsoluteTxPosition(ctx),
+				Msg:       []byte(`"init message"`),
+			}},
+			expErr: fmt.Errorf("decoding bech32 failed: %w", bech32.ErrInvalidLength(5)),
 		},
 		"with empty request": {
 			req:    nil,
@@ -462,7 +675,7 @@ func TestQueryContractHistory(t *testing.T) {
 			// then
 			if spec.expErr != nil {
 				if err != nil {
-					assert.Equal(t, spec.expErr, err)
+					require.Equal(t, spec.expErr, err, "but got %+v", err)
 				} else {
 					require.Error(t, spec.expErr)
 				}
@@ -470,6 +683,7 @@ func TestQueryContractHistory(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, spec.expContent, got.Entries)
+			assert.EqualValues(t, spec.expPaginationTotal, got.Pagination.Total)
 		})
 	}
 }
@@ -535,23 +749,27 @@ func TestQueryCodeList(t *testing.T) {
 	keeper := keepers.WasmKeeper
 
 	specs := map[string]struct {
-		storedCodeIDs []uint64
-		req           *types.QueryCodesRequest
-		expCodeIDs    []uint64
-		expErr        error
+		storedCodeIDs      []uint64
+		req                *types.QueryCodesRequest
+		expCodeIDs         []uint64
+		expPaginationTotal uint64
+		expErr             error
 	}{
 		"none": {
-			req: &types.QueryCodesRequest{},
+			req:                &types.QueryCodesRequest{},
+			expPaginationTotal: 0,
 		},
 		"no gaps": {
-			storedCodeIDs: []uint64{1, 2, 3},
-			req:           &types.QueryCodesRequest{},
-			expCodeIDs:    []uint64{1, 2, 3},
+			storedCodeIDs:      []uint64{1, 2, 3},
+			req:                &types.QueryCodesRequest{},
+			expCodeIDs:         []uint64{1, 2, 3},
+			expPaginationTotal: 3,
 		},
 		"with gaps": {
-			storedCodeIDs: []uint64{2, 4, 6},
-			req:           &types.QueryCodesRequest{},
-			expCodeIDs:    []uint64{2, 4, 6},
+			storedCodeIDs:      []uint64{2, 4, 6},
+			req:                &types.QueryCodesRequest{},
+			expCodeIDs:         []uint64{2, 4, 6},
+			expPaginationTotal: 3,
 		},
 		"with pagination offset": {
 			storedCodeIDs: []uint64{1, 2, 3},
@@ -560,7 +778,18 @@ func TestQueryCodeList(t *testing.T) {
 					Offset: 1,
 				},
 			},
-			expCodeIDs: []uint64{2, 3},
+			expCodeIDs:         []uint64{2, 3},
+			expPaginationTotal: 3,
+		},
+		"with invalid pagination key": {
+			storedCodeIDs: []uint64{1, 2, 3},
+			req: &types.QueryCodesRequest{
+				Pagination: &query.PageRequest{
+					Offset: 1,
+					Key:    []byte("test"),
+				},
+			},
+			expErr: fmt.Errorf("invalid request, either offset or key is expected, got both"),
 		},
 		"with pagination limit": {
 			storedCodeIDs: []uint64{1, 2, 3},
@@ -569,7 +798,8 @@ func TestQueryCodeList(t *testing.T) {
 					Limit: 2,
 				},
 			},
-			expCodeIDs: []uint64{1, 2},
+			expCodeIDs:         []uint64{1, 2},
+			expPaginationTotal: 0,
 		},
 		"with pagination next key": {
 			storedCodeIDs: []uint64{1, 2, 3},
@@ -578,7 +808,8 @@ func TestQueryCodeList(t *testing.T) {
 					Key: fromBase64("AAAAAAAAAAI="),
 				},
 			},
-			expCodeIDs: []uint64{2, 3},
+			expCodeIDs:         []uint64{2, 3},
+			expPaginationTotal: 0,
 		},
 		"with empty request": {
 			req:    nil,
@@ -601,12 +832,13 @@ func TestQueryCodeList(t *testing.T) {
 			got, err := q.Codes(sdk.WrapSDKContext(xCtx), spec.req)
 			// then
 			if spec.expErr != nil {
-				require.True(t, errors.Is(err, spec.expErr), "but got %+v", err)
+				require.Equal(t, spec.expErr, err, "but got %+v", err)
 				return
 			}
 			require.NoError(t, err)
 			require.NotNil(t, got.CodeInfos)
 			require.Len(t, got.CodeInfos, len(spec.expCodeIDs))
+			assert.EqualValues(t, spec.expPaginationTotal, got.Pagination.Total)
 			for i, exp := range spec.expCodeIDs {
 				assert.EqualValues(t, exp, got.CodeInfos[i].CodeID)
 			}
@@ -646,26 +878,26 @@ func TestQueryContractInfo(t *testing.T) {
 			src:    &types.QueryContractInfoRequest{Address: contractAddr.String()},
 			stored: types.ContractInfoFixture(),
 			expRsp: &types.QueryContractInfoResponse{
-				Address: contractAddr.String(),
-				ContractInfo: types.ContractInfoFixture(func(info *types.ContractInfo) {
-					info.Created = nil // not returned on queries
-				}),
+				Address:      contractAddr.String(),
+				ContractInfo: types.ContractInfoFixture(),
 			},
 		},
 		"with extension": {
 			src:    &types.QueryContractInfoRequest{Address: contractAddr.String()},
 			stored: types.ContractInfoFixture(myExtension),
 			expRsp: &types.QueryContractInfoResponse{
-				Address: contractAddr.String(),
-				ContractInfo: types.ContractInfoFixture(myExtension, func(info *types.ContractInfo) {
-					info.Created = nil // not returned on queries
-				}),
+				Address:      contractAddr.String(),
+				ContractInfo: types.ContractInfoFixture(myExtension),
 			},
 		},
 		"not found": {
 			src:    &types.QueryContractInfoRequest{Address: RandomBech32AccountAddress(t)},
 			stored: types.ContractInfoFixture(),
 			expErr: types.ErrNotFound,
+		},
+		"query with invalid address": {
+			src:    &types.QueryContractInfoRequest{Address: "abcde"},
+			expErr: bech32.ErrInvalidLength(5),
 		},
 		"with empty request": {
 			src:    nil,
@@ -699,17 +931,19 @@ func TestQueryPinnedCodes(t *testing.T) {
 
 	q := Querier(keeper)
 	specs := map[string]struct {
-		srcQuery   *types.QueryPinnedCodesRequest
-		expCodeIDs []uint64
-		expErr     error
+		srcQuery           *types.QueryPinnedCodesRequest
+		expCodeIDs         []uint64
+		expPaginationTotal uint64
+		expErr             error
 	}{
 		"req nil": {
 			srcQuery: nil,
 			expErr:   status.Error(codes.InvalidArgument, "empty request"),
 		},
 		"query all": {
-			srcQuery:   &types.QueryPinnedCodesRequest{},
-			expCodeIDs: []uint64{exampleContract1.CodeID, exampleContract2.CodeID},
+			srcQuery:           &types.QueryPinnedCodesRequest{},
+			expCodeIDs:         []uint64{exampleContract1.CodeID, exampleContract2.CodeID},
+			expPaginationTotal: 2,
 		},
 		"with pagination offset": {
 			srcQuery: &types.QueryPinnedCodesRequest{
@@ -717,7 +951,8 @@ func TestQueryPinnedCodes(t *testing.T) {
 					Offset: 1,
 				},
 			},
-			expCodeIDs: []uint64{exampleContract2.CodeID},
+			expCodeIDs:         []uint64{exampleContract2.CodeID},
+			expPaginationTotal: 2,
 		},
 		"with invalid pagination key": {
 			srcQuery: &types.QueryPinnedCodesRequest{
@@ -734,7 +969,8 @@ func TestQueryPinnedCodes(t *testing.T) {
 					Limit: 1,
 				},
 			},
-			expCodeIDs: []uint64{exampleContract1.CodeID},
+			expCodeIDs:         []uint64{exampleContract1.CodeID},
+			expPaginationTotal: 0,
 		},
 		"with pagination next key": {
 			srcQuery: &types.QueryPinnedCodesRequest{
@@ -742,18 +978,21 @@ func TestQueryPinnedCodes(t *testing.T) {
 					Key: fromBase64("AAAAAAAAAAM="),
 				},
 			},
-			expCodeIDs: []uint64{exampleContract2.CodeID},
+			expCodeIDs:         []uint64{exampleContract2.CodeID},
+			expPaginationTotal: 0,
 		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			got, err := q.PinnedCodes(sdk.WrapSDKContext(ctx), spec.srcQuery)
+
 			if spec.expErr != nil {
 				assert.Nil(t, got)
-				assert.NotNil(t, err)
-
+				assert.EqualError(t, spec.expErr, err.Error())
 				return
 			}
+
+			assert.EqualValues(t, spec.expPaginationTotal, got.Pagination.Total)
 			require.NotNil(t, got)
 			assert.Equal(t, spec.expCodeIDs, got.CodeIDs)
 		})
@@ -766,26 +1005,39 @@ func TestQueryParams(t *testing.T) {
 
 	q := Querier(keeper)
 
-	paramsResponse, err := q.Params(sdk.WrapSDKContext(ctx), &types.QueryParamsRequest{})
-	require.NoError(t, err)
-	require.NotNil(t, paramsResponse)
+	specs := map[string]struct {
+		setParams types.Params
+		expParams types.Params
+		expErr    error
+	}{
+		"allowEverybody(DefaultParams)": {
+			setParams: types.DefaultParams(),
+			expParams: types.DefaultParams(),
+		},
+		"allowNobody": {
+			setParams: types.Params{
+				CodeUploadAccess:             types.AllowNobody,
+				InstantiateDefaultPermission: types.AccessTypeNobody,
+			},
+			expParams: types.Params{
+				CodeUploadAccess:             types.AllowNobody,
+				InstantiateDefaultPermission: types.AccessTypeNobody,
+			},
+		},
+	}
+	for msg, spec := range specs {
+		t.Run(msg, func(t *testing.T) {
+			xCtx, _ := ctx.CacheContext()
+			keeper.SetParams(xCtx, spec.setParams)
 
-	defaultParams := types.DefaultParams()
+			paramsResponse, err := q.Params(sdk.WrapSDKContext(xCtx), &types.QueryParamsRequest{})
 
-	require.Equal(t, paramsResponse.Params.CodeUploadAccess, defaultParams.CodeUploadAccess)
-	require.Equal(t, paramsResponse.Params.InstantiateDefaultPermission, defaultParams.InstantiateDefaultPermission)
-
-	keeper.SetParams(ctx, types.Params{
-		CodeUploadAccess:             types.AllowNobody,
-		InstantiateDefaultPermission: types.AccessTypeNobody,
-	})
-
-	paramsResponse, err = q.Params(sdk.WrapSDKContext(ctx), &types.QueryParamsRequest{})
-	require.NoError(t, err)
-	require.NotNil(t, paramsResponse)
-
-	require.Equal(t, paramsResponse.Params.CodeUploadAccess, types.AllowNobody)
-	require.Equal(t, paramsResponse.Params.InstantiateDefaultPermission, types.AccessTypeNobody)
+			require.NoError(t, err)
+			require.NotNil(t, paramsResponse)
+			require.Equal(t, spec.expParams.CodeUploadAccess, paramsResponse.Params.CodeUploadAccess)
+			require.Equal(t, spec.expParams.InstantiateDefaultPermission, paramsResponse.Params.InstantiateDefaultPermission)
+		})
+	}
 }
 
 func TestQueryCodeInfo(t *testing.T) {
@@ -879,6 +1131,7 @@ func TestQueryCodeInfoList(t *testing.T) {
 			codeInfo: codeInfoWithConfig(types.AccessTypeOnlyAddress.With(anyAddress)),
 		},
 	}
+	expPaginationTotal := 0
 
 	allCodesResponse := make([]types.CodeInfoResponse, 0)
 	for _, code := range codes {
@@ -905,6 +1158,7 @@ func TestQueryCodeInfoList(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, got.CodeInfos, 3)
 	require.EqualValues(t, allCodesResponse, got.CodeInfos)
+	assert.EqualValues(t, expPaginationTotal, got.Pagination.Total)
 }
 
 func fromBase64(s string) []byte {

@@ -4,14 +4,33 @@
 
 ### Features
 * [\#61](https://github.com/Finschia/wasmd/pull/61) bumpup ibc-go to v4
+* [\#84](https://github.com/Finschia/wasmd/pull/84) add AcceptlistStaragteQuerier
 
 ### Improvements
 * [\#63](https://github.com/Finschia/wasmd/pull/63) add event checking to TestStoreCode
 * [\#65](https://github.com/Finschia/wasmd/pull/65) add test cases for empty request in each function
+* [\#66](https://github.com/Finschia/wasmd/pull/66) add test cases for invalid pagination key in some functions
+* [\#64](https://github.com/Finschia/wasmd/pull/64) test: add test cases to confirm output for PinnedCodes
+* [\#70](https://github.com/Finschia/wasmd/pull/70) add event checking to TestInstantiateContract
+* [\#73](https://github.com/Finschia/wasmd/pull/73) test: add the check for expPaginationTotal
+* [\#72](https://github.com/Finschia/wasmd/pull/72) add pagination next key test in ContractHistory
+* [\#75](https://github.com/Finschia/wasmd/pull/75) test: add the test case for InactiveContract
+* [\#74](https://github.com/Finschia/wasmd/pull/74) add event checking to TestInstantiateContract2
+* [\#78](https://github.com/Finschia/wasmd/pull/78) add the check for TestMigrateContract
+* [\#69](https://github.com/Finschia/wasmd/pull/69) refactor: refactor test cases for Params
+* [\#71](https://github.com/Finschia/wasmd/pull/71) add test cases in ContractsByCode
+* [\#82](https://github.com/Finschia/wasmd/pull/82) add test case to QueryInactiveContracts
+* [\#87](https://github.com/Finschia/wasmd/pull/87) add an integration test for TestExecuteContract
+* [\#79](https://github.com/Finschia/wasmd/pull/79) add an integration test for TestStoreAndInstantiateContract
+* [\#88](https://github.com/Finschia/wasmd/pull/88) add the test case for invalid address
+* [\#76](https://github.com/Finschia/wasmd/pull/76) add an integration test for ClearAdmin
 * [\#68](https://github.com/Finschia/wasmd/pull/68) add an integration test for UpdateAdmin
 
 ### Bug Fixes
+* [\#62](https://github.com/Finschia/wasmd/pull/62) fill ContractHistory querier result's Updated field
 * [\#52](https://github.com/Finschia/wasmd/pull/52) fix cli_test error of wasmplus and add cli_test ci
+* [\#89](https://github.com/Finschia/wasmd/pull/89) fill ContractInfo querier result's Updated field
+* [\#90](https://github.com/Finschia/wasmd/pull/90) delete output in TestQueryContractsByCode
 
 ### Breaking Changes
 
@@ -20,6 +39,7 @@
 
 ### Document Updates
 * [\#54](https://github.com/Finschia/wasmd/pull/54) add documentation about errors (codespace and codes)
+* [\#92](https://github.com/Finschia/wasmd/pull/92) modify links in x/wasmplus README.md
 
 
 ## [v0.1.4](https://github.com/Finschia/wasmd/releases/tag/v0.1.4) - 2023.05.22
@@ -32,6 +52,7 @@
 
 ### Bug Fixes
 * [\#35](https://github.com/Finschia/wasmd/pull/35) stop wrap twice the response of handling non-plus wasm message in plus handler
+* [\#77](https://github.com/Finschia/wasmd/pull/77) use ctx cache in msg server integration test
 
 ### Document Updates
 * [\#44](https://github.com/Finschia/wasmd/pull/44) update notice

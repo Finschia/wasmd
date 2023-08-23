@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"testing"
 	"time"
 
@@ -687,4 +688,17 @@ func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.AccAddress) {
 	pub := key.PubKey()
 	addr := sdk.AccAddress(pub.Address())
 	return key, pub, addr
+}
+
+func GenerateSortedBech32Address(addrs ...[]byte) []string {
+	sort.Slice(addrs, func(i, j int) bool {
+		return string(addrs[i]) < string(addrs[j])
+	})
+
+	expAddrs := make([]string, len(addrs))
+	for i, b := range addrs {
+		expAddrs[i] = sdk.AccAddress(b).String()
+	}
+
+	return expAddrs
 }
