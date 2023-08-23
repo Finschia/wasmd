@@ -335,6 +335,111 @@ func TestMigrateContract(t *testing.T) {
 	}
 }
 
+func TestExecuteContract(t *testing.T) {
+	wasmApp := app.Setup(false)
+	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
+
+	var (
+		myAddress       sdk.AccAddress = make([]byte, types.ContractAddrLen)
+		_, _, otherAddr                = testdata.KeyTestPubAddr()
+	)
+
+	// setup
+	_, _, sender := testdata.KeyTestPubAddr()
+	msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
+		m.WASMByteCode = hackatomContract
+		m.Sender = sender.String()
+	})
+
+	// store code
+	rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(ctx, msg)
+	require.NoError(t, err)
+	var storeCodeResponse types.MsgStoreCodeResponse
+	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &storeCodeResponse))
+
+	// instantiate contract
+	initMsg := keeper.HackatomExampleInitMsg{
+		Verifier:    myAddress,
+		Beneficiary: otherAddr,
+	}
+	initMsgBz, err := json.Marshal(initMsg)
+	require.NoError(t, err)
+	msgInstantiate := types.MsgInstantiateContractFixture(func(m *types.MsgInstantiateContract) {
+		m.Sender = sender.String()
+		m.Admin = myAddress.String()
+		m.CodeID = storeCodeResponse.CodeID
+		m.Label = "test"
+		m.Msg = initMsgBz
+		m.Funds = sdk.Coins{}
+	})
+	rsp, err = wasmApp.MsgServiceRouter().Handler(msgInstantiate)(ctx, msgInstantiate)
+	require.NoError(t, err)
+	var instantiateResponse types.MsgInstantiateContractResponse
+	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
+
+	specs := map[string]struct {
+		addr   string
+		expErr bool
+	}{
+		"adress can execute a contract": {
+			addr:   myAddress.String(),
+			expErr: false,
+		},
+		"other address cannot execute a contract": {
+			addr:   otherAddr.String(),
+			expErr: true,
+		},
+	}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			xCtx, _ := ctx.CacheContext()
+
+			// when
+			msgExecuteContract := types.MsgExecuteContractFixture(func(m *types.MsgExecuteContract) {
+				m.Sender = spec.addr
+				m.Msg = []byte(`{"release":{}}`)
+				m.Contract = instantiateResponse.Address
+				m.Funds = sdk.Coins{}
+			})
+			rsp, err = wasmApp.MsgServiceRouter().Handler(msgExecuteContract)(xCtx, msgExecuteContract)
+
+			// then
+			if spec.expErr {
+				require.Error(t, err)
+				return
+			}
+
+			// check event
+			events := rsp.Events
+			assert.Equal(t, 4, len(events))
+			assert.Equal(t, "message", events[0].Type)
+			assert.Equal(t, 2, len(events[0].Attributes))
+			assert.Equal(t, "module", string(events[0].Attributes[0].Key))
+			assert.Equal(t, "wasm", string(events[0].Attributes[0].Value))
+			assert.Equal(t, "sender", string(events[0].Attributes[1].Key))
+			assert.Equal(t, myAddress.String(), string(events[0].Attributes[1].Value))
+			assert.Equal(t, "execute", events[1].Type)
+			assert.Equal(t, 1, len(events[1].Attributes))
+			assert.Equal(t, "_contract_address", string(events[1].Attributes[0].Key))
+			assert.Equal(t, instantiateResponse.Address, string(events[1].Attributes[0].Value))
+			assert.Equal(t, "wasm", events[2].Type)
+			assert.Equal(t, 3, len(events[2].Attributes))
+			assert.Equal(t, "_contract_address", string(events[2].Attributes[0].Key))
+			assert.Equal(t, instantiateResponse.Address, string(events[2].Attributes[0].Value))
+			assert.Equal(t, "action", string(events[2].Attributes[1].Key))
+			assert.Equal(t, "release", string(events[2].Attributes[1].Value))
+			assert.Equal(t, "destination", string(events[2].Attributes[2].Key))
+			assert.Equal(t, "wasm-hackatom", events[3].Type)
+			assert.Equal(t, "_contract_address", string(events[3].Attributes[0].Key))
+			assert.Equal(t, instantiateResponse.Address, string(events[3].Attributes[0].Value))
+			assert.Equal(t, "action", string(events[3].Attributes[1].Key))
+			assert.Equal(t, "release", string(events[3].Attributes[1].Value))
+
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestClearAdmin(t *testing.T) {
 	wasmApp := app.Setup(false)
 	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
