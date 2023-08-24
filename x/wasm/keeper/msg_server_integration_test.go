@@ -422,11 +422,61 @@ func TestExecuteContract(t *testing.T) {
 
 	specs := map[string]struct {
 		addr   string
+		events []abci.Event
 		expErr bool
 	}{
 		"adress can execute a contract": {
-			addr:   myAddress.String(),
-			expErr: false,
+			addr: myAddress.String(),
+			events: []abci.Event{{
+				Type: "message",
+				Attributes: []abci.EventAttribute{{
+					Key:   []byte("module"),
+					Value: []byte("wasm"),
+					Index: false,
+				}, {
+					Key:   []byte("sender"),
+					Value: []byte(myAddress.String()),
+					Index: false,
+				},
+				},
+			}, {
+				Type: "execute",
+				Attributes: []abci.EventAttribute{{
+					Key:   []byte("_contract_address"),
+					Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+					Index: false,
+				},
+				},
+			}, {
+				Type: "wasm",
+				Attributes: []abci.EventAttribute{{
+					Key:   []byte("_contract_address"),
+					Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+					Index: false,
+				}, {
+					Key:   []byte("action"),
+					Value: []byte("release"),
+					Index: false,
+				}, {
+					Key:   []byte("destination"),
+					Value: []byte("link1cvk5jz4jank96cmfrxhf5nn4dmj6atu833yvjq"),
+					Index: false,
+				},
+				},
+			}, {
+				Type: "wasm-hackatom",
+				Attributes: []abci.EventAttribute{{
+					Key:   []byte("_contract_address"),
+					Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+					Index: false,
+				}, {
+					Key:   []byte("action"),
+					Value: []byte("release"),
+					Index: false,
+				},
+				},
+			},
+			}, expErr: false,
 		},
 		"other address cannot execute a contract": {
 			addr:   otherAddr.String(),
@@ -453,30 +503,14 @@ func TestExecuteContract(t *testing.T) {
 			}
 
 			// check event
-			events := rsp.Events
-			assert.Equal(t, 4, len(events))
-			assert.Equal(t, "message", events[0].Type)
-			assert.Equal(t, 2, len(events[0].Attributes))
-			assert.Equal(t, "module", string(events[0].Attributes[0].Key))
-			assert.Equal(t, "wasm", string(events[0].Attributes[0].Value))
-			assert.Equal(t, "sender", string(events[0].Attributes[1].Key))
-			assert.Equal(t, myAddress.String(), string(events[0].Attributes[1].Value))
-			assert.Equal(t, "execute", events[1].Type)
-			assert.Equal(t, 1, len(events[1].Attributes))
-			assert.Equal(t, "_contract_address", string(events[1].Attributes[0].Key))
-			assert.Equal(t, instantiateResponse.Address, string(events[1].Attributes[0].Value))
-			assert.Equal(t, "wasm", events[2].Type)
-			assert.Equal(t, 3, len(events[2].Attributes))
-			assert.Equal(t, "_contract_address", string(events[2].Attributes[0].Key))
-			assert.Equal(t, instantiateResponse.Address, string(events[2].Attributes[0].Value))
-			assert.Equal(t, "action", string(events[2].Attributes[1].Key))
-			assert.Equal(t, "release", string(events[2].Attributes[1].Value))
-			assert.Equal(t, "destination", string(events[2].Attributes[2].Key))
-			assert.Equal(t, "wasm-hackatom", events[3].Type)
-			assert.Equal(t, "_contract_address", string(events[3].Attributes[0].Key))
-			assert.Equal(t, instantiateResponse.Address, string(events[3].Attributes[0].Value))
-			assert.Equal(t, "action", string(events[3].Attributes[1].Key))
-			assert.Equal(t, "release", string(events[3].Attributes[1].Value))
+			assert.Equal(t, len(spec.events), len(rsp.Events))
+			assert.Equal(t, spec.events[0], rsp.Events[0])
+			assert.Equal(t, spec.events[1], rsp.Events[1])
+			assert.Equal(t, spec.events[2].Attributes[2].Key, rsp.Events[2].Attributes[2].Key)
+			// Note: Value with destination as key cannot be tested because it is a different value for each execution
+			assert.Equal(t, spec.events[2].Attributes[0], rsp.Events[2].Attributes[0])
+			assert.Equal(t, spec.events[2].Attributes[1], rsp.Events[2].Attributes[1])
+			assert.Equal(t, spec.events[3], rsp.Events[3])
 
 			require.NoError(t, err)
 		})
