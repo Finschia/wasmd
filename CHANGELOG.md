@@ -25,6 +25,7 @@
 * [\#88](https://github.com/Finschia/wasmd/pull/88) add the test case for invalid address
 * [\#76](https://github.com/Finschia/wasmd/pull/76) add an integration test for ClearAdmin
 * [\#68](https://github.com/Finschia/wasmd/pull/68) add an integration test for UpdateAdmin
+* [\#99](https://github.com/Finschia/wasmd/pull/99) format test files
 
 ### Bug Fixes
 * [\#62](https://github.com/Finschia/wasmd/pull/62) fill ContractHistory querier result's Updated field
