@@ -80,13 +80,13 @@ func TestInstantiateContract(t *testing.T) {
 	specs := map[string]struct {
 		addr       string
 		permission *types.AccessConfig
-		events     []abci.Event
+		expEvents  []abci.Event
 		expErr     bool
 	}{
 		"address can instantiate a contract when permission is everybody": {
 			addr:       myAddress.String(),
 			permission: &types.AllowEverybody,
-			events: []abci.Event{{
+			expEvents: []abci.Event{{
 				Type: "message",
 				Attributes: []abci.EventAttribute{{
 					Key:   []byte("module"),
@@ -155,7 +155,7 @@ func TestInstantiateContract(t *testing.T) {
 			}
 
 			// check event
-			assert.Equal(t, spec.events, rsp.Events)
+			assert.Equal(t, spec.expEvents, rsp.Events)
 			assert.Contains(t, string(rsp.Data), string(rsp.Events[1].Attributes[0].Value))
 
 			require.NoError(t, err)
@@ -175,14 +175,14 @@ func TestInstantiateContract2(t *testing.T) {
 		addr       string
 		permission *types.AccessConfig
 		salt       string
-		events     []abci.Event
+		expEvents  []abci.Event
 		expErr     bool
 	}{
 		"address can instantiate a contract when permission is everybody": {
 			addr:       myAddress.String(),
 			permission: &types.AllowEverybody,
 			salt:       "salt1",
-			events: []abci.Event{{
+			expEvents: []abci.Event{{
 				Type: "message",
 				Attributes: []abci.EventAttribute{{
 					Key:   []byte("module"),
@@ -257,7 +257,7 @@ func TestInstantiateContract2(t *testing.T) {
 			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
 
 			// check event
-			assert.Equal(t, spec.events, rsp.Events)
+			assert.Equal(t, spec.expEvents, rsp.Events)
 
 			require.NoError(t, err)
 		})
@@ -274,13 +274,13 @@ func TestMigrateContract(t *testing.T) {
 	)
 
 	specs := map[string]struct {
-		addr   string
-		events []abci.Event
-		expErr bool
+		addr      string
+		expEvents []abci.Event
+		expErr    bool
 	}{
 		"admin can migrate a contract": {
 			addr: myAddress.String(),
-			events: []abci.Event{{
+			expEvents: []abci.Event{{
 				Type: "message",
 				Attributes: []abci.EventAttribute{{
 					Key:   []byte("module"),
@@ -371,7 +371,7 @@ func TestMigrateContract(t *testing.T) {
 			}
 
 			// check event
-			assert.Equal(t, spec.events, rsp.Events)
+			assert.Equal(t, spec.expEvents, rsp.Events)
 
 			require.NoError(t, err)
 		})
@@ -421,13 +421,13 @@ func TestExecuteContract(t *testing.T) {
 	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
 
 	specs := map[string]struct {
-		addr   string
-		events []abci.Event
-		expErr bool
+		addr      string
+		expEvents []abci.Event
+		expErr    bool
 	}{
 		"adress can execute a contract": {
 			addr: myAddress.String(),
-			events: []abci.Event{{
+			expEvents: []abci.Event{{
 				Type: "message",
 				Attributes: []abci.EventAttribute{{
 					Key:   []byte("module"),
@@ -503,14 +503,14 @@ func TestExecuteContract(t *testing.T) {
 			}
 
 			// check event
-			assert.Equal(t, len(spec.events), len(rsp.Events))
-			assert.Equal(t, spec.events[0], rsp.Events[0])
-			assert.Equal(t, spec.events[1], rsp.Events[1])
-			assert.Equal(t, spec.events[2].Attributes[2].Key, rsp.Events[2].Attributes[2].Key)
+			assert.Equal(t, len(spec.expEvents), len(rsp.Events))
+			assert.Equal(t, spec.expEvents[0], rsp.Events[0])
+			assert.Equal(t, spec.expEvents[1], rsp.Events[1])
+			assert.Equal(t, spec.expEvents[2].Attributes[2].Key, rsp.Events[2].Attributes[2].Key)
 			// Note: Value with destination as key cannot be tested because it is a different value for each execution
-			assert.Equal(t, spec.events[2].Attributes[0], rsp.Events[2].Attributes[0])
-			assert.Equal(t, spec.events[2].Attributes[1], rsp.Events[2].Attributes[1])
-			assert.Equal(t, spec.events[3], rsp.Events[3])
+			assert.Equal(t, spec.expEvents[2].Attributes[0], rsp.Events[2].Attributes[0])
+			assert.Equal(t, spec.expEvents[2].Attributes[1], rsp.Events[2].Attributes[1])
+			assert.Equal(t, spec.expEvents[3], rsp.Events[3])
 
 			require.NoError(t, err)
 		})
