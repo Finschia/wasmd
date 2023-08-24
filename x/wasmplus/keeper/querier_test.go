@@ -3,14 +3,16 @@ package keeper
 import (
 	"encoding/base64"
 	"fmt"
+	"testing"
+
 	"github.com/Finschia/finschia-sdk/types/query"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"testing"
 
 	sdk "github.com/Finschia/finschia-sdk/types"
+
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
 	"github.com/Finschia/wasmd/x/wasmplus/types"
 )

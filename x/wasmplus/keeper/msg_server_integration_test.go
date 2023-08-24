@@ -24,9 +24,7 @@ func TestStoreAndInstantiateContract(t *testing.T) {
 	wasmApp := appplus.Setup(false)
 	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
 
-	var (
-		myAddress sdk.AccAddress = make([]byte, wasmtypes.ContractAddrLen)
-	)
+	var myAddress sdk.AccAddress = make([]byte, wasmtypes.ContractAddrLen)
 
 	specs := map[string]struct {
 		addr       string
