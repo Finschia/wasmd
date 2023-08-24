@@ -33,6 +33,7 @@
 * [\#89](https://github.com/Finschia/wasmd/pull/89) fill ContractInfo querier result's Updated field
 * [\#90](https://github.com/Finschia/wasmd/pull/90) delete output in TestQueryContractsByCode
 * [\#95](https://github.com/Finschia/wasmd/pull/95) add a test case to verify ContractInfo gets correct IBCPortID
+* [\#101](https://github.com/Finschia/wasmd/pull/101) move helper method out of generated file
 
 ### Breaking Changes
 
