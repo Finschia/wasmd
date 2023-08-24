@@ -275,10 +275,37 @@ func TestMigrateContract(t *testing.T) {
 
 	specs := map[string]struct {
 		addr   string
+		events []abci.Event
 		expErr bool
 	}{
 		"admin can migrate a contract": {
-			addr:   myAddress.String(),
+			addr: myAddress.String(),
+			events: []abci.Event{{
+				Type: "message",
+				Attributes: []abci.EventAttribute{{
+					Key:   []byte("module"),
+					Value: []byte("wasm"),
+					Index: false,
+				}, {
+					Key:   []byte("sender"),
+					Value: []byte(myAddress.String()),
+					Index: false,
+				},
+				},
+			}, {
+				Type: "migrate",
+				Attributes: []abci.EventAttribute{{
+					Key:   []byte("code_id"),
+					Value: []byte("1"),
+					Index: false,
+				}, {
+					Key:   []byte("_contract_address"),
+					Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+					Index: false,
+				},
+				},
+			},
+			},
 			expErr: false,
 		},
 		"other address cannot migrate a contract": {
@@ -344,20 +371,7 @@ func TestMigrateContract(t *testing.T) {
 			}
 
 			// check event
-			events := rsp.Events
-			assert.Equal(t, 2, len(events))
-			assert.Equal(t, "message", events[0].Type)
-			assert.Equal(t, 2, len(events[0].Attributes))
-			assert.Equal(t, "module", string(events[0].Attributes[0].Key))
-			assert.Equal(t, "wasm", string(events[0].Attributes[0].Value))
-			assert.Equal(t, "sender", string(events[0].Attributes[1].Key))
-			assert.Equal(t, myAddress.String(), string(events[0].Attributes[1].Value))
-			assert.Equal(t, "migrate", events[1].Type)
-			assert.Equal(t, 2, len(events[1].Attributes))
-			assert.Equal(t, "code_id", string(events[1].Attributes[0].Key))
-			assert.Equal(t, "1", string(events[1].Attributes[0].Value))
-			assert.Equal(t, "_contract_address", string(events[1].Attributes[1].Key))
-			assert.Equal(t, instantiateResponse.Address, string(events[1].Attributes[1].Value))
+			assert.Equal(t, spec.events, rsp.Events)
 
 			require.NoError(t, err)
 		})
