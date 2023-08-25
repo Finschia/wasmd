@@ -37,6 +37,7 @@
 ### Breaking Changes
 
 ### Build, CI
+* [\#104](https://github.com/Finschia/wasmd/pull/104) change depending wasmvm to v1.1.1-0.11.4-rc1
 * [\#60](https://github.com/Finschia/wasmd/pull/60) Update golang version to 1.20
 
 ### Document Updates
