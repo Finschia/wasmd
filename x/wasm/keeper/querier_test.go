@@ -417,6 +417,7 @@ func TestQueryContractsByCode(t *testing.T) {
 		})
 	}
 }
+
 func TestQueryContractListByCodeOrdering(t *testing.T) {
 	ctx, keepers := CreateTestInput(t, false, AvailableCapabilities)
 	keeper := keepers.WasmKeeper

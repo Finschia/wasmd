@@ -73,9 +73,7 @@ func TestInstantiateContract(t *testing.T) {
 	wasmApp := app.Setup(false)
 	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
 
-	var (
-		myAddress sdk.AccAddress = make([]byte, types.ContractAddrLen)
-	)
+	var myAddress sdk.AccAddress = make([]byte, types.ContractAddrLen)
 
 	specs := map[string]struct {
 		addr       string
@@ -137,7 +135,7 @@ func TestInstantiateContract(t *testing.T) {
 			}
 			rsp, err = wasmApp.MsgServiceRouter().Handler(msgInstantiate)(xCtx, msgInstantiate)
 
-			//then
+			// then
 			if spec.expErr {
 				require.Error(t, err)
 				return
@@ -156,9 +154,7 @@ func TestInstantiateContract2(t *testing.T) {
 	wasmApp := app.Setup(false)
 	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
 
-	var (
-		myAddress sdk.AccAddress = make([]byte, types.ContractAddrLen)
-	)
+	var myAddress sdk.AccAddress = make([]byte, types.ContractAddrLen)
 
 	specs := map[string]struct {
 		addr       string
@@ -225,7 +221,7 @@ func TestInstantiateContract2(t *testing.T) {
 			}
 			rsp, err = wasmApp.MsgServiceRouter().Handler(msgInstantiate)(xCtx, msgInstantiate)
 
-			//then
+			// then
 			if spec.expErr {
 				require.Error(t, err)
 				return
@@ -432,7 +428,8 @@ func TestExecuteContract(t *testing.T) {
 					},
 					},
 				},
-			}, expErr: false,
+			}, 
+      expErr: false,
 		},
 		"other address cannot execute a contract": {
 			addr:   otherAddr.String(),
