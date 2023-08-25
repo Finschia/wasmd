@@ -444,7 +444,8 @@ func TestExecuteContract(t *testing.T) {
 							Index: false,
 						},
 					},
-				}, {
+				}, { // This is the event for the hackatom contract. See here for details.
+					// https://github.com/Finschia/cosmwasm/blob/v1.1.9-0.7.0/contracts/hackatom/src/contract.rs#L97
 					Type: "wasm",
 					Attributes: []abci.EventAttribute{
 						{
@@ -461,7 +462,8 @@ func TestExecuteContract(t *testing.T) {
 							Index: false,
 						},
 					},
-				}, {
+				}, { // This is the event for the hackatom contract. See here for details.
+					// https://github.com/Finschia/cosmwasm/blob/v1.1.9-0.7.0/contracts/hackatom/src/contract.rs#L97
 					Type: "wasm-hackatom",
 					Attributes: []abci.EventAttribute{
 						{
