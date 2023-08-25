@@ -457,7 +457,7 @@ func TestExecuteContract(t *testing.T) {
 							Index: false,
 						}, {
 							Key:   []byte("destination"),
-							Value: []byte("link1cvk5jz4jank96cmfrxhf5nn4dmj6atu833yvjq"),
+							Value: nil,
 							Index: false,
 						},
 					},
