@@ -26,6 +26,8 @@
 * [\#76](https://github.com/Finschia/wasmd/pull/76) add an integration test for ClearAdmin
 * [\#68](https://github.com/Finschia/wasmd/pull/68) add an integration test for UpdateAdmin
 * [\#99](https://github.com/Finschia/wasmd/pull/99) format test files
+* [\#98](https://github.com/Finschia/wasmd/pull/98) refactor TestStoreAndInstantiateContract
+* [\#100](https://github.com/Finschia/wasmd/pull/100) refactor tests for cosmwasm/wasm/v1/tx.proto other than TestClearAdmin
 
 ### Bug Fixes
 * [\#62](https://github.com/Finschia/wasmd/pull/62) fill ContractHistory querier result's Updated field
@@ -38,6 +40,7 @@
 ### Breaking Changes
 
 ### Build, CI
+* [\#104](https://github.com/Finschia/wasmd/pull/104) change depending wasmvm to v1.1.1-0.11.4-rc1
 * [\#60](https://github.com/Finschia/wasmd/pull/60) Update golang version to 1.20
 
 ### Document Updates

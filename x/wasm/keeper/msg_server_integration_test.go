@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"crypto/sha256"
 	_ "embed"
-	"encoding/hex"
 	"encoding/json"
 	"testing"
 	"time"
@@ -31,42 +30,82 @@ func TestStoreCode(t *testing.T) {
 	wasmApp := app.Setup(false)
 	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{})
 	_, _, sender := testdata.KeyTestPubAddr()
-	msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
-		m.WASMByteCode = wasmContract
-		m.Sender = sender.String()
-	})
-	expHash := sha256.Sum256(wasmContract)
 
-	// when
-	rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(ctx, msg)
+	specs := map[string]struct {
+		addr       string
+		permission *types.AccessConfig
+		expEvents  []abci.Event
+	}{
+		"address can store a contract when permission is everybody": {
+			addr:       sender.String(),
+			permission: &types.AllowEverybody,
+			expEvents: []abci.Event{
+				createMsgEvent(sender), {
+					Type: "store_code",
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("code_checksum"),
+							Value: []byte("2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89"),
+							Index: false,
+						}, {
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						},
+					},
+				},
+			},
+		},
+		"address can store a contract when permission is nobody": {
+			addr:       sender.String(),
+			permission: &types.AllowNobody,
+			expEvents: []abci.Event{
+				createMsgEvent(sender), {
+					Type: "store_code",
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("code_checksum"),
+							Value: []byte("2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89"),
+							Index: false,
+						}, {
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						},
+					},
+				},
+			},
+		},
+	}
 
-	// check event
-	require.Equal(t, 2, len(rsp.Events))
-	assert.Equal(t, "message", rsp.Events[0].Type)
-	assert.Equal(t, 2, len(rsp.Events[0].Attributes))
-	assert.Equal(t, "module", string(rsp.Events[0].Attributes[0].Key))
-	assert.Equal(t, "wasm", string(rsp.Events[0].Attributes[0].Value))
-	assert.Equal(t, "sender", string(rsp.Events[0].Attributes[1].Key))
-	assert.Equal(t, sender.String(), string(rsp.Events[0].Attributes[1].Value))
-	assert.Equal(t, "store_code", rsp.Events[1].Type)
-	assert.Equal(t, 2, len(rsp.Events[1].Attributes))
-	assert.Equal(t, "code_checksum", string(rsp.Events[1].Attributes[0].Key))
-	assert.Equal(t, hex.EncodeToString(expHash[:]), string(rsp.Events[1].Attributes[0].Value))
-	assert.Equal(t, "code_id", string(rsp.Events[1].Attributes[1].Key))
-	assert.Equal(t, "1", string(rsp.Events[1].Attributes[1].Value))
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			xCtx, _ := ctx.CacheContext()
+			msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
+				m.WASMByteCode = wasmContract
+				m.Sender = sender.String()
+			})
 
-	// then
-	require.NoError(t, err)
-	var result types.MsgStoreCodeResponse
-	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &result))
-	assert.Equal(t, uint64(1), result.CodeID)
-	assert.Equal(t, expHash[:], result.Checksum)
-	// and
-	info := wasmApp.WasmKeeper.GetCodeInfo(ctx, 1)
-	assert.NotNil(t, info)
-	assert.Equal(t, expHash[:], info.CodeHash)
-	assert.Equal(t, sender.String(), info.Creator)
-	assert.Equal(t, types.DefaultParams().InstantiateDefaultPermission.With(sender), info.InstantiateConfig)
+			expHash := sha256.Sum256(wasmContract)
+			// when
+			rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(xCtx, msg)
+			// check event
+			assert.Equal(t, spec.expEvents, rsp.Events)
+
+			// then
+			require.NoError(t, err)
+			var result types.MsgStoreCodeResponse
+			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &result))
+			assert.Equal(t, uint64(1), result.CodeID)
+			assert.Equal(t, expHash[:], result.Checksum)
+			// and
+			info := wasmApp.WasmKeeper.GetCodeInfo(xCtx, 1)
+			assert.NotNil(t, info)
+			assert.Equal(t, expHash[:], info.CodeHash)
+			assert.Equal(t, sender.String(), info.Creator)
+			assert.Equal(t, types.DefaultParams().InstantiateDefaultPermission.With(sender), info.InstantiateConfig)
+		})
+	}
 }
 
 func TestInstantiateContract(t *testing.T) {
@@ -78,12 +117,29 @@ func TestInstantiateContract(t *testing.T) {
 	specs := map[string]struct {
 		addr       string
 		permission *types.AccessConfig
+		expEvents  []abci.Event
 		expErr     bool
 	}{
 		"address can instantiate a contract when permission is everybody": {
 			addr:       myAddress.String(),
 			permission: &types.AllowEverybody,
-			expErr:     false,
+			expEvents: []abci.Event{
+				createMsgEvent(myAddress), {
+					Type: "instantiate",
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("_contract_address"),
+							Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+							Index: false,
+						}, {
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						},
+					},
+				},
+			},
+			expErr: false,
 		},
 		"address cannot instantiate a contract when permission is nobody": {
 			addr:       myAddress.String(),
@@ -125,21 +181,11 @@ func TestInstantiateContract(t *testing.T) {
 				return
 			}
 
+			var instantiateResponse types.MsgInstantiateContractResponse
+			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
+
 			// check event
-			events := rsp.Events
-			assert.Equal(t, 2, len(events))
-			assert.Equal(t, "message", events[0].Type)
-			assert.Equal(t, 2, len(events[0].Attributes))
-			assert.Equal(t, "module", string(events[0].Attributes[0].Key))
-			assert.Equal(t, "wasm", string(events[0].Attributes[0].Value))
-			assert.Equal(t, "sender", string(events[0].Attributes[1].Key))
-			assert.Equal(t, myAddress.String(), string(events[0].Attributes[1].Value))
-			assert.Equal(t, "instantiate", events[1].Type)
-			assert.Equal(t, 2, len(events[1].Attributes))
-			assert.Equal(t, "_contract_address", string(events[1].Attributes[0].Key))
-			assert.Contains(t, string(rsp.Data), string(events[1].Attributes[0].Value))
-			assert.Equal(t, "code_id", string(events[1].Attributes[1].Key))
-			assert.Equal(t, "1", string(events[1].Attributes[1].Value))
+			assert.Equal(t, spec.expEvents, rsp.Events)
 
 			require.NoError(t, err)
 		})
@@ -156,13 +202,30 @@ func TestInstantiateContract2(t *testing.T) {
 		addr       string
 		permission *types.AccessConfig
 		salt       string
+		expEvents  []abci.Event
 		expErr     bool
 	}{
 		"address can instantiate a contract when permission is everybody": {
 			addr:       myAddress.String(),
 			permission: &types.AllowEverybody,
 			salt:       "salt1",
-			expErr:     false,
+			expEvents: []abci.Event{
+				createMsgEvent(myAddress), {
+					Type: "instantiate",
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("_contract_address"),
+							Value: []byte("link1nf6f7s337nw8xgjejz9pdnhmpl843ec33h596msgrqa2qgh4hkpsdmlq2u"),
+							Index: false,
+						}, {
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						},
+					},
+				},
+			},
+			expErr: false,
 		},
 		"address cannot instantiate a contract when permission is nobody": {
 			addr:       myAddress.String(),
@@ -211,20 +274,7 @@ func TestInstantiateContract2(t *testing.T) {
 			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
 
 			// check event
-			events := rsp.Events
-			assert.Equal(t, 2, len(events))
-			assert.Equal(t, "message", events[0].Type)
-			assert.Equal(t, 2, len(events[0].Attributes))
-			assert.Equal(t, "module", string(events[0].Attributes[0].Key))
-			assert.Equal(t, "wasm", string(events[0].Attributes[0].Value))
-			assert.Equal(t, "sender", string(events[0].Attributes[1].Key))
-			assert.Equal(t, myAddress.String(), string(events[0].Attributes[1].Value))
-			assert.Equal(t, "instantiate", events[1].Type)
-			assert.Equal(t, 2, len(events[1].Attributes))
-			assert.Equal(t, "_contract_address", string(events[1].Attributes[0].Key))
-			assert.Equal(t, instantiateResponse.Address, string(events[1].Attributes[0].Value))
-			assert.Equal(t, "code_id", string(events[1].Attributes[1].Key))
-			assert.Equal(t, "1", string(events[1].Attributes[1].Value))
+			assert.Equal(t, spec.expEvents, rsp.Events)
 
 			require.NoError(t, err)
 		})
@@ -241,11 +291,28 @@ func TestMigrateContract(t *testing.T) {
 	)
 
 	specs := map[string]struct {
-		addr   string
-		expErr bool
+		addr      string
+		expEvents []abci.Event
+		expErr    bool
 	}{
 		"admin can migrate a contract": {
-			addr:   myAddress.String(),
+			addr: myAddress.String(),
+			expEvents: []abci.Event{
+				createMsgEvent(myAddress), {
+					Type: "migrate",
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						}, {
+							Key:   []byte("_contract_address"),
+							Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+							Index: false,
+						},
+					},
+				},
+			},
 			expErr: false,
 		},
 		"other address cannot migrate a contract": {
@@ -311,20 +378,7 @@ func TestMigrateContract(t *testing.T) {
 			}
 
 			// check event
-			events := rsp.Events
-			assert.Equal(t, 2, len(events))
-			assert.Equal(t, "message", events[0].Type)
-			assert.Equal(t, 2, len(events[0].Attributes))
-			assert.Equal(t, "module", string(events[0].Attributes[0].Key))
-			assert.Equal(t, "wasm", string(events[0].Attributes[0].Value))
-			assert.Equal(t, "sender", string(events[0].Attributes[1].Key))
-			assert.Equal(t, myAddress.String(), string(events[0].Attributes[1].Value))
-			assert.Equal(t, "migrate", events[1].Type)
-			assert.Equal(t, 2, len(events[1].Attributes))
-			assert.Equal(t, "code_id", string(events[1].Attributes[0].Key))
-			assert.Equal(t, "1", string(events[1].Attributes[0].Value))
-			assert.Equal(t, "_contract_address", string(events[1].Attributes[1].Key))
-			assert.Equal(t, instantiateResponse.Address, string(events[1].Attributes[1].Value))
+			assert.Equal(t, spec.expEvents, rsp.Events)
 
 			require.NoError(t, err)
 		})
@@ -374,11 +428,59 @@ func TestExecuteContract(t *testing.T) {
 	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
 
 	specs := map[string]struct {
-		addr   string
-		expErr bool
+		addr string
+		// Note: Value with destination as key cannot be tested because it is a different value for each execution
+		expEvents func(destination_address []byte) []abci.Event
+		expErr    bool
 	}{
 		"address can execute a contract": {
-			addr:   myAddress.String(),
+			addr: myAddress.String(),
+			expEvents: func(destination_address []byte) []abci.Event {
+				return []abci.Event{
+					createMsgEvent(myAddress), {
+						Type: "execute",
+						Attributes: []abci.EventAttribute{
+							{
+								Key:   []byte("_contract_address"),
+								Value: []byte(instantiateResponse.Address),
+								Index: false,
+							},
+						},
+					}, { // This is the event for the hackatom contract. See here for details.
+						// https://github.com/Finschia/cosmwasm/blob/v1.1.9-0.7.0/contracts/hackatom/src/contract.rs#L97
+						Type: "wasm",
+						Attributes: []abci.EventAttribute{
+							{
+								Key:   []byte("_contract_address"),
+								Value: []byte(instantiateResponse.Address),
+								Index: false,
+							}, {
+								Key:   []byte("action"),
+								Value: []byte("release"),
+								Index: false,
+							}, {
+								Key:   []byte("destination"),
+								Value: destination_address,
+								Index: false,
+							},
+						},
+					}, { // This is the event for the hackatom contract. See here for details.
+						// https://github.com/Finschia/cosmwasm/blob/v1.1.9-0.7.0/contracts/hackatom/src/contract.rs#L97
+						Type: "wasm-hackatom",
+						Attributes: []abci.EventAttribute{
+							{
+								Key:   []byte("_contract_address"),
+								Value: []byte(instantiateResponse.Address),
+								Index: false,
+							}, {
+								Key:   []byte("action"),
+								Value: []byte("release"),
+								Index: false,
+							},
+						},
+					},
+				}
+			},
 			expErr: false,
 		},
 		"other address cannot execute a contract": {
@@ -386,6 +488,7 @@ func TestExecuteContract(t *testing.T) {
 			expErr: true,
 		},
 	}
+
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			xCtx, _ := ctx.CacheContext()
@@ -406,30 +509,7 @@ func TestExecuteContract(t *testing.T) {
 			}
 
 			// check event
-			events := rsp.Events
-			assert.Equal(t, 4, len(events))
-			assert.Equal(t, "message", events[0].Type)
-			assert.Equal(t, 2, len(events[0].Attributes))
-			assert.Equal(t, "module", string(events[0].Attributes[0].Key))
-			assert.Equal(t, "wasm", string(events[0].Attributes[0].Value))
-			assert.Equal(t, "sender", string(events[0].Attributes[1].Key))
-			assert.Equal(t, myAddress.String(), string(events[0].Attributes[1].Value))
-			assert.Equal(t, "execute", events[1].Type)
-			assert.Equal(t, 1, len(events[1].Attributes))
-			assert.Equal(t, "_contract_address", string(events[1].Attributes[0].Key))
-			assert.Equal(t, instantiateResponse.Address, string(events[1].Attributes[0].Value))
-			assert.Equal(t, "wasm", events[2].Type)
-			assert.Equal(t, 3, len(events[2].Attributes))
-			assert.Equal(t, "_contract_address", string(events[2].Attributes[0].Key))
-			assert.Equal(t, instantiateResponse.Address, string(events[2].Attributes[0].Value))
-			assert.Equal(t, "action", string(events[2].Attributes[1].Key))
-			assert.Equal(t, "release", string(events[2].Attributes[1].Value))
-			assert.Equal(t, "destination", string(events[2].Attributes[2].Key))
-			assert.Equal(t, "wasm-hackatom", events[3].Type)
-			assert.Equal(t, "_contract_address", string(events[3].Attributes[0].Key))
-			assert.Equal(t, instantiateResponse.Address, string(events[3].Attributes[0].Value))
-			assert.Equal(t, "action", string(events[3].Attributes[1].Key))
-			assert.Equal(t, "release", string(events[3].Attributes[1].Value))
+			assert.Equal(t, spec.expEvents(rsp.Events[2].Attributes[2].Value), rsp.Events)
 
 			require.NoError(t, err)
 		})
@@ -480,19 +560,7 @@ func TestUpdateAdmin(t *testing.T) {
 			addr:   myAddress.String(),
 			expErr: false,
 			expEvents: []abci.Event{
-				{
-					Type: "message",
-					Attributes: []abci.EventAttribute{
-						{
-							Key:   []byte("module"),
-							Value: []byte("wasm"),
-						},
-						{
-							Key:   []byte("sender"),
-							Value: []byte(myAddress.String()),
-						},
-					},
-				},
+				createMsgEvent(myAddress),
 				{
 					Type: "update_contract_admin",
 					Attributes: []abci.EventAttribute{
@@ -589,10 +657,12 @@ func TestClearAdmin(t *testing.T) {
 						{
 							Key:   []byte("_contract_address"),
 							Value: []byte(contractAddress),
+							Index: false,
 						},
 						{
 							Key:   []byte("new_admin_address"),
 							Value: []byte{},
+							Index: false,
 						},
 					},
 				},
@@ -633,10 +703,12 @@ func createMsgEvent(sender sdk.AccAddress) abci.Event {
 			{
 				Key:   []byte("module"),
 				Value: []byte("wasm"),
+				Index: false,
 			},
 			{
 				Key:   []byte("sender"),
 				Value: []byte(sender.String()),
+				Index: false,
 			},
 		},
 	}
