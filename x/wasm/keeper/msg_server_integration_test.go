@@ -67,7 +67,7 @@ func TestStoreCode(t *testing.T) {
 						Index: false,
 					}, {
 						Key:   []byte("code_id"),
-						Value: []uint8{0x31},
+						Value: []byte("1"),
 						Index: false,
 					},
 					},
@@ -78,6 +78,7 @@ func TestStoreCode(t *testing.T) {
 
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
+			xCtx, _ := ctx.CacheContext()
 			msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
 				m.WASMByteCode = wasmContract
 				m.Sender = sender.String()
@@ -85,7 +86,7 @@ func TestStoreCode(t *testing.T) {
 
 			expHash := sha256.Sum256(wasmContract)
 			// when
-			rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(ctx, msg)
+			rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(xCtx, msg)
 			// check event
 			assert.Equal(t, spec.expEvents, rsp.Events)
 
@@ -96,7 +97,7 @@ func TestStoreCode(t *testing.T) {
 			assert.Equal(t, uint64(1), result.CodeID)
 			assert.Equal(t, expHash[:], result.Checksum)
 			// and
-			info := wasmApp.WasmKeeper.GetCodeInfo(ctx, 1)
+			info := wasmApp.WasmKeeper.GetCodeInfo(xCtx, 1)
 			assert.NotNil(t, info)
 			assert.Equal(t, expHash[:], info.CodeHash)
 			assert.Equal(t, sender.String(), info.Creator)
