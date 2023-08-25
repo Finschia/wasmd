@@ -86,31 +86,20 @@ func TestInstantiateContract(t *testing.T) {
 		"address can instantiate a contract when permission is everybody": {
 			addr:       myAddress.String(),
 			permission: &types.AllowEverybody,
-			expEvents: []abci.Event{{
-				Type: "message",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("module"),
-					Value: []byte("wasm"),
-					Index: false,
-				}, {
-					Key:   []byte("sender"),
-					Value: []byte(myAddress.String()),
-					Index: false,
+			expEvents: []abci.Event{
+				createMsgEvent(myAddress), {
+					Type: "instantiate",
+					Attributes: []abci.EventAttribute{{
+						Key:   []byte("_contract_address"),
+						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+						Index: false,
+					}, {
+						Key:   []byte("code_id"),
+						Value: []byte("1"),
+						Index: false,
+					},
+					},
 				},
-				},
-			}, {
-				Type: "instantiate",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("_contract_address"),
-					Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
-					Index: false,
-				}, {
-					Key:   []byte("code_id"),
-					Value: []byte("1"),
-					Index: false,
-				},
-				},
-			},
 			},
 			expErr: false,
 		},
@@ -182,31 +171,20 @@ func TestInstantiateContract2(t *testing.T) {
 			addr:       myAddress.String(),
 			permission: &types.AllowEverybody,
 			salt:       "salt1",
-			expEvents: []abci.Event{{
-				Type: "message",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("module"),
-					Value: []byte("wasm"),
-					Index: false,
-				}, {
-					Key:   []byte("sender"),
-					Value: []byte(myAddress.String()),
-					Index: false,
+			expEvents: []abci.Event{
+				createMsgEvent(myAddress), {
+					Type: "instantiate",
+					Attributes: []abci.EventAttribute{{
+						Key:   []byte("_contract_address"),
+						Value: []byte("link1nf6f7s337nw8xgjejz9pdnhmpl843ec33h596msgrqa2qgh4hkpsdmlq2u"),
+						Index: false,
+					}, {
+						Key:   []byte("code_id"),
+						Value: []byte("1"),
+						Index: false,
+					},
+					},
 				},
-				},
-			}, {
-				Type: "instantiate",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("_contract_address"),
-					Value: []byte("link1nf6f7s337nw8xgjejz9pdnhmpl843ec33h596msgrqa2qgh4hkpsdmlq2u"),
-					Index: false,
-				}, {
-					Key:   []byte("code_id"),
-					Value: []byte("1"),
-					Index: false,
-				},
-				},
-			},
 			},
 			expErr: false,
 		},
@@ -280,31 +258,20 @@ func TestMigrateContract(t *testing.T) {
 	}{
 		"admin can migrate a contract": {
 			addr: myAddress.String(),
-			expEvents: []abci.Event{{
-				Type: "message",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("module"),
-					Value: []byte("wasm"),
-					Index: false,
-				}, {
-					Key:   []byte("sender"),
-					Value: []byte(myAddress.String()),
-					Index: false,
+			expEvents: []abci.Event{
+				createMsgEvent(myAddress), {
+					Type: "migrate",
+					Attributes: []abci.EventAttribute{{
+						Key:   []byte("code_id"),
+						Value: []byte("1"),
+						Index: false,
+					}, {
+						Key:   []byte("_contract_address"),
+						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+						Index: false,
+					},
+					},
 				},
-				},
-			}, {
-				Type: "migrate",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("code_id"),
-					Value: []byte("1"),
-					Index: false,
-				}, {
-					Key:   []byte("_contract_address"),
-					Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
-					Index: false,
-				},
-				},
-			},
 			},
 			expErr: false,
 		},
@@ -427,55 +394,44 @@ func TestExecuteContract(t *testing.T) {
 	}{
 		"adress can execute a contract": {
 			addr: myAddress.String(),
-			expEvents: []abci.Event{{
-				Type: "message",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("module"),
-					Value: []byte("wasm"),
-					Index: false,
+			expEvents: []abci.Event{
+				createMsgEvent(myAddress), {
+					Type: "execute",
+					Attributes: []abci.EventAttribute{{
+						Key:   []byte("_contract_address"),
+						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+						Index: false,
+					},
+					},
 				}, {
-					Key:   []byte("sender"),
-					Value: []byte(myAddress.String()),
-					Index: false,
-				},
-				},
-			}, {
-				Type: "execute",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("_contract_address"),
-					Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
-					Index: false,
-				},
-				},
-			}, {
-				Type: "wasm",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("_contract_address"),
-					Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
-					Index: false,
+					Type: "wasm",
+					Attributes: []abci.EventAttribute{{
+						Key:   []byte("_contract_address"),
+						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+						Index: false,
+					}, {
+						Key:   []byte("action"),
+						Value: []byte("release"),
+						Index: false,
+					}, {
+						Key:   []byte("destination"),
+						Value: []byte("link1cvk5jz4jank96cmfrxhf5nn4dmj6atu833yvjq"),
+						Index: false,
+					},
+					},
 				}, {
-					Key:   []byte("action"),
-					Value: []byte("release"),
-					Index: false,
-				}, {
-					Key:   []byte("destination"),
-					Value: []byte("link1cvk5jz4jank96cmfrxhf5nn4dmj6atu833yvjq"),
-					Index: false,
+					Type: "wasm-hackatom",
+					Attributes: []abci.EventAttribute{{
+						Key:   []byte("_contract_address"),
+						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+						Index: false,
+					}, {
+						Key:   []byte("action"),
+						Value: []byte("release"),
+						Index: false,
+					},
+					},
 				},
-				},
-			}, {
-				Type: "wasm-hackatom",
-				Attributes: []abci.EventAttribute{{
-					Key:   []byte("_contract_address"),
-					Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
-					Index: false,
-				}, {
-					Key:   []byte("action"),
-					Value: []byte("release"),
-					Index: false,
-				},
-				},
-			},
 			}, expErr: false,
 		},
 		"other address cannot execute a contract": {
