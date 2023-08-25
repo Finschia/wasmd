@@ -428,55 +428,58 @@ func TestExecuteContract(t *testing.T) {
 	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
 
 	specs := map[string]struct {
-		addr      string
-		expEvents []abci.Event
+		addr string
+		// Note: Value with destination as key cannot be tested because it is a different value for each execution
+		expEvents func(destination_address []byte) []abci.Event
 		expErr    bool
 	}{
 		"address can execute a contract": {
 			addr: myAddress.String(),
-			expEvents: []abci.Event{
-				createMsgEvent(myAddress), {
-					Type: "execute",
-					Attributes: []abci.EventAttribute{
-						{
-							Key:   []byte("_contract_address"),
-							Value: []byte(instantiateResponse.Address),
-							Index: false,
+			expEvents: func(destination_address []byte) []abci.Event {
+				return []abci.Event{
+					createMsgEvent(myAddress), {
+						Type: "execute",
+						Attributes: []abci.EventAttribute{
+							{
+								Key:   []byte("_contract_address"),
+								Value: []byte(instantiateResponse.Address),
+								Index: false,
+							},
+						},
+					}, { // This is the event for the hackatom contract. See here for details.
+						// https://github.com/Finschia/cosmwasm/blob/v1.1.9-0.7.0/contracts/hackatom/src/contract.rs#L97
+						Type: "wasm",
+						Attributes: []abci.EventAttribute{
+							{
+								Key:   []byte("_contract_address"),
+								Value: []byte(instantiateResponse.Address),
+								Index: false,
+							}, {
+								Key:   []byte("action"),
+								Value: []byte("release"),
+								Index: false,
+							}, {
+								Key:   []byte("destination"),
+								Value: destination_address,
+								Index: false,
+							},
+						},
+					}, { // This is the event for the hackatom contract. See here for details.
+						// https://github.com/Finschia/cosmwasm/blob/v1.1.9-0.7.0/contracts/hackatom/src/contract.rs#L97
+						Type: "wasm-hackatom",
+						Attributes: []abci.EventAttribute{
+							{
+								Key:   []byte("_contract_address"),
+								Value: []byte(instantiateResponse.Address),
+								Index: false,
+							}, {
+								Key:   []byte("action"),
+								Value: []byte("release"),
+								Index: false,
+							},
 						},
 					},
-				}, { // This is the event for the hackatom contract. See here for details.
-					// https://github.com/Finschia/cosmwasm/blob/v1.1.9-0.7.0/contracts/hackatom/src/contract.rs#L97
-					Type: "wasm",
-					Attributes: []abci.EventAttribute{
-						{
-							Key:   []byte("_contract_address"),
-							Value: []byte(instantiateResponse.Address),
-							Index: false,
-						}, {
-							Key:   []byte("action"),
-							Value: []byte("release"),
-							Index: false,
-						}, {
-							Key:   []byte("destination"),
-							Value: nil,
-							Index: false,
-						},
-					},
-				}, { // This is the event for the hackatom contract. See here for details.
-					// https://github.com/Finschia/cosmwasm/blob/v1.1.9-0.7.0/contracts/hackatom/src/contract.rs#L97
-					Type: "wasm-hackatom",
-					Attributes: []abci.EventAttribute{
-						{
-							Key:   []byte("_contract_address"),
-							Value: []byte(instantiateResponse.Address),
-							Index: false,
-						}, {
-							Key:   []byte("action"),
-							Value: []byte("release"),
-							Index: false,
-						},
-					},
-				},
+				}
 			},
 			expErr: false,
 		},
@@ -485,6 +488,7 @@ func TestExecuteContract(t *testing.T) {
 			expErr: true,
 		},
 	}
+
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			xCtx, _ := ctx.CacheContext()
@@ -505,10 +509,7 @@ func TestExecuteContract(t *testing.T) {
 			}
 
 			// check event
-			new_spec := spec
-			// Note: Value with destination as key cannot be tested because it is a different value for each execution
-			new_spec.expEvents[2].Attributes[2].Value = rsp.Events[2].Attributes[2].Value
-			assert.Equal(t, new_spec.expEvents, rsp.Events)
+			assert.Equal(t, spec.expEvents(rsp.Events[2].Attributes[2].Value), rsp.Events)
 
 			require.NoError(t, err)
 		})
