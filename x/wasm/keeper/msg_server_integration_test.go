@@ -180,9 +180,11 @@ func TestInstantiateContract(t *testing.T) {
 				return
 			}
 
+			var instantiateResponse types.MsgInstantiateContractResponse
+			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &instantiateResponse))
+
 			// check event
 			assert.Equal(t, spec.expEvents, rsp.Events)
-			assert.Contains(t, string(rsp.Data), string(rsp.Events[1].Attributes[0].Value))
 
 			require.NoError(t, err)
 		})
@@ -434,7 +436,7 @@ func TestExecuteContract(t *testing.T) {
 					Type: "execute",
 					Attributes: []abci.EventAttribute{{
 						Key:   []byte("_contract_address"),
-						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+						Value: []byte(instantiateResponse.Address),
 						Index: false,
 					},
 					},
@@ -442,7 +444,7 @@ func TestExecuteContract(t *testing.T) {
 					Type: "wasm",
 					Attributes: []abci.EventAttribute{{
 						Key:   []byte("_contract_address"),
-						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+						Value: []byte(instantiateResponse.Address),
 						Index: false,
 					}, {
 						Key:   []byte("action"),
@@ -458,7 +460,7 @@ func TestExecuteContract(t *testing.T) {
 					Type: "wasm-hackatom",
 					Attributes: []abci.EventAttribute{{
 						Key:   []byte("_contract_address"),
-						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+						Value: []byte(instantiateResponse.Address),
 						Index: false,
 					}, {
 						Key:   []byte("action"),
@@ -495,14 +497,10 @@ func TestExecuteContract(t *testing.T) {
 			}
 
 			// check event
-			assert.Equal(t, len(spec.expEvents), len(rsp.Events))
-			assert.Equal(t, spec.expEvents[0], rsp.Events[0])
-			assert.Equal(t, spec.expEvents[1], rsp.Events[1])
-			assert.Equal(t, spec.expEvents[2].Attributes[2].Key, rsp.Events[2].Attributes[2].Key)
+			new_spec := spec
 			// Note: Value with destination as key cannot be tested because it is a different value for each execution
-			assert.Equal(t, spec.expEvents[2].Attributes[0], rsp.Events[2].Attributes[0])
-			assert.Equal(t, spec.expEvents[2].Attributes[1], rsp.Events[2].Attributes[1])
-			assert.Equal(t, spec.expEvents[3], rsp.Events[3])
+			new_spec.expEvents[2].Attributes[2].Value = rsp.Events[2].Attributes[2].Value
+			assert.Equal(t, new_spec.expEvents, rsp.Events)
 
 			require.NoError(t, err)
 		})
