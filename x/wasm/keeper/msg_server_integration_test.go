@@ -42,15 +42,16 @@ func TestStoreCode(t *testing.T) {
 			expEvents: []abci.Event{
 				createMsgEvent(sender), {
 					Type: "store_code",
-					Attributes: []abci.EventAttribute{{
-						Key:   []byte("code_checksum"),
-						Value: []byte("2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89"),
-						Index: false,
-					}, {
-						Key:   []byte("code_id"),
-						Value: []byte("1"),
-						Index: false,
-					},
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("code_checksum"),
+							Value: []byte("2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89"),
+							Index: false,
+						}, {
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						},
 					},
 				},
 			},
@@ -61,15 +62,16 @@ func TestStoreCode(t *testing.T) {
 			expEvents: []abci.Event{
 				createMsgEvent(sender), {
 					Type: "store_code",
-					Attributes: []abci.EventAttribute{{
-						Key:   []byte("code_checksum"),
-						Value: []byte("2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89"),
-						Index: false,
-					}, {
-						Key:   []byte("code_id"),
-						Value: []byte("1"),
-						Index: false,
-					},
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("code_checksum"),
+							Value: []byte("2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89"),
+							Index: false,
+						}, {
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						},
 					},
 				},
 			},
@@ -102,10 +104,8 @@ func TestStoreCode(t *testing.T) {
 			assert.Equal(t, expHash[:], info.CodeHash)
 			assert.Equal(t, sender.String(), info.Creator)
 			assert.Equal(t, types.DefaultParams().InstantiateDefaultPermission.With(sender), info.InstantiateConfig)
-
 		})
 	}
-
 }
 
 func TestInstantiateContract(t *testing.T) {
@@ -126,15 +126,16 @@ func TestInstantiateContract(t *testing.T) {
 			expEvents: []abci.Event{
 				createMsgEvent(myAddress), {
 					Type: "instantiate",
-					Attributes: []abci.EventAttribute{{
-						Key:   []byte("_contract_address"),
-						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
-						Index: false,
-					}, {
-						Key:   []byte("code_id"),
-						Value: []byte("1"),
-						Index: false,
-					},
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("_contract_address"),
+							Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+							Index: false,
+						}, {
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						},
 					},
 				},
 			},
@@ -211,15 +212,16 @@ func TestInstantiateContract2(t *testing.T) {
 			expEvents: []abci.Event{
 				createMsgEvent(myAddress), {
 					Type: "instantiate",
-					Attributes: []abci.EventAttribute{{
-						Key:   []byte("_contract_address"),
-						Value: []byte("link1nf6f7s337nw8xgjejz9pdnhmpl843ec33h596msgrqa2qgh4hkpsdmlq2u"),
-						Index: false,
-					}, {
-						Key:   []byte("code_id"),
-						Value: []byte("1"),
-						Index: false,
-					},
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("_contract_address"),
+							Value: []byte("link1nf6f7s337nw8xgjejz9pdnhmpl843ec33h596msgrqa2qgh4hkpsdmlq2u"),
+							Index: false,
+						}, {
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						},
 					},
 				},
 			},
@@ -298,15 +300,16 @@ func TestMigrateContract(t *testing.T) {
 			expEvents: []abci.Event{
 				createMsgEvent(myAddress), {
 					Type: "migrate",
-					Attributes: []abci.EventAttribute{{
-						Key:   []byte("code_id"),
-						Value: []byte("1"),
-						Index: false,
-					}, {
-						Key:   []byte("_contract_address"),
-						Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
-						Index: false,
-					},
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("code_id"),
+							Value: []byte("1"),
+							Index: false,
+						}, {
+							Key:   []byte("_contract_address"),
+							Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+							Index: false,
+						},
 					},
 				},
 			},
@@ -429,44 +432,47 @@ func TestExecuteContract(t *testing.T) {
 		expEvents []abci.Event
 		expErr    bool
 	}{
-		"adress can execute a contract": {
+		"address can execute a contract": {
 			addr: myAddress.String(),
 			expEvents: []abci.Event{
 				createMsgEvent(myAddress), {
 					Type: "execute",
-					Attributes: []abci.EventAttribute{{
-						Key:   []byte("_contract_address"),
-						Value: []byte(instantiateResponse.Address),
-						Index: false,
-					},
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("_contract_address"),
+							Value: []byte(instantiateResponse.Address),
+							Index: false,
+						},
 					},
 				}, {
 					Type: "wasm",
-					Attributes: []abci.EventAttribute{{
-						Key:   []byte("_contract_address"),
-						Value: []byte(instantiateResponse.Address),
-						Index: false,
-					}, {
-						Key:   []byte("action"),
-						Value: []byte("release"),
-						Index: false,
-					}, {
-						Key:   []byte("destination"),
-						Value: []byte("link1cvk5jz4jank96cmfrxhf5nn4dmj6atu833yvjq"),
-						Index: false,
-					},
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("_contract_address"),
+							Value: []byte(instantiateResponse.Address),
+							Index: false,
+						}, {
+							Key:   []byte("action"),
+							Value: []byte("release"),
+							Index: false,
+						}, {
+							Key:   []byte("destination"),
+							Value: []byte("link1cvk5jz4jank96cmfrxhf5nn4dmj6atu833yvjq"),
+							Index: false,
+						},
 					},
 				}, {
 					Type: "wasm-hackatom",
-					Attributes: []abci.EventAttribute{{
-						Key:   []byte("_contract_address"),
-						Value: []byte(instantiateResponse.Address),
-						Index: false,
-					}, {
-						Key:   []byte("action"),
-						Value: []byte("release"),
-						Index: false,
-					},
+					Attributes: []abci.EventAttribute{
+						{
+							Key:   []byte("_contract_address"),
+							Value: []byte(instantiateResponse.Address),
+							Index: false,
+						}, {
+							Key:   []byte("action"),
+							Value: []byte("release"),
+							Index: false,
+						},
 					},
 				},
 			},
@@ -557,10 +563,12 @@ func TestUpdateAdmin(t *testing.T) {
 						{
 							Key:   []byte("module"),
 							Value: []byte("wasm"),
+							Index: false,
 						},
 						{
 							Key:   []byte("sender"),
 							Value: []byte(myAddress.String()),
+							Index: false,
 						},
 					},
 				},
@@ -660,10 +668,12 @@ func TestClearAdmin(t *testing.T) {
 						{
 							Key:   []byte("_contract_address"),
 							Value: []byte(contractAddress),
+							Index: false,
 						},
 						{
 							Key:   []byte("new_admin_address"),
 							Value: []byte{},
+							Index: false,
 						},
 					},
 				},
@@ -704,10 +714,12 @@ func createMsgEvent(sender sdk.AccAddress) abci.Event {
 			{
 				Key:   []byte("module"),
 				Value: []byte("wasm"),
+				Index: false,
 			},
 			{
 				Key:   []byte("sender"),
 				Value: []byte(sender.String()),
+				Index: false,
 			},
 		},
 	}
