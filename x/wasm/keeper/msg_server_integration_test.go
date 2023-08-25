@@ -557,21 +557,7 @@ func TestUpdateAdmin(t *testing.T) {
 			addr:   myAddress.String(),
 			expErr: false,
 			expEvents: []abci.Event{
-				{
-					Type: "message",
-					Attributes: []abci.EventAttribute{
-						{
-							Key:   []byte("module"),
-							Value: []byte("wasm"),
-							Index: false,
-						},
-						{
-							Key:   []byte("sender"),
-							Value: []byte(myAddress.String()),
-							Index: false,
-						},
-					},
-				},
+				createMsgEvent(myAddress),
 				{
 					Type: "update_contract_admin",
 					Attributes: []abci.EventAttribute{
