@@ -46,6 +46,7 @@
 ### Document Updates
 * [\#54](https://github.com/Finschia/wasmd/pull/54) add documentation about errors (codespace and codes)
 * [\#92](https://github.com/Finschia/wasmd/pull/92) modify links in x/wasmplus README.md
+* [\#103](https://github.com/Finschia/wasmd/pull/103) add clarifications to the order of list response in query
 
 
 ## [v0.1.4](https://github.com/Finschia/wasmd/releases/tag/v0.1.4) - 2023.05.22
