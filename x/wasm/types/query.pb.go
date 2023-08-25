@@ -177,7 +177,7 @@ var xxx_messageInfo_QueryContractHistoryRequest proto.InternalMessageInfo
 // QueryContractHistoryResponse is the response type for the
 // Query/ContractHistory RPC method
 type QueryContractHistoryResponse struct {
-	// return in the order of timestamps according to contract updates
+	// return in the order of timestamps according to when the contract was updated
 	Entries []ContractCodeHistoryEntry `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries"`
 	// pagination defines the pagination in the response.
 	Pagination *query.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
