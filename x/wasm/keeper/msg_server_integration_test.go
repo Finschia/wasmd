@@ -40,7 +40,7 @@ func TestStoreCode(t *testing.T) {
 			addr:       sender.String(),
 			permission: &types.AllowEverybody,
 			expEvents: []abci.Event{
-				createMsgEvent(sender), {
+				{
 					Type: "store_code",
 					Attributes: []abci.EventAttribute{
 						{
@@ -60,7 +60,7 @@ func TestStoreCode(t *testing.T) {
 			addr:       sender.String(),
 			permission: &types.AllowNobody,
 			expEvents: []abci.Event{
-				createMsgEvent(sender), {
+				{
 					Type: "store_code",
 					Attributes: []abci.EventAttribute{
 						{
@@ -124,7 +124,7 @@ func TestInstantiateContract(t *testing.T) {
 			addr:       myAddress.String(),
 			permission: &types.AllowEverybody,
 			expEvents: []abci.Event{
-				createMsgEvent(myAddress), {
+				{
 					Type: "instantiate",
 					Attributes: []abci.EventAttribute{
 						{
@@ -210,7 +210,7 @@ func TestInstantiateContract2(t *testing.T) {
 			permission: &types.AllowEverybody,
 			salt:       "salt1",
 			expEvents: []abci.Event{
-				createMsgEvent(myAddress), {
+				{
 					Type: "instantiate",
 					Attributes: []abci.EventAttribute{
 						{
@@ -298,7 +298,7 @@ func TestMigrateContract(t *testing.T) {
 		"admin can migrate a contract": {
 			addr: myAddress.String(),
 			expEvents: []abci.Event{
-				createMsgEvent(myAddress), {
+				{
 					Type: "migrate",
 					Attributes: []abci.EventAttribute{
 						{
@@ -437,7 +437,7 @@ func TestExecuteContract(t *testing.T) {
 			addr: myAddress.String(),
 			expEvents: func(destination_address []byte) []abci.Event {
 				return []abci.Event{
-					createMsgEvent(myAddress), {
+					{
 						Type: "execute",
 						Attributes: []abci.EventAttribute{
 							{
@@ -509,7 +509,7 @@ func TestExecuteContract(t *testing.T) {
 			}
 
 			// check event
-			assert.Equal(t, spec.expEvents(rsp.Events[2].Attributes[2].Value), rsp.Events)
+			assert.Equal(t, spec.expEvents(rsp.Events[1].Attributes[2].Value), rsp.Events)
 
 			require.NoError(t, err)
 		})
@@ -560,7 +560,6 @@ func TestUpdateAdmin(t *testing.T) {
 			addr:   myAddress.String(),
 			expErr: false,
 			expEvents: []abci.Event{
-				createMsgEvent(myAddress),
 				{
 					Type: "update_contract_admin",
 					Attributes: []abci.EventAttribute{
@@ -650,7 +649,6 @@ func TestClearAdmin(t *testing.T) {
 			addr:   myAddress.String(),
 			expErr: false,
 			expEvents: []abci.Event{
-				createMsgEvent(myAddress),
 				{
 					Type: "update_contract_admin",
 					Attributes: []abci.EventAttribute{
@@ -691,25 +689,5 @@ func TestClearAdmin(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, spec.expEvents, rsp.Events)
 		})
-	}
-}
-
-// This function is utilized to generate the msg event for event checking in integration tests
-// It will be deleted in release/v0.1.x
-func createMsgEvent(sender sdk.AccAddress) abci.Event {
-	return abci.Event{
-		Type: "message",
-		Attributes: []abci.EventAttribute{
-			{
-				Key:   []byte("module"),
-				Value: []byte("wasm"),
-				Index: false,
-			},
-			{
-				Key:   []byte("sender"),
-				Value: []byte(sender.String()),
-				Index: false,
-			},
-		},
 	}
 }
