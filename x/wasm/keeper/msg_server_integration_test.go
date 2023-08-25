@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"crypto/sha256"
 	_ "embed"
-	"encoding/hex"
 	"encoding/json"
 	"testing"
 	"time"
@@ -31,42 +30,81 @@ func TestStoreCode(t *testing.T) {
 	wasmApp := app.Setup(false)
 	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{})
 	_, _, sender := testdata.KeyTestPubAddr()
-	msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
-		m.WASMByteCode = wasmContract
-		m.Sender = sender.String()
-	})
-	expHash := sha256.Sum256(wasmContract)
 
-	// when
-	rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(ctx, msg)
+	specs := map[string]struct {
+		addr       string
+		permission *types.AccessConfig
+		expEvents  []abci.Event
+	}{
+		"address can store a contract when permission is everybody": {
+			addr:       sender.String(),
+			permission: &types.AllowEverybody,
+			expEvents: []abci.Event{
+				createMsgEvent(sender), {
+					Type: "store_code",
+					Attributes: []abci.EventAttribute{{
+						Key:   []byte("code_checksum"),
+						Value: []byte("2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89"),
+						Index: false,
+					}, {
+						Key:   []byte("code_id"),
+						Value: []byte("1"),
+						Index: false,
+					},
+					},
+				},
+			},
+		},
+		"address can store a contract when permission is nobody": {
+			addr:       sender.String(),
+			permission: &types.AllowNobody,
+			expEvents: []abci.Event{
+				createMsgEvent(sender), {
+					Type: "store_code",
+					Attributes: []abci.EventAttribute{{
+						Key:   []byte("code_checksum"),
+						Value: []byte("2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89"),
+						Index: false,
+					}, {
+						Key:   []byte("code_id"),
+						Value: []uint8{0x31},
+						Index: false,
+					},
+					},
+				},
+			},
+		},
+	}
 
-	// check event
-	require.Equal(t, 2, len(rsp.Events))
-	assert.Equal(t, "message", rsp.Events[0].Type)
-	assert.Equal(t, 2, len(rsp.Events[0].Attributes))
-	assert.Equal(t, "module", string(rsp.Events[0].Attributes[0].Key))
-	assert.Equal(t, "wasm", string(rsp.Events[0].Attributes[0].Value))
-	assert.Equal(t, "sender", string(rsp.Events[0].Attributes[1].Key))
-	assert.Equal(t, sender.String(), string(rsp.Events[0].Attributes[1].Value))
-	assert.Equal(t, "store_code", rsp.Events[1].Type)
-	assert.Equal(t, 2, len(rsp.Events[1].Attributes))
-	assert.Equal(t, "code_checksum", string(rsp.Events[1].Attributes[0].Key))
-	assert.Equal(t, hex.EncodeToString(expHash[:]), string(rsp.Events[1].Attributes[0].Value))
-	assert.Equal(t, "code_id", string(rsp.Events[1].Attributes[1].Key))
-	assert.Equal(t, "1", string(rsp.Events[1].Attributes[1].Value))
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			msg := types.MsgStoreCodeFixture(func(m *types.MsgStoreCode) {
+				m.WASMByteCode = wasmContract
+				m.Sender = sender.String()
+			})
 
-	// then
-	require.NoError(t, err)
-	var result types.MsgStoreCodeResponse
-	require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &result))
-	assert.Equal(t, uint64(1), result.CodeID)
-	assert.Equal(t, expHash[:], result.Checksum)
-	// and
-	info := wasmApp.WasmKeeper.GetCodeInfo(ctx, 1)
-	assert.NotNil(t, info)
-	assert.Equal(t, expHash[:], info.CodeHash)
-	assert.Equal(t, sender.String(), info.Creator)
-	assert.Equal(t, types.DefaultParams().InstantiateDefaultPermission.With(sender), info.InstantiateConfig)
+			expHash := sha256.Sum256(wasmContract)
+			// when
+			rsp, err := wasmApp.MsgServiceRouter().Handler(msg)(ctx, msg)
+			// check event
+			assert.Equal(t, spec.expEvents, rsp.Events)
+
+			// then
+			require.NoError(t, err)
+			var result types.MsgStoreCodeResponse
+			require.NoError(t, wasmApp.AppCodec().Unmarshal(rsp.Data, &result))
+			assert.Equal(t, uint64(1), result.CodeID)
+			assert.Equal(t, expHash[:], result.Checksum)
+			// and
+			info := wasmApp.WasmKeeper.GetCodeInfo(ctx, 1)
+			assert.NotNil(t, info)
+			assert.Equal(t, expHash[:], info.CodeHash)
+			assert.Equal(t, sender.String(), info.Creator)
+			assert.Equal(t, types.DefaultParams().InstantiateDefaultPermission.With(sender), info.InstantiateConfig)
+
+		})
+	}
+
 }
 
 func TestInstantiateContract(t *testing.T) {
@@ -428,8 +466,8 @@ func TestExecuteContract(t *testing.T) {
 					},
 					},
 				},
-			}, 
-      expErr: false,
+			},
+			expErr: false,
 		},
 		"other address cannot execute a contract": {
 			addr:   otherAddr.String(),
