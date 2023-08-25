@@ -33,12 +33,6 @@ func (m msgServer) StoreCodeAndInstantiateContract(goCtx context.Context,
 		return nil, err
 	}
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
-	))
-
 	var adminAddr sdk.AccAddress
 	if msg.Admin != "" {
 		adminAddr, err = sdk.AccAddressFromBech32(msg.Admin)
