@@ -42,7 +42,7 @@
 ### Build, CI
 * [\#104](https://github.com/Finschia/wasmd/pull/104) change depending wasmvm to v1.1.1-0.11.4-rc1
 * [\#60](https://github.com/Finschia/wasmd/pull/60) Update golang version to 1.20
-* [\#105](https://github.com/Finschia/wasmd/pull/105) change depending finschia-sdk to v0.48.0-rc2 #105
+* [\#105](https://github.com/Finschia/wasmd/pull/105) change depending finschia-sdk to v0.48.0-rc2 and backport #81
 
 ### Document Updates
 * [\#54](https://github.com/Finschia/wasmd/pull/54) add documentation about errors (codespace and codes)
