@@ -1081,7 +1081,7 @@ Query/ContractHistory RPC method
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `entries` | [ContractCodeHistoryEntry](#cosmwasm.wasm.v1.ContractCodeHistoryEntry) | repeated | return in the order of contract execution |
+| `entries` | [ContractCodeHistoryEntry](#cosmwasm.wasm.v1.ContractCodeHistoryEntry) | repeated | return in the order of timestamps according to contract updates |
 | `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
 
 
@@ -1148,7 +1148,7 @@ Query/ContractsByCode RPC method
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `contracts` | [string](#string) | repeated | contracts are a set of contract addresses return in the order of instantiation |
+| `contracts` | [string](#string) | repeated | contracts are a set of contract addresses. return in the order of timestamps according to instantiation or migration |
 | `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
 
 

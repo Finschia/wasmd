@@ -177,7 +177,7 @@ var xxx_messageInfo_QueryContractHistoryRequest proto.InternalMessageInfo
 // QueryContractHistoryResponse is the response type for the
 // Query/ContractHistory RPC method
 type QueryContractHistoryResponse struct {
-	// return in the order of contract execution
+	// return in the order of timestamps according to contract updates
 	Entries []ContractCodeHistoryEntry `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries"`
 	// pagination defines the pagination in the response.
 	Pagination *query.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -270,8 +270,8 @@ var xxx_messageInfo_QueryContractsByCodeRequest proto.InternalMessageInfo
 // QueryContractsByCodeResponse is the response type for the
 // Query/ContractsByCode RPC method
 type QueryContractsByCodeResponse struct {
-	// contracts are a set of contract addresses
-	// return in the order of instantiation
+	// contracts are a set of contract addresses.
+	// return in the order of timestamps according to instantiation or migration
 	Contracts []string `protobuf:"bytes,1,rep,name=contracts,proto3" json:"contracts,omitempty"`
 	// pagination defines the pagination in the response.
 	Pagination *query.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`

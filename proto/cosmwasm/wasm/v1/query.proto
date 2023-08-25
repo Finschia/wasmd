@@ -97,7 +97,7 @@ message QueryContractHistoryRequest {
 // QueryContractHistoryResponse is the response type for the
 // Query/ContractHistory RPC method
 message QueryContractHistoryResponse {
-  // return in the order of contract execution
+  // return in the order of timestamps according to contract updates
   repeated ContractCodeHistoryEntry entries = 1
       [ (gogoproto.nullable) = false ];
   // pagination defines the pagination in the response.
@@ -115,8 +115,8 @@ message QueryContractsByCodeRequest {
 // QueryContractsByCodeResponse is the response type for the
 // Query/ContractsByCode RPC method
 message QueryContractsByCodeResponse {
-  // contracts are a set of contract addresses
-  // return in the order of instantiation
+  // contracts are a set of contract addresses.
+  // return in the order of timestamps according to instantiation or migration
   repeated string contracts = 1;
 
   // pagination defines the pagination in the response.

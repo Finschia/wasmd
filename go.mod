@@ -6,6 +6,7 @@ require (
 	github.com/Finschia/finschia-sdk v0.48.0-rc1
 	github.com/Finschia/ostracon v1.1.1
 	github.com/Finschia/wasmvm v1.1.1-0.11.2.0.20230418093236-ce70a3856778
+	github.com/cosmos/btcutil v1.0.5
 	github.com/cosmos/iavl v0.19.4
 	github.com/cosmos/ibc-go/v4 v4.3.1
 	github.com/dvsekhvalnov/jose2go v1.5.0
@@ -51,7 +52,6 @@ require (
 	github.com/coinbase/rosetta-sdk-go v0.8.3 // indirect
 	github.com/coinbase/rosetta-sdk-go/types v1.0.0 // indirect
 	github.com/confio/ics23/go v0.9.0 // indirect
-	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gorocksdb v1.2.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.12.2 // indirect
