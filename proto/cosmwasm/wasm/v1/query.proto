@@ -97,6 +97,7 @@ message QueryContractHistoryRequest {
 // QueryContractHistoryResponse is the response type for the
 // Query/ContractHistory RPC method
 message QueryContractHistoryResponse {
+  // return in the order of contract execution
   repeated ContractCodeHistoryEntry entries = 1
       [ (gogoproto.nullable) = false ];
   // pagination defines the pagination in the response.
@@ -115,6 +116,7 @@ message QueryContractsByCodeRequest {
 // Query/ContractsByCode RPC method
 message QueryContractsByCodeResponse {
   // contracts are a set of contract addresses
+  // return in the order of instantiation
   repeated string contracts = 1;
 
   // pagination defines the pagination in the response.
@@ -133,6 +135,7 @@ message QueryAllContractStateRequest {
 // QueryAllContractStateResponse is the response type for the
 // Query/AllContractState RPC method
 message QueryAllContractStateResponse {
+  // return in alphabetical order of the state's keys
   repeated Model models = 1 [ (gogoproto.nullable) = false ];
   // pagination defines the pagination in the response.
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
@@ -207,6 +210,7 @@ message QueryCodesRequest {
 
 // QueryCodesResponse is the response type for the Query/Codes RPC method
 message QueryCodesResponse {
+  // return in the order of code_id
   repeated CodeInfoResponse code_infos = 1 [ (gogoproto.nullable) = false ];
   // pagination defines the pagination in the response.
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
@@ -222,6 +226,7 @@ message QueryPinnedCodesRequest {
 // QueryPinnedCodesResponse is the response type for the
 // Query/PinnedCodes RPC method
 message QueryPinnedCodesResponse {
+  // return in the order of code_id
   repeated uint64 code_ids = 1
       [ (gogoproto.nullable) = false, (gogoproto.customname) = "CodeIDs" ];
   // pagination defines the pagination in the response.
