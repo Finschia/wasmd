@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/Finschia/finschia-sdk v0.48.0-rc1
 	github.com/Finschia/ostracon v1.1.1
-	github.com/Finschia/wasmvm v1.1.1-0.11.2.0.20230418093236-ce70a3856778
+	github.com/Finschia/wasmvm v1.1.1-0.11.4-rc1
 	github.com/cosmos/iavl v0.19.4
 	github.com/cosmos/ibc-go/v4 v4.3.1
 	github.com/dvsekhvalnov/jose2go v1.5.0
