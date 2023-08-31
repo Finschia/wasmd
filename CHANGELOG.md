@@ -1,8 +1,22 @@
 # Changelog
 
-## [Unreleased](https://github.com/Finschia/wasmd/compare/v0.1.4...HEAD)
+## [Unreleased](https://github.com/Finschia/wasmd/compare/v0.1.5...HEAD)
 
 ### Features
+
+### Improvements
+
+### Bug Fixes
+
+### Breaking Changes
+
+### Build, CI
+
+### Document Updates
+
+
+
+## [v0.1.5](https://github.com/Finschia/wasmd/releases/tag/v0.1.5) - 2023.08.31
 
 ### Improvements
 * [\#81](https://github.com/Finschia/wasmd/pull/81) Apply Finschia/finschia-sdk#1063
@@ -11,10 +25,6 @@
 * [\#85](https://github.com/Finschia/wasmd/pull/85) cherry-pick fill ContractHistory querier result's Updated field (#62)
 * [\#52](https://github.com/Finschia/wasmd/pull/52) fix cli_test error of wasmplus and add cli_test ci
 * [\#93](https://github.com/Finschia/wasmd/pull/93) cherry-pick fill ContractInfo querier result's Updated field (#89)
-
-### Breaking Changes
-
-### Build, CI
 
 ### Document Updates
 * [\#54](https://github.com/Finschia/wasmd/pull/54) add documentation about errors (codespace and codes)
