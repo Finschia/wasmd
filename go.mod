@@ -12,8 +12,8 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/line/ibc-go/v3 v3.3.2
-	github.com/line/lbm-sdk v0.46.1-0.20230209105703-b88647308597
-	github.com/line/ostracon v1.0.9-0.20230209043112-5aca894db3a6
+	github.com/line/lbm-sdk v0.47.0-rc4.0.20231120061129-54d9f5d7e573
+	github.com/line/ostracon v1.0.9
 	github.com/line/wasmvm v1.1.1-0.11.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.15.0
