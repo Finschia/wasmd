@@ -257,16 +257,14 @@ func TestHandleStoreAndInstantiate(t *testing.T) {
 	require.Equal(t, uint64(1), codeID)
 	require.Equal(t, "link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8", contractBech32Addr)
 	// this should be standard x/wasm init event, nothing from contract
-	require.Equal(t, 4, len(res.Events), prettyEvents(res.Events))
+	require.Equal(t, 3, len(res.Events), prettyEvents(res.Events))
 	assert.Equal(t, "store_code", res.Events[0].Type)
 	assertAttribute(t, "code_id", "1", res.Events[0].Attributes[1])
-	assert.Equal(t, "message", res.Events[1].Type)
-	assertAttribute(t, "module", "wasm", res.Events[1].Attributes[0])
-	assert.Equal(t, "instantiate", res.Events[2].Type)
+	assert.Equal(t, "instantiate", res.Events[1].Type)
+	assertAttribute(t, "_contract_address", contractBech32Addr, res.Events[1].Attributes[0])
+	assertAttribute(t, "code_id", "1", res.Events[1].Attributes[1])
+	assert.Equal(t, "wasm", res.Events[2].Type)
 	assertAttribute(t, "_contract_address", contractBech32Addr, res.Events[2].Attributes[0])
-	assertAttribute(t, "code_id", "1", res.Events[2].Attributes[1])
-	assert.Equal(t, "wasm", res.Events[3].Type)
-	assertAttribute(t, "_contract_address", contractBech32Addr, res.Events[3].Attributes[0])
 
 	assertCodeList(t, q, data.ctx, 1)
 	assertCodeBytes(t, q, data.ctx, 1, testContract)
@@ -396,4 +394,19 @@ func TestErrorsCreateAndInstantiate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestErrorHandleNonPlusWasmCreate(t *testing.T) {
+	data := setupTest(t)
+	creator := data.faucet.NewFundedRandomAccount(data.ctx, sdk.NewInt64Coin("denom", 100000))
+
+	h := data.module.Route().Handler()
+
+	msg := &wasmtypes.MsgStoreCode{
+		Sender:       creator.String(),
+		WASMByteCode: []byte("invalid WASM contract"),
+	}
+
+	_, err := h(data.ctx, msg)
+	require.ErrorContains(t, err, "Wasm validation")
 }
