@@ -13,6 +13,7 @@
 ### Build, CI
 
 ### Document Updates
+* [\#113](https://github.com/Finschia/wasmd/pull/113) add compatibility of wasmd v0.2
 
 
 ## [v0.2.0](https://github.com/Finschia/wasmd/releases/tag/v0.2.0) - 2023.10.19
