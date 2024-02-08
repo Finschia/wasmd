@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/Finschia/finschia-sdk v0.48.0
 	github.com/Finschia/ostracon v1.1.2
-	github.com/Finschia/wasmvm v1.1.1-0.11.6
+	github.com/Finschia/wasmvm v1.1.1-0.12.0
 	github.com/cosmos/btcutil v1.0.5
 	github.com/cosmos/iavl v0.19.4
 	github.com/cosmos/ibc-go/v4 v4.3.1
@@ -148,5 +148,4 @@ replace (
 	// the following version across all dependencies.
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
-
 )
