@@ -9,6 +9,7 @@
 ### Bug Fixes
 
 ### Breaking Changes
+* [\#117](https://github.com/Finschia/wasmd/pull/117) version-up depending wasmvm
 
 ### Build, CI
 
