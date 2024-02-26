@@ -106,7 +106,7 @@ func DefaultQueryPlugins(
 ) QueryPlugins {
 	return QueryPlugins{
 		Bank:     BankQuerier(bank),
-		Custom:   CustomQuerierImpl(queryRouter),
+		Custom:   NoCustomQuerier,
 		IBC:      IBCQuerier(wasm, channelKeeper),
 		Staking:  StakingQuerier(staking, distKeeper),
 		Stargate: RejectStargateQuerier(),
@@ -207,30 +207,6 @@ func BankQuerier(bankKeeper types.BankViewKeeper) func(ctx sdk.Context, request 
 
 func NoCustomQuerier(sdk.Context, json.RawMessage) ([]byte, error) {
 	return nil, wasmvmtypes.UnsupportedRequest{Kind: "custom"}
-}
-
-func CustomQuerierImpl(queryRouter GRPCQueryRouter) func(ctx sdk.Context, querierJson json.RawMessage) ([]byte, error) {
-	return func(ctx sdk.Context, querierJson json.RawMessage) ([]byte, error) {
-		var linkQueryWrapper types.LinkQueryWrapper
-		err := json.Unmarshal(querierJson, &linkQueryWrapper)
-		if err != nil {
-			return nil, err
-		}
-		route := queryRouter.Route(linkQueryWrapper.Path)
-		if route == nil {
-			return nil, wasmvmtypes.UnsupportedRequest{Kind: "Unknown encode module"}
-		}
-		req := abci.RequestQuery{
-			Data: linkQueryWrapper.Data,
-			Path: linkQueryWrapper.Path,
-		}
-		res, err := route(ctx, req)
-		if err != nil {
-			return nil, err
-		}
-
-		return res.Value, nil
-	}
 }
 
 func IBCQuerier(wasm contractMetaDataSource, channelKeeper types.ChannelKeeper) func(ctx sdk.Context, caller sdk.AccAddress, request *wasmvmtypes.IBCQuery) ([]byte, error) {
