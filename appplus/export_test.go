@@ -2,37 +2,44 @@ package appplus
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+
+	abci "github.com/cometbft/cometbft/abci/types"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
-	db "github.com/tendermint/tm-db"
 
-	"github.com/Finschia/ostracon/libs/log"
-
-	wasmapp "github.com/Finschia/wasmd/app"
-	wasmplustypes "github.com/Finschia/wasmd/x/wasmplus/types"
+	"cosmossdk.io/log"
 )
 
 func TestZeroHeightGenesis(t *testing.T) {
-	db := db.NewMemDB()
-	gapp := NewWasmApp(log.NewOCLogger(log.NewSyncWriter(os.Stdout)), db, nil, true, map[int64]bool{}, DefaultNodeHome, 0, MakeEncodingConfig(), wasmplustypes.EnableAllProposals, wasmapp.EmptyBaseAppOptions{}, emptyWasmOpts)
+	dir, err := os.MkdirTemp("", "simapp")
+	if err != nil {
+		panic(fmt.Sprintf("failed creating temporary directory: %v", err))
+	}
+	defer os.RemoveAll(dir)
 
-	genesisState := NewDefaultGenesisState()
+	db := dbm.NewMemDB()
+	gapp := NewWasmApp(log.NewNopLogger(), db, nil, true, simtestutil.NewAppOptionsWithFlagHome(dir), nil)
+
+	genesisState := gapp.DefaultGenesis()
 	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
 	require.NoError(t, err)
 
 	// Initialize the chain
-	gapp.InitChain(
-		abci.RequestInitChain{
+	_, err = gapp.InitChain(
+		&abci.RequestInitChain{
 			Validators:    []abci.ValidatorUpdate{},
 			AppStateBytes: stateBytes,
 		},
 	)
+	require.NoError(t, err)
 	gapp.Commit()
 
 	jailAllowedAddress := []string{"linkvaloper12kr02kew9fl73rqekalavuu0xaxcgwr6pz5vt8"}
-	_, err = gapp.ExportAppStateAndValidators(true, jailAllowedAddress)
+	_, err = gapp.ExportAppStateAndValidators(true, jailAllowedAddress, nil)
 	require.NoError(t, err)
 }

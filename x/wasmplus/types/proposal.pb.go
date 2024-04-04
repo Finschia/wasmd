@@ -5,21 +5,17 @@ package types
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
-
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
-
-var (
-	_ = fmt.Errorf
-	_ = math.Inf
-)
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -43,11 +39,9 @@ func (*DeactivateContractProposal) ProtoMessage() {}
 func (*DeactivateContractProposal) Descriptor() ([]byte, []int) {
 	return fileDescriptor_38b6af62537450c9, []int{0}
 }
-
 func (m *DeactivateContractProposal) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *DeactivateContractProposal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeactivateContractProposal.Marshal(b, m, deterministic)
@@ -60,15 +54,12 @@ func (m *DeactivateContractProposal) XXX_Marshal(b []byte, deterministic bool) (
 		return b[:n], nil
 	}
 }
-
 func (m *DeactivateContractProposal) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_DeactivateContractProposal.Merge(m, src)
 }
-
 func (m *DeactivateContractProposal) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *DeactivateContractProposal) XXX_DiscardUnknown() {
 	xxx_messageInfo_DeactivateContractProposal.DiscardUnknown(m)
 }
@@ -91,11 +82,9 @@ func (*ActivateContractProposal) ProtoMessage() {}
 func (*ActivateContractProposal) Descriptor() ([]byte, []int) {
 	return fileDescriptor_38b6af62537450c9, []int{1}
 }
-
 func (m *ActivateContractProposal) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *ActivateContractProposal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ActivateContractProposal.Marshal(b, m, deterministic)
@@ -108,15 +97,12 @@ func (m *ActivateContractProposal) XXX_Marshal(b []byte, deterministic bool) ([]
 		return b[:n], nil
 	}
 }
-
 func (m *ActivateContractProposal) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ActivateContractProposal.Merge(m, src)
 }
-
 func (m *ActivateContractProposal) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *ActivateContractProposal) XXX_DiscardUnknown() {
 	xxx_messageInfo_ActivateContractProposal.DiscardUnknown(m)
 }
@@ -182,7 +168,6 @@ func (this *DeactivateContractProposal) Equal(that interface{}) bool {
 	}
 	return true
 }
-
 func (this *ActivateContractProposal) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
@@ -213,7 +198,6 @@ func (this *ActivateContractProposal) Equal(that interface{}) bool {
 	}
 	return true
 }
-
 func (m *DeactivateContractProposal) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -313,7 +297,6 @@ func encodeVarintProposal(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-
 func (m *DeactivateContractProposal) Size() (n int) {
 	if m == nil {
 		return 0
@@ -359,11 +342,9 @@ func (m *ActivateContractProposal) Size() (n int) {
 func sovProposal(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
-
 func sozProposal(x uint64) (n int) {
 	return sovProposal(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-
 func (m *DeactivateContractProposal) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -510,7 +491,6 @@ func (m *DeactivateContractProposal) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *ActivateContractProposal) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -657,7 +637,6 @@ func (m *ActivateContractProposal) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func skipProposal(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

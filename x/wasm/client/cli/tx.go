@@ -4,19 +4,22 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
-	"github.com/Finschia/finschia-sdk/client"
-	"github.com/Finschia/finschia-sdk/client/flags"
-	"github.com/Finschia/finschia-sdk/client/tx"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
-	"github.com/Finschia/finschia-sdk/version"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/version"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 
-	"github.com/Finschia/wasmd/x/wasm/client/cli/os"
 	"github.com/Finschia/wasmd/x/wasm/ioutils"
 	"github.com/Finschia/wasmd/x/wasm/types"
 )
@@ -24,6 +27,9 @@ import (
 const (
 	flagAmount                    = "amount"
 	flagLabel                     = "label"
+	flagSource                    = "code-source-url"
+	flagBuilder                   = "builder"
+	flagCodeHash                  = "code-hash"
 	flagAdmin                     = "admin"
 	flagNoAdmin                   = "no-admin"
 	flagFixMsg                    = "fix-msg"
@@ -33,6 +39,15 @@ const (
 	flagInstantiateByAddress      = "instantiate-only-address"
 	flagInstantiateByAnyOfAddress = "instantiate-anyof-addresses"
 	flagUnpinCode                 = "unpin-code"
+	flagAllowedMsgKeys            = "allow-msg-keys"
+	flagAllowedRawMsgs            = "allow-raw-msgs"
+	flagExpiration                = "expiration"
+	flagMaxCalls                  = "max-calls"
+	flagMaxFunds                  = "max-funds"
+	flagAllowAllMsgs              = "allow-all-messages"
+	flagNoTokenTransfer           = "no-token-transfer"
+	flagAuthority                 = "authority"
+	flagExpedite                  = "expedite"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -43,6 +58,7 @@ func GetTxCmd() *cobra.Command {
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
+		SilenceUsage:               true,
 	}
 	txCmd.AddCommand(
 		StoreCodeCmd(),
@@ -52,6 +68,10 @@ func GetTxCmd() *cobra.Command {
 		MigrateContractCmd(),
 		UpdateContractAdminCmd(),
 		ClearContractAdminCmd(),
+		GrantCmd(),
+		UpdateInstantiateConfigCmd(),
+		SubmitProposalCmd(),
+		UpdateContractLabelCmd(),
 	)
 	return txCmd
 }
@@ -68,27 +88,23 @@ func StoreCodeCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			msg, err := parseStoreCodeArgs(args[0], clientCtx.GetFromAddress(), cmd.Flags())
+			msg, err := parseStoreCodeArgs(args[0], clientCtx.GetFromAddress().String(), cmd.Flags())
 			if err != nil {
-				return err
-			}
-			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
+		SilenceUsage: true,
 	}
 
-	cmd.Flags().String(flagInstantiateByEverybody, "", "Everybody can instantiate a contract from the code, optional")
-	cmd.Flags().String(flagInstantiateNobody, "", "Nobody except the governance process can instantiate a contract from the code, optional")
-	cmd.Flags().String(flagInstantiateByAddress, "", "Deprecated: Only this address can instantiate a contract from the code, optional")
-	cmd.Flags().StringSlice(flagInstantiateByAnyOfAddress, []string{}, "Any of the addresses can instantiate a contract from the code, optional")
+	addInstantiatePermissionFlags(cmd)
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
 
-func parseStoreCodeArgs(file string, sender sdk.AccAddress, flags *flag.FlagSet) (types.MsgStoreCode, error) {
-	wasm, err := os.ReadFileWithSizeLimit(file, int64(types.MaxWasmSize))
+// Prepares MsgStoreCode object from flags with gzipped wasm byte code field
+func parseStoreCodeArgs(file, sender string, flags *flag.FlagSet) (types.MsgStoreCode, error) {
+	wasm, err := os.ReadFile(file)
 	if err != nil {
 		return types.MsgStoreCode{}, err
 	}
@@ -110,11 +126,11 @@ func parseStoreCodeArgs(file string, sender sdk.AccAddress, flags *flag.FlagSet)
 	}
 
 	msg := types.MsgStoreCode{
-		Sender:                sender.String(),
+		Sender:                sender,
 		WASMByteCode:          wasm,
 		InstantiatePermission: perm,
 	}
-	return msg, nil
+	return msg, msg.ValidateBasic()
 }
 
 func parseAccessConfigFlags(flags *flag.FlagSet) (*types.AccessConfig, error) {
@@ -139,12 +155,7 @@ func parseAccessConfigFlags(flags *flag.FlagSet) (*types.AccessConfig, error) {
 		return nil, fmt.Errorf("instantiate by address: %s", err)
 	}
 	if onlyAddrStr != "" {
-		allowedAddr, err := sdk.AccAddressFromBech32(onlyAddrStr)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, flagInstantiateByAddress)
-		}
-		x := types.AccessTypeOnlyAddress.With(allowedAddr)
-		return &x, nil
+		return nil, fmt.Errorf("not supported anymore. Use: %s", flagInstantiateByAnyOfAddress)
 	}
 	everybodyStr, err := flags.GetString(flagInstantiateByEverybody)
 	if err != nil {
@@ -176,6 +187,13 @@ func parseAccessConfigFlags(flags *flag.FlagSet) (*types.AccessConfig, error) {
 	return nil, nil
 }
 
+func addInstantiatePermissionFlags(cmd *cobra.Command) {
+	cmd.Flags().String(flagInstantiateByEverybody, "", "Everybody can instantiate a contract from the code, optional")
+	cmd.Flags().String(flagInstantiateNobody, "", "Nobody except the governance process can instantiate a contract from the code, optional")
+	cmd.Flags().String(flagInstantiateByAddress, "", fmt.Sprintf("Removed: use %s instead", flagInstantiateByAnyOfAddress))
+	cmd.Flags().StringSlice(flagInstantiateByAnyOfAddress, []string{}, "Any of the addresses can instantiate a contract from the code, optional")
+}
+
 // InstantiateContractCmd will instantiate a contract from previously uploaded code.
 func InstantiateContractCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -184,7 +202,7 @@ func InstantiateContractCmd() *cobra.Command {
 		Long: fmt.Sprintf(`Creates a new instance of an uploaded wasm code with the given 'constructor' message.
 Each contract instance has a unique address assigned.
 Example:
-$ %s wasmd tx wasm instantiate 1 '{"foo":"bar"}' --admin="$(%s keys show mykey -a)" \
+$ %s tx wasm instantiate 1 '{"foo":"bar"}' --admin="$(%s keys show mykey -a)" \
   --from mykey --amount="100ustake" --label "local0.1.0" 
 `, version.AppName, version.AppName),
 		Aliases: []string{"start", "init", "inst", "i"},
@@ -194,20 +212,18 @@ $ %s wasmd tx wasm instantiate 1 '{"foo":"bar"}' --admin="$(%s keys show mykey -
 			if err != nil {
 				return err
 			}
-			msg, err := parseInstantiateArgs(args[0], args[1], clientCtx.GetFromAddress(), cmd.Flags())
+			msg, err := parseInstantiateArgs(args[0], args[1], clientCtx.Keyring, clientCtx.GetFromAddress().String(), cmd.Flags())
 			if err != nil {
-				return err
-			}
-			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
+		SilenceUsage: true,
 	}
 
 	cmd.Flags().String(flagAmount, "", "Coins to send to the contract during instantiation")
 	cmd.Flags().String(flagLabel, "", "A human-readable name for this contract in lists")
-	cmd.Flags().String(flagAdmin, "", "Address of an admin")
+	cmd.Flags().String(flagAdmin, "", "Address or key name of an admin")
 	cmd.Flags().Bool(flagNoAdmin, false, "You must set this explicitly if you don't want an admin")
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
@@ -225,7 +241,7 @@ Each contract instance has a unique address assigned. They are assigned automati
 for special use cases, the given 'salt' argument and '--fix-msg' parameters can be used to generate a custom address.
 
 Predictable address example (also see '%s query wasm build-address -h'):
-$ %s wasmd tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps) --admin="$(%s keys show mykey -a)" \
+$ %s tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps) --admin="$(%s keys show mykey -a)" \
   --from mykey --amount="100ustake" --label "local0.1.0" \
    --fix-msg 
 `, version.AppName, version.AppName, version.AppName),
@@ -244,7 +260,7 @@ $ %s wasmd tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps)
 			if err != nil {
 				return fmt.Errorf("fix msg: %w", err)
 			}
-			data, err := parseInstantiateArgs(args[0], args[1], clientCtx.GetFromAddress(), cmd.Flags())
+			data, err := parseInstantiateArgs(args[0], args[1], clientCtx.Keyring, clientCtx.GetFromAddress().String(), cmd.Flags())
 			if err != nil {
 				return err
 			}
@@ -258,16 +274,14 @@ $ %s wasmd tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps)
 				Salt:   salt,
 				FixMsg: fixMsg,
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
+		SilenceUsage: true,
 	}
 
 	cmd.Flags().String(flagAmount, "", "Coins to send to the contract during instantiation")
 	cmd.Flags().String(flagLabel, "", "A human-readable name for this contract in lists")
-	cmd.Flags().String(flagAdmin, "", "Address of an admin")
+	cmd.Flags().String(flagAdmin, "", "Address or key name of an admin")
 	cmd.Flags().Bool(flagNoAdmin, false, "You must set this explicitly if you don't want an admin")
 	cmd.Flags().Bool(flagFixMsg, false, "An optional flag to include the json_encoded_init_args for the predictable address generation mode")
 	decoder.RegisterFlags(cmd.PersistentFlags(), "salt")
@@ -275,7 +289,7 @@ $ %s wasmd tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps)
 	return cmd
 }
 
-func parseInstantiateArgs(rawCodeID, initMsg string, sender sdk.AccAddress, flags *flag.FlagSet) (*types.MsgInstantiateContract, error) {
+func parseInstantiateArgs(rawCodeID, initMsg string, kr keyring.Keyring, sender string, flags *flag.FlagSet) (*types.MsgInstantiateContract, error) {
 	// get the id of the code to instantiate
 	codeID, err := strconv.ParseUint(rawCodeID, 10, 64)
 	if err != nil {
@@ -301,6 +315,7 @@ func parseInstantiateArgs(rawCodeID, initMsg string, sender sdk.AccAddress, flag
 	if err != nil {
 		return nil, fmt.Errorf("admin: %s", err)
 	}
+
 	noAdmin, err := flags.GetBool(flagNoAdmin)
 	if err != nil {
 		return nil, fmt.Errorf("no-admin: %s", err)
@@ -314,16 +329,33 @@ func parseInstantiateArgs(rawCodeID, initMsg string, sender sdk.AccAddress, flag
 		return nil, fmt.Errorf("you set an admin and passed --no-admin, those cannot both be true")
 	}
 
-	// build and sign the transaction, then broadcast to Ostracon
+	if adminStr != "" {
+		addr, err := sdk.AccAddressFromBech32(adminStr)
+		if err != nil {
+			info, err := kr.Key(adminStr)
+			if err != nil {
+				return nil, fmt.Errorf("admin %s", err)
+			}
+			admin, err := info.GetAddress()
+			if err != nil {
+				return nil, err
+			}
+			adminStr = admin.String()
+		} else {
+			adminStr = addr.String()
+		}
+	}
+
+	// build and sign the transaction, then broadcast to Tendermint
 	msg := types.MsgInstantiateContract{
-		Sender: sender.String(),
+		Sender: sender,
 		CodeID: codeID,
 		Label:  label,
 		Funds:  amount,
 		Msg:    []byte(initMsg),
 		Admin:  adminStr,
 	}
-	return &msg, nil
+	return &msg, msg.ValidateBasic()
 }
 
 // ExecuteContractCmd will instantiate a contract from previously uploaded code.
@@ -343,11 +375,9 @@ func ExecuteContractCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
+		SilenceUsage: true,
 	}
 
 	cmd.Flags().String(flagAmount, "", "Coins to send to the contract along with command")
@@ -355,7 +385,7 @@ func ExecuteContractCmd() *cobra.Command {
 	return cmd
 }
 
-func parseExecuteArgs(contractAddr string, execMsg string, sender sdk.AccAddress, flags *flag.FlagSet) (types.MsgExecuteContract, error) {
+func parseExecuteArgs(contractAddr, execMsg string, sender sdk.AccAddress, flags *flag.FlagSet) (types.MsgExecuteContract, error) {
 	amountStr, err := flags.GetString(flagAmount)
 	if err != nil {
 		return types.MsgExecuteContract{}, fmt.Errorf("amount: %s", err)
@@ -372,4 +402,248 @@ func parseExecuteArgs(contractAddr string, execMsg string, sender sdk.AccAddress
 		Funds:    amount,
 		Msg:      []byte(execMsg),
 	}, nil
+}
+
+func GrantCmd() *cobra.Command {
+	txCmd := &cobra.Command{
+		Use:                "grant",
+		Short:              "Grant a authz permission",
+		DisableFlagParsing: true,
+		SilenceUsage:       true,
+	}
+	txCmd.AddCommand(
+		GrantAuthorizationCmd(),
+		GrantStoreCodeAuthorizationCmd(),
+	)
+	return txCmd
+}
+
+func GrantAuthorizationCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "contract [message_type=\"execution\"|\"migration\"] [grantee] [contract_addr_bech32] --allow-raw-msgs [msg1,msg2,...] --allow-msg-keys [key1,key2,...] --allow-all-messages",
+		Short: "Grant authorization to interact with a contract on behalf of you",
+		Long: fmt.Sprintf(`Grant authorization to an address.
+Examples:
+$ %s tx grant contract execution <grantee_addr> <contract_addr> --allow-all-messages --max-calls 1 --no-token-transfer --expiration 1667979596
+
+$ %s tx grant contract execution <grantee_addr> <contract_addr> --allow-all-messages --max-funds 100000uwasm --expiration 1667979596
+
+$ %s tx grant contract execution <grantee_addr> <contract_addr> --allow-all-messages --max-calls 5 --max-funds 100000uwasm --expiration 1667979596
+`, version.AppName, version.AppName, version.AppName),
+		Args: cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			grantee, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return err
+			}
+
+			contract, err := sdk.AccAddressFromBech32(args[2])
+			if err != nil {
+				return err
+			}
+
+			msgKeys, err := cmd.Flags().GetStringSlice(flagAllowedMsgKeys)
+			if err != nil {
+				return err
+			}
+
+			rawMsgs, err := cmd.Flags().GetStringSlice(flagAllowedRawMsgs)
+			if err != nil {
+				return err
+			}
+
+			maxFundsStr, err := cmd.Flags().GetString(flagMaxFunds)
+			if err != nil {
+				return fmt.Errorf("max funds: %s", err)
+			}
+
+			maxCalls, err := cmd.Flags().GetUint64(flagMaxCalls)
+			if err != nil {
+				return err
+			}
+
+			exp, err := cmd.Flags().GetInt64(flagExpiration)
+			if err != nil {
+				return err
+			}
+			if exp == 0 {
+				return errors.New("expiration must be set")
+			}
+
+			allowAllMsgs, err := cmd.Flags().GetBool(flagAllowAllMsgs)
+			if err != nil {
+				return err
+			}
+
+			noTokenTransfer, err := cmd.Flags().GetBool(flagNoTokenTransfer)
+			if err != nil {
+				return err
+			}
+
+			var limit types.ContractAuthzLimitX
+			switch {
+			case maxFundsStr != "" && maxCalls != 0 && !noTokenTransfer:
+				maxFunds, err := sdk.ParseCoinsNormalized(maxFundsStr)
+				if err != nil {
+					return fmt.Errorf("max funds: %s", err)
+				}
+				limit = types.NewCombinedLimit(maxCalls, maxFunds...)
+			case maxFundsStr != "" && maxCalls == 0 && !noTokenTransfer:
+				maxFunds, err := sdk.ParseCoinsNormalized(maxFundsStr)
+				if err != nil {
+					return fmt.Errorf("max funds: %s", err)
+				}
+				limit = types.NewMaxFundsLimit(maxFunds...)
+			case maxCalls != 0 && noTokenTransfer && maxFundsStr == "":
+				limit = types.NewMaxCallsLimit(maxCalls)
+			default:
+				return errors.New("invalid limit setup")
+			}
+
+			var filter types.ContractAuthzFilterX
+			switch {
+			case allowAllMsgs && len(msgKeys) != 0 || allowAllMsgs && len(rawMsgs) != 0 || len(msgKeys) != 0 && len(rawMsgs) != 0:
+				return errors.New("cannot set more than one filter within one grant")
+			case allowAllMsgs:
+				filter = types.NewAllowAllMessagesFilter()
+			case len(msgKeys) != 0:
+				filter = types.NewAcceptedMessageKeysFilter(msgKeys...)
+			case len(rawMsgs) != 0:
+				msgs := make([]types.RawContractMessage, len(rawMsgs))
+				for i, msg := range rawMsgs {
+					msgs[i] = types.RawContractMessage(msg)
+				}
+				filter = types.NewAcceptedMessagesFilter(msgs...)
+			default:
+				return errors.New("invalid filter setup")
+			}
+
+			grant, err := types.NewContractGrant(contract, limit, filter)
+			if err != nil {
+				return err
+			}
+
+			var authorization authz.Authorization
+			switch args[1] {
+			case "execution":
+				authorization = types.NewContractExecutionAuthorization(*grant)
+			case "migration":
+				authorization = types.NewContractMigrationAuthorization(*grant)
+			default:
+				return fmt.Errorf("%s authorization type not supported", args[1])
+			}
+
+			expire, err := getExpireTime(cmd)
+			if err != nil {
+				return err
+			}
+
+			grantMsg, err := authz.NewMsgGrant(clientCtx.GetFromAddress(), grantee, authorization, expire)
+			if err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), grantMsg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().StringSlice(flagAllowedMsgKeys, []string{}, "Allowed msg keys")
+	cmd.Flags().StringSlice(flagAllowedRawMsgs, []string{}, "Allowed raw msgs")
+	cmd.Flags().Uint64(flagMaxCalls, 0, "Maximal number of calls to the contract")
+	cmd.Flags().String(flagMaxFunds, "", "Maximal amount of tokens transferable to the contract.")
+	cmd.Flags().Int64(flagExpiration, 0, "The Unix timestamp.")
+	cmd.Flags().Bool(flagAllowAllMsgs, false, "Allow all messages")
+	cmd.Flags().Bool(flagNoTokenTransfer, false, "Don't allow token transfer")
+	return cmd
+}
+
+func GrantStoreCodeAuthorizationCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "store-code [grantee] [code_hash:permission]",
+		Short: "Grant authorization to upload contract code on behalf of you",
+		Long: fmt.Sprintf(`Grant authorization to an address.
+Examples:
+$ %s tx grant store-code <grantee_addr> 13a1fc994cc6d1c81b746ee0c0ff6f90043875e0bf1d9be6b7d779fc978dc2a5:everybody  1wqrtry681b746ee0c0ff6f90043875e0bf1d9be6b7d779fc978dc2a5:nobody --expiration 1667979596
+
+$ %s tx grant store-code <grantee_addr> *:%s1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm,%s1vx8knpllrj7n963p9ttd80w47kpacrhuts497x
+`, version.AppName, version.AppName, version.AppName, version.AppName),
+		Args: cobra.MinimumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			grantee, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return err
+			}
+
+			grants, err := parseStoreCodeGrants(args[1:])
+			if err != nil {
+				return err
+			}
+
+			authorization := types.NewStoreCodeAuthorization(grants...)
+
+			expire, err := getExpireTime(cmd)
+			if err != nil {
+				return err
+			}
+
+			grantMsg, err := authz.NewMsgGrant(clientCtx.GetFromAddress(), grantee, authorization, expire)
+			if err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), grantMsg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().Int64(flagExpiration, 0, "The Unix timestamp.")
+	return cmd
+}
+
+func getExpireTime(cmd *cobra.Command) (*time.Time, error) {
+	exp, err := cmd.Flags().GetInt64(flagExpiration)
+	if err != nil {
+		return nil, err
+	}
+	if exp == 0 {
+		return nil, nil
+	}
+	e := time.Unix(exp, 0)
+	return &e, nil
+}
+
+func parseStoreCodeGrants(args []string) ([]types.CodeGrant, error) {
+	grants := make([]types.CodeGrant, len(args))
+	for i, c := range args {
+		// format: code_hash:access_config
+		// access_config: nobody|everybody|address(es)
+		parts := strings.Split(c, ":")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid format")
+		}
+
+		if parts[1] == "*" {
+			grants[i] = types.CodeGrant{
+				CodeHash: []byte(parts[0]),
+			}
+			continue
+		}
+
+		accessConfig, err := parseAccessConfig(parts[1])
+		if err != nil {
+			return nil, err
+		}
+		grants[i] = types.CodeGrant{
+			CodeHash:              []byte(parts[0]),
+			InstantiatePermission: &accessConfig,
+		}
+	}
+	return grants, nil
 }

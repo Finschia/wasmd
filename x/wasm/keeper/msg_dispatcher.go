@@ -1,15 +1,18 @@
 package keeper
 
 import (
-	"bytes"
 	"fmt"
 	"sort"
+	"strings"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+
+	errorsmod "cosmossdk.io/errors"
+	storetypes "cosmossdk.io/store/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )
@@ -51,20 +54,20 @@ func (d MessageDispatcher) DispatchMessages(ctx sdk.Context, contractAddr sdk.Ac
 
 // dispatchMsgWithGasLimit sends a message with gas limit applied
 func (d MessageDispatcher) dispatchMsgWithGasLimit(ctx sdk.Context, contractAddr sdk.AccAddress, ibcPort string, msg wasmvmtypes.CosmosMsg, gasLimit uint64) (events []sdk.Event, data [][]byte, err error) {
-	limitedMeter := sdk.NewGasMeter(gasLimit)
+	limitedMeter := storetypes.NewGasMeter(gasLimit)
 	subCtx := ctx.WithGasMeter(limitedMeter)
 
 	// catch out of gas panic and just charge the entire gas limit
 	defer func() {
 		if r := recover(); r != nil {
 			// if it's not an OutOfGas error, raise it again
-			if _, ok := r.(sdk.ErrorOutOfGas); !ok {
+			if _, ok := r.(storetypes.ErrorOutOfGas); !ok {
 				// log it to get the original stack trace somewhere (as panic(r) keeps message but stacktrace to here
 				moduleLogger(ctx).Info("SubMsg rethrowing panic: %#v", r)
 				panic(r)
 			}
 			ctx.GasMeter().ConsumeGas(gasLimit, "Sub-Message OutOfGas panic")
-			err = sdkerrors.Wrap(sdkerrors.ErrOutOfGas, "SubMsg hit gas limit")
+			err = errorsmod.Wrap(sdkerrors.ErrOutOfGas, "SubMsg hit gas limit")
 		}
 	}()
 	events, data, err = d.messenger.DispatchMsg(subCtx, contractAddr, ibcPort, msg)
@@ -84,7 +87,7 @@ func (d MessageDispatcher) DispatchSubmessages(ctx sdk.Context, contractAddr sdk
 		switch msg.ReplyOn {
 		case wasmvmtypes.ReplySuccess, wasmvmtypes.ReplyError, wasmvmtypes.ReplyAlways, wasmvmtypes.ReplyNever:
 		default:
-			return nil, sdkerrors.Wrap(types.ErrInvalid, "replyOn value")
+			return nil, errorsmod.Wrap(types.ErrInvalid, "replyOn value")
 		}
 		// first, we build a sub-context which we can use inside the submessages
 		subCtx, commit := ctx.CacheContext()
@@ -116,7 +119,7 @@ func (d MessageDispatcher) DispatchSubmessages(ctx sdk.Context, contractAddr sdk
 				for _, e := range filteredEvents {
 					attributes := e.Attributes
 					sort.SliceStable(attributes, func(i, j int) bool {
-						return bytes.Compare(attributes[i].Key, attributes[j].Key) < 0
+						return strings.Compare(attributes[i].Key, attributes[j].Key) < 0
 					})
 				}
 			}
@@ -164,7 +167,7 @@ func (d MessageDispatcher) DispatchSubmessages(ctx sdk.Context, contractAddr sdk
 		rspData, err := d.keeper.reply(ctx, contractAddr, reply)
 		switch {
 		case err != nil:
-			return nil, sdkerrors.Wrap(err, "reply")
+			return nil, errorsmod.Wrap(err, "reply")
 		case rspData != nil:
 			rsp = rspData
 		}
@@ -185,7 +188,7 @@ func redactError(err error) error {
 	// sdk/11 is out of gas
 	// sdk/5 is insufficient funds (on bank send)
 	// (we can theoretically redact less in the future, but this is a first step to safety)
-	codespace, code, _ := sdkerrors.ABCIInfo(err, false)
+	codespace, code, _ := errorsmod.ABCIInfo(err, false)
 	return fmt.Errorf("codespace: %s, code: %d", codespace, code)
 }
 
@@ -215,8 +218,8 @@ func sdkAttributesToWasmVMAttributes(attrs []abci.EventAttribute) []wasmvmtypes.
 	res := make([]wasmvmtypes.EventAttribute, len(attrs))
 	for i, attr := range attrs {
 		res[i] = wasmvmtypes.EventAttribute{
-			Key:   string(attr.Key),
-			Value: string(attr.Value),
+			Key:   attr.Key,
+			Value: attr.Value,
 		}
 	}
 	return res

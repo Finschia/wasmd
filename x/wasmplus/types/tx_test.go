@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
-	"github.com/Finschia/finschia-sdk/x/auth/legacy/legacytx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 
 	wasmTypes "github.com/Finschia/wasmd/x/wasm/types"
 )
@@ -19,7 +21,7 @@ func NewMsgStoreCodeAndInstantiateContract(fromAddr sdk.AccAddress) *MsgStoreCod
 }
 
 func TestStoreCodeAndInstantiateContractValidation(t *testing.T) {
-	bad, err := sdk.AccAddressFromHex("012345")
+	bad, err := sdk.AccAddressFromHexUnsafe("012345")
 	require.NoError(t, err)
 	badAddress := bad.String()
 	require.NoError(t, err)
@@ -74,7 +76,7 @@ func TestStoreCodeAndInstantiateContractValidation(t *testing.T) {
 				WASMByteCode: []byte("foo"),
 				Label:        "foo",
 				Msg:          []byte(`{"some": "data"}`),
-				Funds:        sdk.Coins{sdk.Coin{Denom: "foobar", Amount: sdk.NewInt(200)}},
+				Funds:        sdk.Coins{sdk.Coin{Denom: "foobar", Amount: sdkmath.NewInt(200)}},
 			},
 			valid: true,
 		},
@@ -82,10 +84,10 @@ func TestStoreCodeAndInstantiateContractValidation(t *testing.T) {
 			msg: MsgStoreCodeAndInstantiateContract{
 				Sender:                goodAddress,
 				WASMByteCode:          []byte("foo"),
-				InstantiatePermission: &wasmTypes.AccessConfig{Permission: wasmTypes.AccessTypeOnlyAddress, Address: badAddress},
+				InstantiatePermission: &wasmTypes.AccessConfig{Permission: wasmTypes.AccessTypeAnyOfAddresses, Addresses: []string{badAddress}},
 				Label:                 "foo",
 				Msg:                   []byte(`{"some": "data"}`),
-				Funds:                 sdk.Coins{sdk.Coin{Denom: "foobar", Amount: sdk.NewInt(200)}},
+				Funds:                 sdk.Coins{sdk.Coin{Denom: "foobar", Amount: sdkmath.NewInt(200)}},
 			},
 			valid: false,
 		},
@@ -95,7 +97,7 @@ func TestStoreCodeAndInstantiateContractValidation(t *testing.T) {
 				WASMByteCode: []byte("foo"),
 				Msg:          []byte(`{"some": "data"}`),
 				// we cannot use sdk.NewCoin() constructors as they panic on creating invalid data (before we can test)
-				Funds: sdk.Coins{sdk.Coin{Denom: "foobar", Amount: sdk.NewInt(-200)}},
+				Funds: sdk.Coins{sdk.Coin{Denom: "foobar", Amount: sdkmath.NewInt(-200)}},
 			},
 			valid: false,
 		},
@@ -147,22 +149,24 @@ func TestMsgJsonSignBytes(t *testing.T) {
 			src: &MsgStoreCodeAndInstantiateContract{
 				Sender: "sender1", WASMByteCode: []byte{89, 69, 76, 76, 79, 87, 32, 83, 85, 66, 77, 65, 82, 73, 78, 69},
 				InstantiatePermission: &wasmTypes.AccessConfig{Permission: wasmTypes.AccessTypeAnyOfAddresses, Addresses: []string{"address1", "address2"}},
-				Admin:                 "admin1", Label: "My", Msg: wasmTypes.RawContractMessage(myInnerMsg), Funds: sdk.Coins{{Denom: "denom1", Amount: sdk.NewInt(1)}},
+				Admin:                 "admin1", Label: "My", Msg: wasmTypes.RawContractMessage(myInnerMsg), Funds: sdk.Coins{{Denom: "denom1", Amount: sdkmath.NewInt(1)}},
 			},
-			exp: `
-{
-	"type":"wasm/MsgStoreCodeAndInstantiateContract",
-	"value": {"admin":"admin1","funds":[{"amount":"1","denom":"denom1"}],"instantiate_permission":{"addresses":["address1","address2"],
-		"permission":"AnyOfAddresses"},"label":"My","msg":{"foo":"bar"},"sender":"sender1","wasm_byte_code":"WUVMTE9XIFNVQk1BUklORQ=="}
-}`,
+			exp: `{
+				"admin": "admin1",
+				"funds": [{"amount": "1", "denom": "denom1"}],
+				"instantiate_permission": {
+					"addresses": ["address1", "address2"],
+					"permission": "AnyOfAddresses"
+				},
+				"label": "My",
+				"msg": {"foo": "bar"},
+				"sender": "sender1",
+				"wasm_byte_code": "WUVMTE9XIFNVQk1BUklORQ=="
+			}`,
 		},
 		"MsgInstantiateContract with minimum field": {
 			src: &MsgStoreCodeAndInstantiateContract{},
-			exp: `
-{
-	"type":"wasm/MsgStoreCodeAndInstantiateContract",
-	"value": {"funds":[]}
-}`,
+			exp: `{"funds": []}`,
 		},
 	}
 	for name, spec := range specs {

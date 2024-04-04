@@ -1,41 +1,66 @@
 package types
 
 import (
-	"github.com/Finschia/finschia-sdk/codec"
-	"github.com/Finschia/finschia-sdk/codec/legacy"
-	"github.com/Finschia/finschia-sdk/codec/types"
-	cryptocodec "github.com/Finschia/finschia-sdk/crypto/codec"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	"github.com/Finschia/finschia-sdk/types/msgservice"
-	authzcodec "github.com/Finschia/finschia-sdk/x/authz/codec"
-	govcodec "github.com/Finschia/finschia-sdk/x/gov/codec"
-	govtypes "github.com/Finschia/finschia-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/msgservice"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	"github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
 
-// RegisterLegacyAminoCodec registers the account types and interface
-func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) { //nolint:staticcheck
-	legacy.RegisterAminoMsg(cdc, &MsgStoreCode{}, "wasm/MsgStoreCode")
-	legacy.RegisterAminoMsg(cdc, &MsgInstantiateContract{}, "wasm/MsgInstantiateContract")
-	legacy.RegisterAminoMsg(cdc, &MsgInstantiateContract2{}, "wasm/MsgInstantiateContract2")
-	legacy.RegisterAminoMsg(cdc, &MsgExecuteContract{}, "wasm/MsgExecuteContract")
-	legacy.RegisterAminoMsg(cdc, &MsgMigrateContract{}, "wasm/MsgMigrateContract")
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateAdmin{}, "wasm/MsgUpdateAdmin")
-	legacy.RegisterAminoMsg(cdc, &MsgClearAdmin{}, "wasm/MsgClearAdmin")
-	legacy.RegisterAminoMsg(cdc, &MsgIBCSend{}, "wasm/MsgIBCSend")
-	legacy.RegisterAminoMsg(cdc, &MsgIBCCloseChannel{}, "wasm/MsgIBCCloseChannel")
+// RegisterLegacyAminoCodec registers the concrete types and interface
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	cdc.RegisterConcrete(&MsgStoreCode{}, "wasm/MsgStoreCode", nil)
+	cdc.RegisterConcrete(&MsgInstantiateContract{}, "wasm/MsgInstantiateContract", nil)
+	cdc.RegisterConcrete(&MsgInstantiateContract2{}, "wasm/MsgInstantiateContract2", nil)
+	cdc.RegisterConcrete(&MsgExecuteContract{}, "wasm/MsgExecuteContract", nil)
+	cdc.RegisterConcrete(&MsgMigrateContract{}, "wasm/MsgMigrateContract", nil)
+	cdc.RegisterConcrete(&MsgUpdateAdmin{}, "wasm/MsgUpdateAdmin", nil)
+	cdc.RegisterConcrete(&MsgClearAdmin{}, "wasm/MsgClearAdmin", nil)
+	cdc.RegisterConcrete(&MsgUpdateInstantiateConfig{}, "wasm/MsgUpdateInstantiateConfig", nil)
+	cdc.RegisterConcrete(&MsgUpdateParams{}, "wasm/MsgUpdateParams", nil)
+	cdc.RegisterConcrete(&MsgSudoContract{}, "wasm/MsgSudoContract", nil)
+	cdc.RegisterConcrete(&MsgPinCodes{}, "wasm/MsgPinCodes", nil)
+	cdc.RegisterConcrete(&MsgUnpinCodes{}, "wasm/MsgUnpinCodes", nil)
+	cdc.RegisterConcrete(&MsgStoreAndInstantiateContract{}, "wasm/MsgStoreAndInstantiateContract", nil)
+	cdc.RegisterConcrete(&MsgAddCodeUploadParamsAddresses{}, "wasm/MsgAddCodeUploadParamsAddresses", nil)
+	cdc.RegisterConcrete(&MsgRemoveCodeUploadParamsAddresses{}, "wasm/MsgRemoveCodeUploadParamsAddresses", nil)
+	cdc.RegisterConcrete(&MsgStoreAndMigrateContract{}, "wasm/MsgStoreAndMigrateContract", nil)
+	cdc.RegisterConcrete(&MsgUpdateContractLabel{}, "wasm/MsgUpdateContractLabel", nil)
 
+	cdc.RegisterInterface((*ContractInfoExtension)(nil), nil)
+
+	cdc.RegisterInterface((*ContractAuthzFilterX)(nil), nil)
+	cdc.RegisterConcrete(&AllowAllMessagesFilter{}, "wasm/AllowAllMessagesFilter", nil)
+	cdc.RegisterConcrete(&AcceptedMessageKeysFilter{}, "wasm/AcceptedMessageKeysFilter", nil)
+	cdc.RegisterConcrete(&AcceptedMessagesFilter{}, "wasm/AcceptedMessagesFilter", nil)
+
+	cdc.RegisterInterface((*ContractAuthzLimitX)(nil), nil)
+	cdc.RegisterConcrete(&MaxCallsLimit{}, "wasm/MaxCallsLimit", nil)
+	cdc.RegisterConcrete(&MaxFundsLimit{}, "wasm/MaxFundsLimit", nil)
+	cdc.RegisterConcrete(&CombinedLimit{}, "wasm/CombinedLimit", nil)
+
+	cdc.RegisterConcrete(&StoreCodeAuthorization{}, "wasm/StoreCodeAuthorization", nil)
+	cdc.RegisterConcrete(&ContractExecutionAuthorization{}, "wasm/ContractExecutionAuthorization", nil)
+	cdc.RegisterConcrete(&ContractMigrationAuthorization{}, "wasm/ContractMigrationAuthorization", nil)
+
+	// legacy gov v1beta1 types that may be used for unmarshalling stored gov data
 	cdc.RegisterConcrete(&PinCodesProposal{}, "wasm/PinCodesProposal", nil)
 	cdc.RegisterConcrete(&UnpinCodesProposal{}, "wasm/UnpinCodesProposal", nil)
 	cdc.RegisterConcrete(&StoreCodeProposal{}, "wasm/StoreCodeProposal", nil)
 	cdc.RegisterConcrete(&InstantiateContractProposal{}, "wasm/InstantiateContractProposal", nil)
+	cdc.RegisterConcrete(&InstantiateContract2Proposal{}, "wasm/InstantiateContract2Proposal", nil)
 	cdc.RegisterConcrete(&MigrateContractProposal{}, "wasm/MigrateContractProposal", nil)
 	cdc.RegisterConcrete(&SudoContractProposal{}, "wasm/SudoContractProposal", nil)
 	cdc.RegisterConcrete(&ExecuteContractProposal{}, "wasm/ExecuteContractProposal", nil)
 	cdc.RegisterConcrete(&UpdateAdminProposal{}, "wasm/UpdateAdminProposal", nil)
 	cdc.RegisterConcrete(&ClearAdminProposal{}, "wasm/ClearAdminProposal", nil)
 	cdc.RegisterConcrete(&UpdateInstantiateConfigProposal{}, "wasm/UpdateInstantiateConfigProposal", nil)
+	cdc.RegisterConcrete(&StoreAndInstantiateContractProposal{}, "wasm/StoreAndInstantiateContractProposal", nil)
 }
 
+// RegisterInterfaces registers the concrete proto types and interfaces with the SDK interface registry
 func RegisterInterfaces(registry types.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
@@ -48,11 +73,50 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgClearAdmin{},
 		&MsgIBCCloseChannel{},
 		&MsgIBCSend{},
+		&MsgUpdateInstantiateConfig{},
+		&MsgUpdateParams{},
+		&MsgSudoContract{},
+		&MsgPinCodes{},
+		&MsgUnpinCodes{},
+		&MsgStoreAndInstantiateContract{},
+		&MsgAddCodeUploadParamsAddresses{},
+		&MsgRemoveCodeUploadParamsAddresses{},
+		&MsgStoreAndMigrateContract{},
+		&MsgUpdateContractLabel{},
 	)
+	registry.RegisterInterface("cosmwasm.wasm.v1.ContractInfoExtension", (*ContractInfoExtension)(nil))
+
+	registry.RegisterInterface("cosmwasm.wasm.v1.ContractAuthzFilterX", (*ContractAuthzFilterX)(nil))
 	registry.RegisterImplementations(
-		(*govtypes.Content)(nil),
+		(*ContractAuthzFilterX)(nil),
+		&AllowAllMessagesFilter{},
+		&AcceptedMessageKeysFilter{},
+		&AcceptedMessagesFilter{},
+	)
+
+	registry.RegisterInterface("cosmwasm.wasm.v1.ContractAuthzLimitX", (*ContractAuthzLimitX)(nil))
+	registry.RegisterImplementations(
+		(*ContractAuthzLimitX)(nil),
+		&MaxCallsLimit{},
+		&MaxFundsLimit{},
+		&CombinedLimit{},
+	)
+
+	registry.RegisterImplementations(
+		(*authz.Authorization)(nil),
+		&StoreCodeAuthorization{},
+		&ContractExecutionAuthorization{},
+		&ContractMigrationAuthorization{},
+	)
+
+	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
+
+	// legacy gov v1beta1 types that may be used for unmarshalling stored gov data
+	registry.RegisterImplementations(
+		(*v1beta1.Content)(nil),
 		&StoreCodeProposal{},
 		&InstantiateContractProposal{},
+		&InstantiateContract2Proposal{},
 		&MigrateContractProposal{},
 		&SudoContractProposal{},
 		&ExecuteContractProposal{},
@@ -61,28 +125,6 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&PinCodesProposal{},
 		&UnpinCodesProposal{},
 		&UpdateInstantiateConfigProposal{},
+		&StoreAndInstantiateContractProposal{},
 	)
-
-	registry.RegisterInterface("ContractInfoExtension", (*ContractInfoExtension)(nil))
-
-	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
-}
-
-var (
-	amino = codec.NewLegacyAmino()
-
-	// ModuleCdc references the global x/wasm module codec.
-
-	ModuleCdc = codec.NewAminoCodec(amino)
-)
-
-func init() {
-	RegisterLegacyAminoCodec(amino)
-	cryptocodec.RegisterCrypto(amino)
-	sdk.RegisterLegacyAminoCodec(amino)
-
-	// Register all Amino interfaces and concrete types on the authz Amino codec so that this can later be
-	// used to properly serialize MsgGrant, MsgExec and MsgSubmitProposal instances
-	RegisterLegacyAminoCodec(authzcodec.Amino)
-	RegisterLegacyAminoCodec(govcodec.Amino)
 }

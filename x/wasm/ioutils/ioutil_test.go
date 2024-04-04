@@ -8,10 +8,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cometbft/cometbft/libs/rand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/Finschia/wasmd/x/wasm/types"
 )
 
 func TestUncompress(t *testing.T) {
@@ -50,17 +49,17 @@ func TestUncompress(t *testing.T) {
 		},
 		"handle big gzip output": {
 			src:      asGzip(bytes.Repeat([]byte{0x1}, maxSize+1)),
-			expError: types.ErrLimit,
+			expError: errLimit,
 		},
-		"handle other big gzip output": {
-			src:      asGzip(bytes.Repeat([]byte{0x1}, 2*maxSize)),
-			expError: types.ErrLimit,
+		"handle big gzip archive": {
+			src:      asGzip(rand.Bytes(2 * maxSize)),
+			expError: errLimit,
 		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			r, err := Uncompress(spec.src, maxSize)
-			require.True(t, errors.Is(spec.expError, err), "exp %v got %+v", spec.expError, err)
+			require.True(t, errors.Is(err, spec.expError), "exp %v got %+v", spec.expError, err)
 			if spec.expError != nil {
 				return
 			}

@@ -1,7 +1,7 @@
 package simulation
 
 import (
-	"github.com/Finschia/finschia-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )
@@ -14,9 +14,9 @@ func RandomizedGenState(simstate *module.SimulationState) {
 		Codes:     nil,
 		Contracts: nil,
 		Sequences: []types.Sequence{
-			{IDKey: types.KeyLastCodeID, Value: simstate.Rand.Uint64()},
+			{IDKey: types.KeySequenceCodeID, Value: simstate.Rand.Uint64() % 1_000_000_000},
+			{IDKey: types.KeySequenceInstanceID, Value: simstate.Rand.Uint64() % 1_000_000_000},
 		},
-		GenMsgs: nil,
 	}
 
 	_, err := simstate.Cdc.MarshalJSON(&wasmGenesis)

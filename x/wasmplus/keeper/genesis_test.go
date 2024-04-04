@@ -2,31 +2,31 @@ package keeper
 
 import (
 	"crypto/sha256"
-	"errors"
 	"os"
 	"testing"
 	"time"
 
+	storemetrics "cosmossdk.io/store/metrics"
+	storetypes "cosmossdk.io/store/types"
+
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+
+	"cosmossdk.io/log"
+	"cosmossdk.io/store"
+	abci "github.com/cometbft/cometbft/abci/types"
+	dbm "github.com/cosmos/cosmos-db"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	fuzz "github.com/google/gofuzz"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/proto/tendermint/crypto"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
-
-	"github.com/Finschia/finschia-sdk/store"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	authkeeper "github.com/Finschia/finschia-sdk/x/auth/keeper"
-	authtypes "github.com/Finschia/finschia-sdk/x/auth/types"
-	banktypes "github.com/Finschia/finschia-sdk/x/bank/types"
-	bankpluskeeper "github.com/Finschia/finschia-sdk/x/bankplus/keeper"
-	distributionkeeper "github.com/Finschia/finschia-sdk/x/distribution/keeper"
-	govtypes "github.com/Finschia/finschia-sdk/x/gov/types"
-	paramskeeper "github.com/Finschia/finschia-sdk/x/params/keeper"
-	paramstypes "github.com/Finschia/finschia-sdk/x/params/types"
-	stakingkeeper "github.com/Finschia/finschia-sdk/x/staking/keeper"
-	"github.com/Finschia/ostracon/libs/log"
 
 	"github.com/Finschia/wasmd/x/wasm/keeper"
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
@@ -42,7 +42,7 @@ const (
 )
 
 func TestGenesisExportImport(t *testing.T) {
-	wasmKeeper, srcCtx, _ := setupKeeper(t)
+	wasmKeeper, srcCtx := setupKeeper(t)
 	contractKeeper := NewPermissionedKeeper(*wasmkeeper.NewGovPermissionKeeper(wasmKeeper), wasmKeeper)
 
 	wasmCode, err := os.ReadFile("../../wasm/keeper/testdata/hackatom.wasm")
@@ -83,9 +83,9 @@ func TestGenesisExportImport(t *testing.T) {
 		}
 		if contractExtension {
 			anyTime := time.Now().UTC()
-			var nestedType govtypes.TextProposal
+			var nestedType v1beta1.TextProposal
 			f.NilChance(0).Fuzz(&nestedType)
-			myExtension, err := govtypes.NewProposal(&nestedType, 1, anyTime, anyTime)
+			myExtension, err := v1beta1.NewProposal(&nestedType, 1, anyTime, anyTime)
 			require.NoError(t, err)
 			err = contract.SetExtension(&myExtension)
 			require.NoError(t, err)
@@ -118,13 +118,13 @@ func TestGenesisExportImport(t *testing.T) {
 	require.NoError(t, err)
 
 	// setup new instances
-	dstKeeper, dstCtx, _ := setupKeeper(t)
+	dstKeeper, dstCtx := setupKeeper(t)
 
 	// re-import
 	var importState types.GenesisState
 	err = dstKeeper.cdc.UnmarshalJSON(exportedGenesis, &importState)
 	require.NoError(t, err)
-	_, err = InitGenesis(dstCtx, dstKeeper, importState, &StakingKeeperMock{}, TestHandler(contractKeeper))
+	_, err = InitGenesis(dstCtx, dstKeeper, importState)
 	require.NoError(t, err)
 
 	// compare
@@ -158,8 +158,8 @@ func TestGenesisInit(t *testing.T) {
 					CodeBytes: wasmCode,
 				}},
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
-					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 2},
+					{IDKey: wasmTypes.KeySequenceInstanceID, Value: 1},
 				},
 				Params: wasmTypes.DefaultParams(),
 			},
@@ -177,8 +177,8 @@ func TestGenesisInit(t *testing.T) {
 					CodeBytes: wasmCode,
 				}},
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 10},
-					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 10},
+					{IDKey: wasmTypes.KeySequenceInstanceID, Value: 1},
 				},
 				Params: wasmTypes.DefaultParams(),
 			},
@@ -197,8 +197,8 @@ func TestGenesisInit(t *testing.T) {
 				}},
 				Contracts: nil,
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 3},
-					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 3},
+					{IDKey: wasmTypes.KeySequenceInstanceID, Value: 1},
 				},
 				Params: wasmTypes.DefaultParams(),
 			},
@@ -260,8 +260,8 @@ func TestGenesisInit(t *testing.T) {
 					},
 				},
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
-					{IDKey: wasmTypes.KeyLastInstanceID, Value: 2},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 2},
+					{IDKey: wasmTypes.KeySequenceInstanceID, Value: 2},
 				},
 				Params: wasmTypes.DefaultParams(),
 			},
@@ -284,8 +284,8 @@ func TestGenesisInit(t *testing.T) {
 					},
 				},
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
-					{IDKey: wasmTypes.KeyLastInstanceID, Value: 3},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 2},
+					{IDKey: wasmTypes.KeySequenceInstanceID, Value: 3},
 				},
 				Params: wasmTypes.DefaultParams(),
 			},
@@ -364,7 +364,7 @@ func TestGenesisInit(t *testing.T) {
 					CodeBytes: wasmCode,
 				}},
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 1},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 1},
 				},
 				Params: wasmTypes.DefaultParams(),
 			},
@@ -383,44 +383,11 @@ func TestGenesisInit(t *testing.T) {
 					},
 				},
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
-					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 2},
+					{IDKey: wasmTypes.KeySequenceInstanceID, Value: 1},
 				},
 				Params: wasmTypes.DefaultParams(),
 			},
-		},
-		"validator set update called for any genesis messages": {
-			src: types.GenesisState{
-				GenMsgs: []wasmTypes.GenesisState_GenMsgs{
-					{Sum: &wasmTypes.GenesisState_GenMsgs_StoreCode{
-						StoreCode: wasmTypes.MsgStoreCodeFixture(),
-					}},
-				},
-				Params: wasmTypes.DefaultParams(),
-			},
-			stakingMock: StakingKeeperMock{expCalls: 1, validatorUpdate: []abci.ValidatorUpdate{
-				{
-					PubKey: crypto.PublicKey{Sum: &crypto.PublicKey_Ed25519{
-						Ed25519: []byte("a valid key"),
-					}},
-					Power: 100,
-				},
-			}},
-			msgHandlerMock: MockMsgHandler{expCalls: 1, expMsg: wasmTypes.MsgStoreCodeFixture()},
-			expSuccess:     true,
-		},
-		"validator set update not called on genesis msg handler errors": {
-			src: types.GenesisState{
-				GenMsgs: []wasmTypes.GenesisState_GenMsgs{
-					{Sum: &wasmTypes.GenesisState_GenMsgs_StoreCode{
-						StoreCode: wasmTypes.MsgStoreCodeFixture(),
-					}},
-				},
-				Params: wasmTypes.DefaultParams(),
-			},
-			msgHandlerMock: MockMsgHandler{expCalls: 1, err: errors.New("test error response")},
-			stakingMock:    StakingKeeperMock{expCalls: 0},
-			expSuccess:     false,
 		},
 		"happy path: inactiveContract": {
 			src: types.GenesisState{
@@ -436,8 +403,8 @@ func TestGenesisInit(t *testing.T) {
 					},
 				},
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
-					{IDKey: wasmTypes.KeyLastInstanceID, Value: 3},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 2},
+					{IDKey: wasmTypes.KeySequenceInstanceID, Value: 3},
 				},
 				Params:                    wasmTypes.DefaultParams(),
 				InactiveContractAddresses: []string{keeper.BuildContractAddressClassic(1, 1).String()},
@@ -452,8 +419,8 @@ func TestGenesisInit(t *testing.T) {
 					CodeBytes: wasmCode,
 				}},
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
-					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 2},
+					{IDKey: wasmTypes.KeySequenceInstanceID, Value: 1},
 				},
 				Params:                    wasmTypes.DefaultParams(),
 				InactiveContractAddresses: []string{humanAddress},
@@ -467,8 +434,8 @@ func TestGenesisInit(t *testing.T) {
 					CodeBytes: wasmCode,
 				}},
 				Sequences: []wasmTypes.Sequence{
-					{IDKey: wasmTypes.KeyLastCodeID, Value: 2},
-					{IDKey: wasmTypes.KeyLastInstanceID, Value: 1},
+					{IDKey: wasmTypes.KeySequenceCodeID, Value: 2},
+					{IDKey: wasmTypes.KeySequenceInstanceID, Value: 1},
 				},
 				Params:                    wasmTypes.DefaultParams(),
 				InactiveContractAddresses: []string{keeper.BuildContractAddressClassic(1, 1).String()},
@@ -477,10 +444,10 @@ func TestGenesisInit(t *testing.T) {
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			keeper, ctx, _ := setupKeeper(t)
+			keeper, ctx := setupKeeper(t)
 
 			require.NoError(t, types.ValidateGenesis(spec.src))
-			gotValidatorSet, gotErr := InitGenesis(ctx, keeper, spec.src, &spec.stakingMock, spec.msgHandlerMock.Handle)
+			gotValidatorSet, gotErr := InitGenesis(ctx, keeper, spec.src)
 			if !spec.expSuccess {
 				require.Error(t, gotErr)
 				return
@@ -496,16 +463,20 @@ func TestGenesisInit(t *testing.T) {
 	}
 }
 
-func setupKeeper(t *testing.T) (*Keeper, sdk.Context, []sdk.StoreKey) {
+func setupKeeper(t *testing.T) (*Keeper, sdk.Context) {
 	t.Helper()
 	tempDir, err := os.MkdirTemp("", "wasm")
 	require.NoError(t, err)
 	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
-	db := dbm.NewMemDB()
-	ms := store.NewCommitMultiStore(db)
+	keyWasm := storetypes.NewKVStoreKey(types.StoreKey)
 
-	ctx := sdk.NewContext(ms, tmproto.Header{
+	db := dbm.NewMemDB()
+	ms := store.NewCommitMultiStore(db, log.NewTestLogger(t), storemetrics.NewNoOpMetrics())
+	ms.MountStoreWithDB(keyWasm, storetypes.StoreTypeIAVL, db)
+	require.NoError(t, ms.LoadLatestVersion())
+
+	ctx := sdk.NewContext(ms, cmtproto.Header{
 		Height: 1234567,
 		Time:   time.Date(2020, time.April, 22, 12, 0, 0, 0, time.UTC),
 	}, false, log.NewNopLogger())
@@ -514,73 +485,21 @@ func setupKeeper(t *testing.T) (*Keeper, sdk.Context, []sdk.StoreKey) {
 	// register an example extension. must be protobuf
 	encodingConfig.InterfaceRegistry.RegisterImplementations(
 		(*wasmTypes.ContractInfoExtension)(nil),
-		&govtypes.Proposal{},
+		&v1beta1.Proposal{},
 	)
 	// also registering gov interfaces for nested Any type
-	govtypes.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	v1beta1.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	wasmConfig := wasmTypes.DefaultWasmConfig()
 
-	keys := sdk.NewKVStoreKeys(
-		authtypes.StoreKey, banktypes.StoreKey, paramstypes.StoreKey, types.StoreKey,
-	)
-	for _, v := range keys {
-		ms.MountStoreWithDB(v, sdk.StoreTypeIAVL, db)
-	}
-	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
-	for _, v := range tkeys {
-		ms.MountStoreWithDB(v, sdk.StoreTypeTransient, db)
-	}
-	require.NoError(t, ms.LoadLatestVersion())
-	appCodec, legacyAmino := encodingConfig.Marshaler, encodingConfig.Amino
-
-	paramsKeeper := paramskeeper.NewKeeper(
-		appCodec,
-		legacyAmino,
-		keys[paramstypes.StoreKey],
-		tkeys[paramstypes.TStoreKey],
-	)
-	for _, m := range []string{
-		authtypes.ModuleName,
-		banktypes.ModuleName,
-		types.ModuleName,
-	} {
-		paramsKeeper.Subspace(m)
-	}
-	subspace := func(m string) paramstypes.Subspace {
-		r, ok := paramsKeeper.GetSubspace(m)
-		require.True(t, ok)
-		return r
-	}
-	maccPerms := map[string][]string{ // module account permissions
-		types.ModuleName: {authtypes.Burner},
-	}
-
-	accountKeeper := authkeeper.NewAccountKeeper(
-		appCodec,
-		keys[authtypes.StoreKey], // target store
-		subspace(authtypes.ModuleName),
-		authtypes.ProtoBaseAccount, // prototype
-		maccPerms,
-	)
-
-	bankKeeper := bankpluskeeper.NewBaseKeeper(
-		appCodec,
-		keys[banktypes.StoreKey],
-		accountKeeper,
-		subspace(banktypes.ModuleName),
-		map[string]bool{},
-		false,
-	)
-
 	srcKeeper := NewKeeper(
-		appCodec,
-		keys[types.StoreKey],
-		subspace(types.ModuleName),
-		accountKeeper,
-		bankKeeper,
+		encodingConfig.Codec,
+		runtime.NewKVStoreService(keyWasm),
+		authkeeper.AccountKeeper{},
+		&bankkeeper.BaseKeeper{},
 		stakingkeeper.Keeper{},
-		distributionkeeper.Keeper{},
+		nil,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -590,8 +509,9 @@ func setupKeeper(t *testing.T) (*Keeper, sdk.Context, []sdk.StoreKey) {
 		tempDir,
 		wasmConfig,
 		AvailableCapabilities,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
-	return &srcKeeper, ctx, []sdk.StoreKey{keys[types.StoreKey], keys[paramstypes.StoreKey]}
+	return &srcKeeper, ctx
 }
 
 type StakingKeeperMock struct {

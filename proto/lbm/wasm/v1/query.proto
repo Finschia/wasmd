@@ -34,7 +34,8 @@ message QueryInactiveContractsRequest {
 // QueryInactiveContractsResponse is the response type for the
 // Query/InactiveContract RPC method.
 message QueryInactiveContractsResponse {
-  // addresses is the inactive address list of strings, in ascending order of byte format
+  // addresses is the inactive address list of strings, in ascending order of
+  // byte format
   repeated string addresses = 1;
 
   // pagination defines the pagination in the response

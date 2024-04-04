@@ -3,20 +3,22 @@ package wasmplus
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
 
+	errorsmod "cosmossdk.io/errors"
+
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
-	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/Finschia/finschia-sdk/client"
-	"github.com/Finschia/finschia-sdk/codec"
-	cdctypes "github.com/Finschia/finschia-sdk/codec/types"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
-	"github.com/Finschia/finschia-sdk/types/module"
-	simtypes "github.com/Finschia/finschia-sdk/types/simulation"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
+	"github.com/Finschia/wasmd/x/wasm/exported"
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
 	"github.com/Finschia/wasmd/x/wasm/simulation"
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
@@ -58,7 +60,7 @@ func (a AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 func (a AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, message json.RawMessage) error {
 	var data types.GenesisState
 	if err := cdc.UnmarshalJSON(message, &data); err != nil {
-		return sdkerrors.Wrap(err, "validate genesis")
+		return errorsmod.Wrap(err, "validate genesis")
 	}
 	return data.ValidateBasic()
 }
@@ -89,6 +91,9 @@ type AppModule struct {
 	validatorSetSource wasmkeeper.ValidatorSetSource
 	accountKeeper      wasmtypes.AccountKeeper // for simulation
 	bankKeeper         simulation.BankKeeper
+	router             wasmkeeper.MessageRouter
+	// legacySubspace is used solely for migration of x/params managed parameters
+	legacySubspace exported.Subspace
 }
 
 func NewAppModule(
@@ -97,6 +102,8 @@ func NewAppModule(
 	vs wasmkeeper.ValidatorSetSource,
 	ak wasmtypes.AccountKeeper,
 	bk simulation.BankKeeper,
+	router *baseapp.MsgServiceRouter,
+	ss exported.Subspace,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic:     AppModuleBasic{},
@@ -105,13 +112,23 @@ func NewAppModule(
 		validatorSetSource: vs,
 		accountKeeper:      ak,
 		bankKeeper:         bk,
+		router:             router,
+		legacySubspace:     ss,
 	}
+}
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() { // marker
+}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() { // marker
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	validators, err := keeper.InitGenesis(ctx, am.keeper, genesisState, am.validatorSetSource, am.Route().Handler())
+	validators, err := keeper.InitGenesis(ctx, am.keeper, genesisState)
 	if err != nil {
 		panic(err)
 	}
@@ -125,21 +142,11 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // RegisterInvariants registers the wasm module invariants.
-func (am AppModule) RegisterInvariants(registry sdk.InvariantRegistry) {}
-
-// Route returns the message routing key for the wasm module.
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey,
-		NewHandler(keeper.NewPermissionedKeeper(*wasmkeeper.NewDefaultPermissionKeeper(am.keeper), am.keeper)))
-}
+func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // QuerierRoute returns the wasm module's querier route name.
 func (am AppModule) QuerierRoute() string {
 	return wasmtypes.QuerierRoute
-}
-
-func (am AppModule) LegacyQuerierHandler(amino *codec.LegacyAmino) sdk.Querier {
-	return wasmkeeper.NewLegacyQuerier(am.keeper, am.keeper.QueryGasLimit())
 }
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
@@ -147,8 +154,22 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(wasmkeeper.NewDefaultPermissionKeeper(am.keeper)))
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.Querier(am.keeper))
 	// wasm service
-	wasmtypes.RegisterMsgServer(cfg.MsgServer(), wasmkeeper.NewMsgServerImpl(wasmkeeper.NewDefaultPermissionKeeper(am.keeper)))
+	wasmtypes.RegisterMsgServer(cfg.MsgServer(), wasmkeeper.NewMsgServerImpl(&am.keeper.Keeper))
 	wasmtypes.RegisterQueryServer(cfg.QueryServer(), keeper.WasmQuerier(am.keeper))
+
+	m := wasmkeeper.NewMigrator(am.keeper.Keeper, am.legacySubspace)
+	err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2)
+	if err != nil {
+		panic(err)
+	}
+	err = cfg.RegisterMigration(types.ModuleName, 2, m.Migrate2to3)
+	if err != nil {
+		panic(err)
+	}
+	err = cfg.RegisterMigration(types.ModuleName, 3, m.Migrate3to4)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // ConsensusVersion is a sequence number for state-breaking change of the
@@ -156,7 +177,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 // introduced by the module. To avoid wrong/empty versions, the initial version
 // should be set to 1.
 func (am AppModule) ConsensusVersion() uint64 {
-	return 1
+	return 4
 }
 
 // ____________________________________________________________________________
@@ -173,16 +194,11 @@ func (am AppModule) ProposalContents(simState module.SimulationState) []simtypes
 	return nil
 }
 
-// RandomizedParams creates randomized bank param changes for the simulator.
-func (am AppModule) RandomizedParams(r *rand.Rand) []simtypes.ParamChange {
-	return simulation.ParamChanges(r, am.cdc)
-}
-
 // RegisterStoreDecoder registers a decoder for supply module's types
-func (am AppModule) RegisterStoreDecoder(registry sdk.StoreDecoderRegistry) {
+func (am AppModule) RegisterStoreDecoder(_ simtypes.StoreDecoderRegistry) {
 }
 
 // WeightedOperations returns the all the gov module operations with their respective weights.
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
-	return simulation.WeightedOperations(&simState, am.accountKeeper, am.bankKeeper, am.keeper)
+	return simulation.WeightedOperations(simState.AppParams, am.accountKeeper, am.bankKeeper, am.keeper)
 }

@@ -1,22 +1,22 @@
 package wasmtesting
 
 import (
-	sdk "github.com/Finschia/finschia-sdk/types"
-	capabilitytypes "github.com/Finschia/finschia-sdk/x/capability/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types" //nolint:staticcheck
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )
 
 type MockChannelKeeper struct {
-	GetChannelFn          func(ctx sdk.Context, srcPort, srcChan string) (channel channeltypes.Channel, found bool)
-	GetNextSequenceSendFn func(ctx sdk.Context, portID, channelID string) (uint64, bool)
-	SendPacketFn          func(ctx sdk.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error
-	ChanCloseInitFn       func(ctx sdk.Context, portID, channelID string, chanCap *capabilitytypes.Capability) error
-	GetAllChannelsFn      func(ctx sdk.Context) []channeltypes.IdentifiedChannel
-	IterateChannelsFn     func(ctx sdk.Context, cb func(channeltypes.IdentifiedChannel) bool)
-	SetChannelFn          func(ctx sdk.Context, portID, channelID string, channel channeltypes.Channel)
+	GetChannelFn                   func(ctx sdk.Context, srcPort, srcChan string) (channel channeltypes.Channel, found bool)
+	GetNextSequenceSendFn          func(ctx sdk.Context, portID, channelID string) (uint64, bool)
+	ChanCloseInitFn                func(ctx sdk.Context, portID, channelID string, chanCap *capabilitytypes.Capability) error
+	GetAllChannelsFn               func(ctx sdk.Context) []channeltypes.IdentifiedChannel
+	SetChannelFn                   func(ctx sdk.Context, portID, channelID string, channel channeltypes.Channel)
+	GetAllChannelsWithPortPrefixFn func(ctx sdk.Context, portPrefix string) []channeltypes.IdentifiedChannel
 }
 
 func (m *MockChannelKeeper) GetChannel(ctx sdk.Context, srcPort, srcChan string) (channel channeltypes.Channel, found bool) {
@@ -40,13 +40,6 @@ func (m *MockChannelKeeper) GetNextSequenceSend(ctx sdk.Context, portID, channel
 	return m.GetNextSequenceSendFn(ctx, portID, channelID)
 }
 
-func (m *MockChannelKeeper) SendPacket(ctx sdk.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error {
-	if m.SendPacketFn == nil {
-		panic("not supposed to be called!")
-	}
-	return m.SendPacketFn(ctx, channelCap, packet)
-}
-
 func (m *MockChannelKeeper) ChanCloseInit(ctx sdk.Context, portID, channelID string, chanCap *capabilitytypes.Capability) error {
 	if m.ChanCloseInitFn == nil {
 		panic("not supposed to be called!")
@@ -54,11 +47,11 @@ func (m *MockChannelKeeper) ChanCloseInit(ctx sdk.Context, portID, channelID str
 	return m.ChanCloseInitFn(ctx, portID, channelID, chanCap)
 }
 
-func (m *MockChannelKeeper) IterateChannels(ctx sdk.Context, cb func(channeltypes.IdentifiedChannel) bool) {
-	if m.IterateChannelsFn == nil {
+func (m *MockChannelKeeper) GetAllChannelsWithPortPrefix(ctx sdk.Context, portPrefix string) []channeltypes.IdentifiedChannel {
+	if m.GetAllChannelsWithPortPrefixFn == nil {
 		panic("not expected to be called")
 	}
-	m.IterateChannelsFn(ctx, cb)
+	return m.GetAllChannelsWithPortPrefixFn(ctx, portPrefix)
 }
 
 func (m *MockChannelKeeper) SetChannel(ctx sdk.Context, portID, channelID string, channel channeltypes.Channel) {
@@ -66,6 +59,17 @@ func (m *MockChannelKeeper) SetChannel(ctx sdk.Context, portID, channelID string
 		panic("not supposed to be called!")
 	}
 	m.SetChannelFn(ctx, portID, channelID, channel)
+}
+
+type MockIBCPacketSender struct {
+	SendPacketFn func(ctx sdk.Context, channelCap *capabilitytypes.Capability, sourcePort, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error)
+}
+
+func (m *MockIBCPacketSender) SendPacket(ctx sdk.Context, channelCap *capabilitytypes.Capability, sourcePort, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
+	if m.SendPacketFn == nil {
+		panic("not supposed to be called!")
+	}
+	return m.SendPacketFn(ctx, channelCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data)
 }
 
 func MockChannelKeeperIterator(s []channeltypes.IdentifiedChannel) func(ctx sdk.Context, cb func(channeltypes.IdentifiedChannel) bool) {

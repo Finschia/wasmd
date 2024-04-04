@@ -1,13 +1,14 @@
 package keeper
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func TestDontBindPortNonIBCContract(t *testing.T) {
@@ -24,9 +25,10 @@ func TestBindingPortForIBCContractOnInstantiate(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "wasm", owner)
 
-	initMsgBz := IBCReflectInitMsg{
+	initMsgBz, err := json.Marshal(IBCReflectInitMsg{
 		ReflectCodeID: example.ReflectCodeID,
-	}.GetBytes(t)
+	})
+	require.NoError(t, err)
 
 	// create a second contract should give yet another portID (and different address)
 	creator := RandomAccountAddress(t)

@@ -1,36 +1,40 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/Finschia/finschia-sdk/codec"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
-	bankpluskeeper "github.com/Finschia/finschia-sdk/x/bankplus/keeper"
-	paramtypes "github.com/Finschia/finschia-sdk/x/params/types"
-	"github.com/Finschia/ostracon/libs/log"
+	corestoretypes "cosmossdk.io/core/store"
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/store/prefix"
 
+	"github.com/cosmos/cosmos-sdk/runtime"
+
+	"cosmossdk.io/log"
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
 	"github.com/Finschia/wasmd/x/wasmplus/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 )
 
 type Keeper struct {
 	wasmkeeper.Keeper
-	cdc      codec.Codec
-	storeKey sdk.StoreKey
-	metrics  *wasmkeeper.Metrics
-	bank     bankpluskeeper.Keeper
+	cdc          codec.Codec
+	storeService corestoretypes.KVStoreService
+	metrics      *wasmkeeper.Metrics
+	bank         wasmtypes.BankKeeper
 }
 
 func NewKeeper(
 	cdc codec.Codec,
-	storeKey sdk.StoreKey,
-	paramSpace paramtypes.Subspace,
+	storeService corestoretypes.KVStoreService,
 	accountKeeper wasmtypes.AccountKeeper,
 	bankKeeper wasmtypes.BankKeeper,
 	stakingKeeper wasmtypes.StakingKeeper,
 	distKeeper wasmtypes.DistributionKeeper,
+	ics4Wrapper wasmtypes.ICS4Wrapper,
 	channelKeeper wasmtypes.ChannelKeeper,
 	portKeeper wasmtypes.PortKeeper,
 	capabilityKeeper wasmtypes.CapabilityKeeper,
@@ -40,26 +44,27 @@ func NewKeeper(
 	homeDir string,
 	wasmConfig wasmtypes.WasmConfig,
 	availableCapabilities string,
+	authority string,
 	opts ...wasmkeeper.Option,
 ) Keeper {
-	bankPlusKeeper, ok := bankKeeper.(bankpluskeeper.Keeper)
+	bankKeeper, ok := bankKeeper.(bankkeeper.Keeper)
 	if !ok {
 		panic("bankKeeper should be bankPlusKeeper")
 	}
 	result := Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
-		metrics:  wasmkeeper.NopMetrics(),
-		bank:     bankPlusKeeper,
+		cdc:          cdc,
+		storeService: storeService,
+		metrics:      wasmkeeper.NopMetrics(),
+		bank:         bankKeeper,
 	}
 	result.Keeper = wasmkeeper.NewKeeper(
 		cdc,
-		storeKey,
-		paramSpace,
+		storeService,
 		accountKeeper,
 		bankKeeper,
 		stakingKeeper,
 		distKeeper,
+		ics4Wrapper,
 		channelKeeper,
 		portKeeper,
 		capabilityKeeper,
@@ -69,17 +74,18 @@ func NewKeeper(
 		homeDir,
 		wasmConfig,
 		availableCapabilities,
+		authority,
 		opts...,
 	)
 	return result
 }
 
 func WasmQuerier(k *Keeper) wasmtypes.QueryServer {
-	return wasmkeeper.NewGrpcQuerier(k.cdc, k.storeKey, k, k.QueryGasLimit())
+	return wasmkeeper.NewGrpcQuerier(k.cdc, k.storeService, k, k.QueryGasLimit())
 }
 
 func Querier(k *Keeper) types.QueryServer {
-	return newGrpcQuerier(k.storeKey, k)
+	return newGrpcQuerier(k.storeService, k)
 }
 
 func (Keeper) Logger(ctx sdk.Context) log.Logger {
@@ -90,15 +96,18 @@ func ModuleLogger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) IsInactiveContract(ctx sdk.Context, contractAddress sdk.AccAddress) bool {
-	store := ctx.KVStore(k.storeKey)
-	return store.Has(types.GetInactiveContractKey(contractAddress))
+func (k Keeper) IsInactiveContract(ctx context.Context, contractAddress sdk.AccAddress) bool {
+	store := k.storeService.OpenKVStore(ctx)
+	ok, err := store.Has(types.GetInactiveContractKey(contractAddress))
+	if err != nil {
+		panic(err)
+	}
+	return ok
 }
 
-func (k Keeper) IterateInactiveContracts(ctx sdk.Context, fn func(contractAddress sdk.AccAddress) (stop bool)) {
-	store := ctx.KVStore(k.storeKey)
-	prefix := types.InactiveContractPrefix
-	iterator := sdk.KVStorePrefixIterator(store, prefix)
+func (k Keeper) IterateInactiveContracts(ctx context.Context, fn func(contractAddress sdk.AccAddress) (stop bool)) {
+	prefixStore := prefix.NewStore(runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx)), types.InactiveContractPrefix)
+	iterator := prefixStore.Iterator(nil, nil)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
@@ -109,42 +118,50 @@ func (k Keeper) IterateInactiveContracts(ctx sdk.Context, fn func(contractAddres
 	}
 }
 
-func (k Keeper) addInactiveContract(ctx sdk.Context, contractAddress sdk.AccAddress) {
-	store := ctx.KVStore(k.storeKey)
+func (k Keeper) addInactiveContract(ctx context.Context, contractAddress sdk.AccAddress) {
+	store := k.storeService.OpenKVStore(ctx)
 	key := types.GetInactiveContractKey(contractAddress)
 
-	store.Set(key, contractAddress)
+	err := store.Set(key, contractAddress)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (k Keeper) deleteInactiveContract(ctx sdk.Context, contractAddress sdk.AccAddress) {
-	store := ctx.KVStore(k.storeKey)
+func (k Keeper) deleteInactiveContract(ctx context.Context, contractAddress sdk.AccAddress) {
+	store := k.storeService.OpenKVStore(ctx)
 	key := types.GetInactiveContractKey(contractAddress)
-	store.Delete(key)
+	err := store.Delete(key)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // activateContract delete the contract address from inactivateContract list if the contract is deactivated.
-func (k Keeper) activateContract(ctx sdk.Context, contractAddress sdk.AccAddress) error {
+func (k Keeper) activateContract(ctx context.Context, contractAddress sdk.AccAddress) error {
 	if !k.IsInactiveContract(ctx, contractAddress) {
-		return sdkerrors.Wrapf(wasmtypes.ErrNotFound, "no inactivate contract %s", contractAddress.String())
+		return errorsmod.Wrapf(wasmtypes.ErrNotFound, "no inactivate contract %s", contractAddress.String())
 	}
 
 	k.deleteInactiveContract(ctx, contractAddress)
-	k.bank.DeleteFromInactiveAddr(ctx, contractAddress)
+	// todo: add bankplus function
+	// k.bank.DeleteFromInactiveAddr(ctx, contractAddress)
 
 	return nil
 }
 
 // deactivateContract add the contract address to inactivateContract list.
-func (k Keeper) deactivateContract(ctx sdk.Context, contractAddress sdk.AccAddress) error {
+func (k Keeper) deactivateContract(ctx context.Context, contractAddress sdk.AccAddress) error {
 	if k.IsInactiveContract(ctx, contractAddress) {
-		return sdkerrors.Wrapf(wasmtypes.ErrAccountExists, "already inactivate contract %s", contractAddress.String())
+		return errorsmod.Wrapf(wasmtypes.ErrAccountExists, "already inactivate contract %s", contractAddress.String())
 	}
 	if !k.HasContractInfo(ctx, contractAddress) {
-		return sdkerrors.Wrapf(wasmtypes.ErrInvalid, "no contract %s", contractAddress.String())
+		return errorsmod.Wrapf(wasmtypes.ErrInvalid, "no contract %s", contractAddress.String())
 	}
 
 	k.addInactiveContract(ctx, contractAddress)
-	k.bank.AddToInactiveAddr(ctx, contractAddress)
+	// todo: add bankplus function
+	// k.bank.AddToInactiveAddr(ctx, contractAddress)
 
 	return nil
 }

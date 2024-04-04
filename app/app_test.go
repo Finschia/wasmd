@@ -1,60 +1,61 @@
 package app
 
 import (
-	"encoding/json"
-	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	abci "github.com/cometbft/cometbft/abci/types"
+	dbm "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
-	db "github.com/tendermint/tm-db"
 
-	"github.com/Finschia/ostracon/libs/log"
+	"cosmossdk.io/log"
 
-	"github.com/Finschia/wasmd/x/wasm"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/msgservice"
+
+	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
 )
 
-var emptyWasmOpts []wasm.Option = nil
+var emptyWasmOpts []wasmkeeper.Option
 
 func TestWasmdExport(t *testing.T) {
-	db := db.NewMemDB()
-	gapp := NewWasmApp(log.NewOCLogger(log.NewSyncWriter(os.Stdout)), db, nil, true, map[int64]bool{}, DefaultNodeHome, 0, MakeEncodingConfig(), wasm.EnableAllProposals, EmptyBaseAppOptions{}, emptyWasmOpts)
+	db := dbm.NewMemDB()
+	logger := log.NewTestLogger(t)
+	gapp := NewWasmAppWithCustomOptions(t, false, SetupOptions{
+		Logger:  logger.With("instance", "first"),
+		DB:      db,
+		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+	})
 
-	genesisState := NewDefaultGenesisState()
-	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
+	// finalize block so we have CheckTx state set
+	_, err := gapp.FinalizeBlock(&abci.RequestFinalizeBlock{
+		Height: 1,
+	})
 	require.NoError(t, err)
 
-	// Initialize the chain
-	gapp.InitChain(
-		abci.RequestInitChain{
-			Validators:    []abci.ValidatorUpdate{},
-			AppStateBytes: stateBytes,
-		},
-	)
-	gapp.Commit()
+	_, err = gapp.Commit()
+	require.NoError(t, err)
 
 	// Making a new app object with the db, so that initchain hasn't been called
-	newGapp := NewWasmApp(log.NewOCLogger(log.NewSyncWriter(os.Stdout)), db, nil, true, map[int64]bool{}, DefaultNodeHome, 0, MakeEncodingConfig(), wasm.EnableAllProposals, EmptyBaseAppOptions{}, emptyWasmOpts)
-	_, err = newGapp.ExportAppStateAndValidators(false, []string{})
+	newGapp := NewWasmApp(logger, db, nil, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()), emptyWasmOpts)
+	_, err = newGapp.ExportAppStateAndValidators(false, []string{}, nil)
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
 }
 
 // ensure that blocked addresses are properly set in bank keeper
 func TestBlockedAddrs(t *testing.T) {
-	db := db.NewMemDB()
-	gapp := NewWasmApp(log.NewOCLogger(log.NewSyncWriter(os.Stdout)), db, nil, true, map[int64]bool{}, DefaultNodeHome, 0, MakeEncodingConfig(), wasm.EnableAllProposals, EmptyBaseAppOptions{}, emptyWasmOpts)
-	blockedAddrs := gapp.BlockedAddrs()
+	gapp := Setup(t)
 
-	for acc := range maccPerms {
-		// for acc := range gapp.BlockedAddrs() {
+	for acc := range BlockedAddresses() {
 		t.Run(acc, func(t *testing.T) {
-			addr := gapp.AccountKeeper.GetModuleAddress(acc)
-			if blockedAddrs[addr.String()] {
-				require.True(t, gapp.BankKeeper.BlockedAddr(addr),
-					"ensure that blocked addresses are properly set in bank keeper",
-				)
+			var addr sdk.AccAddress
+			if modAddr, err := sdk.AccAddressFromBech32(acc); err == nil {
+				addr = modAddr
+			} else {
+				addr = gapp.AccountKeeper.GetModuleAddress(acc)
 			}
+			require.True(t, gapp.BankKeeper.BlockedAddr(addr), "ensure that blocked addresses are properly set in bank keeper")
 		})
 	}
 }
@@ -64,52 +65,17 @@ func TestGetMaccPerms(t *testing.T) {
 	require.Equal(t, maccPerms, dup, "duplicated module account permissions differed from actual module account permissions")
 }
 
-func TestGetEnabledProposals(t *testing.T) {
-	cases := map[string]struct {
-		proposalsEnabled string
-		specificEnabled  string
-		expected         []wasm.ProposalType
-	}{
-		"all disabled": {
-			proposalsEnabled: "false",
-			expected:         wasm.DisableAllProposals,
-		},
-		"all enabled": {
-			proposalsEnabled: "true",
-			expected:         wasm.EnableAllProposals,
-		},
-		"some enabled": {
-			proposalsEnabled: "okay",
-			specificEnabled:  "StoreCode,InstantiateContract",
-			expected:         []wasm.ProposalType{wasm.ProposalTypeStoreCode, wasm.ProposalTypeInstantiateContract},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			ProposalsEnabled = tc.proposalsEnabled
-			EnableSpecificProposals = tc.specificEnabled
-			proposals := GetEnabledProposals()
-			assert.Equal(t, tc.expected, proposals)
-		})
-	}
+// TestMergedRegistry tests that fetching the gogo/protov2 merged registry
+// doesn't fail after loading all file descriptors.
+func TestMergedRegistry(t *testing.T) {
+	r, err := proto.MergedRegistry()
+	require.NoError(t, err)
+	require.Greater(t, r.NumFiles(), 0)
 }
 
-func setGenesis(gapp *WasmApp) error {
-	genesisState := NewDefaultGenesisState()
-	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
-	if err != nil {
-		return err
-	}
-
-	// Initialize the chain
-	gapp.InitChain(
-		abci.RequestInitChain{
-			Validators:    []abci.ValidatorUpdate{},
-			AppStateBytes: stateBytes,
-		},
-	)
-
-	gapp.Commit()
-	return nil
+func TestProtoAnnotations(t *testing.T) {
+	r, err := proto.MergedRegistry()
+	require.NoError(t, err)
+	err = msgservice.ValidateProtoAnnotations(r)
+	require.NoError(t, err)
 }

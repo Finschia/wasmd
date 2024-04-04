@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	dbm "github.com/tendermint/tm-db"
 
-	"github.com/Finschia/finschia-sdk/crypto/keys/secp256k1"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )

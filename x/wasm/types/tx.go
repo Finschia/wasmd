@@ -1,12 +1,15 @@
 package types
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"strings"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // RawContractMessage defines a json message that is sent or returned by a wasm contract.
@@ -41,6 +44,11 @@ func (r RawContractMessage) Bytes() []byte {
 	return r
 }
 
+// Equal content is equal json. Byte equal but this can change in the future.
+func (r RawContractMessage) Equal(o RawContractMessage) bool {
+	return bytes.Equal(r.Bytes(), o.Bytes())
+}
+
 func (msg MsgStoreCode) Route() string {
 	return RouterKey
 }
@@ -54,28 +62,16 @@ func (msg MsgStoreCode) ValidateBasic() error {
 		return err
 	}
 
-	if err := validateWasmCode(msg.WASMByteCode); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "code bytes %s", err.Error())
+	if err := validateWasmCode(msg.WASMByteCode, MaxWasmSize); err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "code bytes %s", err.Error())
 	}
 
 	if msg.InstantiatePermission != nil {
 		if err := msg.InstantiatePermission.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "instantiate permission")
+			return errorsmod.Wrap(err, "instantiate permission")
 		}
 	}
 	return nil
-}
-
-func (msg MsgStoreCode) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
-}
-
-func (msg MsgStoreCode) GetSigners() []sdk.AccAddress {
-	senderAddr, err := sdk.AccAddressFromBech32(msg.Sender)
-	if err != nil { // should never happen as valid basic rejects invalid addresses
-		panic(err.Error())
-	}
-	return []sdk.AccAddress{senderAddr}
 }
 
 func (msg MsgInstantiateContract) Route() string {
@@ -88,42 +84,30 @@ func (msg MsgInstantiateContract) Type() string {
 
 func (msg MsgInstantiateContract) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
-		return sdkerrors.Wrap(err, "sender")
+		return errorsmod.Wrap(err, "sender")
 	}
 
 	if msg.CodeID == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "code id is required")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "code id is required")
 	}
 
 	if err := ValidateLabel(msg.Label); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "label is required")
+		return errorsmod.Wrap(err, "label")
 	}
 
-	if !msg.Funds.IsValid() {
-		return sdkerrors.ErrInvalidCoins
+	if err := msg.Funds.Validate(); err != nil {
+		return errorsmod.Wrap(err, "funds")
 	}
 
 	if len(msg.Admin) != 0 {
 		if _, err := sdk.AccAddressFromBech32(msg.Admin); err != nil {
-			return sdkerrors.Wrap(err, "admin")
+			return errorsmod.Wrap(err, "admin")
 		}
 	}
 	if err := msg.Msg.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "payload msg")
+		return errorsmod.Wrap(err, "payload msg")
 	}
 	return nil
-}
-
-func (msg MsgInstantiateContract) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
-}
-
-func (msg MsgInstantiateContract) GetSigners() []sdk.AccAddress {
-	senderAddr, err := sdk.AccAddressFromBech32(msg.Sender)
-	if err != nil { // should never happen as valid basic rejects invalid addresses
-		panic(err.Error())
-	}
-	return []sdk.AccAddress{senderAddr}
 }
 
 func (msg MsgExecuteContract) Route() string {
@@ -136,31 +120,34 @@ func (msg MsgExecuteContract) Type() string {
 
 func (msg MsgExecuteContract) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
-		return sdkerrors.Wrap(err, "sender")
+		return errorsmod.Wrap(err, "sender")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.Contract); err != nil {
-		return sdkerrors.Wrap(err, "contract")
+		return errorsmod.Wrap(err, "contract")
 	}
 
-	if !msg.Funds.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "sentFunds")
+	if err := msg.Funds.Validate(); err != nil {
+		return errorsmod.Wrap(err, "funds")
 	}
 	if err := msg.Msg.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "payload msg")
+		return errorsmod.Wrap(err, "payload msg")
 	}
 	return nil
 }
 
-func (msg MsgExecuteContract) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
+// GetMsg returns the payload message send to the contract
+func (msg MsgExecuteContract) GetMsg() RawContractMessage {
+	return msg.Msg
 }
 
-func (msg MsgExecuteContract) GetSigners() []sdk.AccAddress {
-	senderAddr, err := sdk.AccAddressFromBech32(msg.Sender)
-	if err != nil { // should never happen as valid basic rejects invalid addresses
-		panic(err.Error())
-	}
-	return []sdk.AccAddress{senderAddr}
+// GetFunds returns tokens send to the contract
+func (msg MsgExecuteContract) GetFunds() sdk.Coins {
+	return msg.Funds
+}
+
+// GetContract returns the bech32 address of the contract
+func (msg MsgExecuteContract) GetContract() string {
+	return msg.Contract
 }
 
 func (msg MsgMigrateContract) Route() string {
@@ -173,32 +160,35 @@ func (msg MsgMigrateContract) Type() string {
 
 func (msg MsgMigrateContract) ValidateBasic() error {
 	if msg.CodeID == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "code id is required")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "code id is required")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
-		return sdkerrors.Wrap(err, "sender")
+		return errorsmod.Wrap(err, "sender")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.Contract); err != nil {
-		return sdkerrors.Wrap(err, "contract")
+		return errorsmod.Wrap(err, "contract")
 	}
 
 	if err := msg.Msg.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "payload msg")
+		return errorsmod.Wrap(err, "payload msg")
 	}
 
 	return nil
 }
 
-func (msg MsgMigrateContract) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
+// GetMsg returns the payload message send to the contract
+func (msg MsgMigrateContract) GetMsg() RawContractMessage {
+	return msg.Msg
 }
 
-func (msg MsgMigrateContract) GetSigners() []sdk.AccAddress {
-	senderAddr, err := sdk.AccAddressFromBech32(msg.Sender)
-	if err != nil { // should never happen as valid basic rejects invalid addresses
-		panic(err.Error())
-	}
-	return []sdk.AccAddress{senderAddr}
+// GetFunds returns tokens send to the contract
+func (msg MsgMigrateContract) GetFunds() sdk.Coins {
+	return sdk.NewCoins()
+}
+
+// GetContract returns the bech32 address of the contract
+func (msg MsgMigrateContract) GetContract() string {
+	return msg.Contract
 }
 
 func (msg MsgUpdateAdmin) Route() string {
@@ -211,30 +201,18 @@ func (msg MsgUpdateAdmin) Type() string {
 
 func (msg MsgUpdateAdmin) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
-		return sdkerrors.Wrap(err, "sender")
+		return errorsmod.Wrap(err, "sender")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.Contract); err != nil {
-		return sdkerrors.Wrap(err, "contract")
+		return errorsmod.Wrap(err, "contract")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.NewAdmin); err != nil {
-		return sdkerrors.Wrap(err, "new admin")
+		return errorsmod.Wrap(err, "new admin")
 	}
 	if strings.EqualFold(msg.Sender, msg.NewAdmin) {
-		return sdkerrors.Wrap(ErrInvalidMsg, "new admin is the same as the old")
+		return errorsmod.Wrap(ErrInvalid, "new admin is the same as the old")
 	}
 	return nil
-}
-
-func (msg MsgUpdateAdmin) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
-}
-
-func (msg MsgUpdateAdmin) GetSigners() []sdk.AccAddress {
-	senderAddr, err := sdk.AccAddressFromBech32(msg.Sender)
-	if err != nil { // should never happen as valid basic rejects invalid addresses
-		panic(err.Error())
-	}
-	return []sdk.AccAddress{senderAddr}
 }
 
 func (msg MsgClearAdmin) Route() string {
@@ -247,24 +225,12 @@ func (msg MsgClearAdmin) Type() string {
 
 func (msg MsgClearAdmin) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
-		return sdkerrors.Wrap(err, "sender")
+		return errorsmod.Wrap(err, "sender")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.Contract); err != nil {
-		return sdkerrors.Wrap(err, "contract")
+		return errorsmod.Wrap(err, "contract")
 	}
 	return nil
-}
-
-func (msg MsgClearAdmin) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
-}
-
-func (msg MsgClearAdmin) GetSigners() []sdk.AccAddress {
-	senderAddr, err := sdk.AccAddressFromBech32(msg.Sender)
-	if err != nil { // should never happen as valid basic rejects invalid addresses
-		panic(err.Error())
-	}
-	return []sdk.AccAddress{senderAddr}
 }
 
 func (msg MsgIBCSend) Route() string {
@@ -276,14 +242,6 @@ func (msg MsgIBCSend) Type() string {
 }
 
 func (msg MsgIBCSend) ValidateBasic() error {
-	return nil
-}
-
-func (msg MsgIBCSend) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
-}
-
-func (msg MsgIBCSend) GetSigners() []sdk.AccAddress {
 	return nil
 }
 
@@ -299,14 +257,6 @@ func (msg MsgIBCCloseChannel) ValidateBasic() error {
 	return nil
 }
 
-func (msg MsgIBCCloseChannel) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
-}
-
-func (msg MsgIBCCloseChannel) GetSigners() []sdk.AccAddress {
-	return nil
-}
-
 var _ sdk.Msg = &MsgInstantiateContract2{}
 
 func (msg MsgInstantiateContract2) Route() string {
@@ -319,43 +269,309 @@ func (msg MsgInstantiateContract2) Type() string {
 
 func (msg MsgInstantiateContract2) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
-		return sdkerrors.Wrap(err, "sender")
+		return errorsmod.Wrap(err, "sender")
 	}
 
 	if msg.CodeID == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "code id is required")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "code id is required")
 	}
 
 	if err := ValidateLabel(msg.Label); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "label is required")
+		return errorsmod.Wrap(err, "label")
 	}
 
-	if !msg.Funds.IsValid() {
-		return sdkerrors.ErrInvalidCoins
+	if err := msg.Funds.Validate(); err != nil {
+		return errorsmod.Wrap(err, "funds")
 	}
 
 	if len(msg.Admin) != 0 {
 		if _, err := sdk.AccAddressFromBech32(msg.Admin); err != nil {
-			return sdkerrors.Wrap(err, "admin")
+			return errorsmod.Wrap(err, "admin")
 		}
 	}
 	if err := msg.Msg.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "payload msg")
+		return errorsmod.Wrap(err, "payload msg")
 	}
 	if err := ValidateSalt(msg.Salt); err != nil {
-		return sdkerrors.Wrap(err, "salt")
+		return errorsmod.Wrap(err, "salt")
 	}
 	return nil
 }
 
-func (msg MsgInstantiateContract2) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
+func (msg MsgUpdateInstantiateConfig) Route() string {
+	return RouterKey
 }
 
-func (msg MsgInstantiateContract2) GetSigners() []sdk.AccAddress {
-	senderAddr, err := sdk.AccAddressFromBech32(msg.Sender)
-	if err != nil { // should never happen as valid basic rejects invalid addresses
-		panic(err.Error())
+func (msg MsgUpdateInstantiateConfig) Type() string {
+	return "update-instantiate-config"
+}
+
+func (msg MsgUpdateInstantiateConfig) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
+		return errorsmod.Wrap(err, "sender")
 	}
-	return []sdk.AccAddress{senderAddr}
+
+	if msg.CodeID == 0 {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "code id is required")
+	}
+
+	if msg.NewInstantiatePermission == nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "instantiate permission is required")
+	}
+
+	if err := msg.NewInstantiatePermission.ValidateBasic(); err != nil {
+		return errorsmod.Wrap(err, "instantiate permission")
+	}
+
+	return nil
+}
+
+func (msg MsgUpdateParams) Route() string {
+	return RouterKey
+}
+
+func (msg MsgUpdateParams) Type() string {
+	return "update-params"
+}
+
+func (msg MsgUpdateParams) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return errorsmod.Wrap(err, "authority")
+	}
+	return msg.Params.ValidateBasic()
+}
+
+func (msg MsgPinCodes) Route() string {
+	return RouterKey
+}
+
+func (msg MsgPinCodes) Type() string {
+	return "pin-codes"
+}
+
+func (msg MsgPinCodes) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return errorsmod.Wrap(err, "authority")
+	}
+	return validateCodeIDs(msg.CodeIDs)
+}
+
+const maxCodeIDTotal = 50
+
+// ensure not empty, not duplicates and not exceeding max number
+func validateCodeIDs(codeIDs []uint64) error {
+	switch n := len(codeIDs); {
+	case n == 0:
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "empty code ids")
+	case n > maxCodeIDTotal:
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "total number of code ids is greater than %d", maxCodeIDTotal)
+	}
+	if hasDuplicates(codeIDs) {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "duplicate code ids")
+	}
+	return nil
+}
+
+func (msg MsgUnpinCodes) Route() string {
+	return RouterKey
+}
+
+func (msg MsgUnpinCodes) Type() string {
+	return "unpin-codes"
+}
+
+func (msg MsgUnpinCodes) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return errorsmod.Wrap(err, "authority")
+	}
+	return validateCodeIDs(msg.CodeIDs)
+}
+
+func (msg MsgSudoContract) Route() string {
+	return RouterKey
+}
+
+func (msg MsgSudoContract) Type() string {
+	return "sudo-contract"
+}
+
+func (msg MsgSudoContract) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return errorsmod.Wrap(err, "authority")
+	}
+	if _, err := sdk.AccAddressFromBech32(msg.Contract); err != nil {
+		return errorsmod.Wrap(err, "contract")
+	}
+	if err := msg.Msg.ValidateBasic(); err != nil {
+		return errorsmod.Wrap(err, "payload msg")
+	}
+	return nil
+}
+
+func (msg MsgStoreAndInstantiateContract) Route() string {
+	return RouterKey
+}
+
+func (msg MsgStoreAndInstantiateContract) Type() string {
+	return "store-and-instantiate-contract"
+}
+
+func (msg MsgStoreAndInstantiateContract) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return errorsmod.Wrap(err, "authority")
+	}
+
+	if err := ValidateLabel(msg.Label); err != nil {
+		return errorsmod.Wrap(err, "label")
+	}
+
+	if err := msg.Funds.Validate(); err != nil {
+		return errorsmod.Wrap(err, "funds")
+	}
+
+	if len(msg.Admin) != 0 {
+		if _, err := sdk.AccAddressFromBech32(msg.Admin); err != nil {
+			return errorsmod.Wrap(err, "admin")
+		}
+	}
+
+	if err := ValidateVerificationInfo(msg.Source, msg.Builder, msg.CodeHash); err != nil {
+		return errorsmod.Wrapf(err, "code verification info")
+	}
+
+	if err := msg.Msg.ValidateBasic(); err != nil {
+		return errorsmod.Wrap(err, "payload msg")
+	}
+
+	if err := validateWasmCode(msg.WASMByteCode, MaxWasmSize); err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "code bytes %s", err.Error())
+	}
+
+	if msg.InstantiatePermission != nil {
+		if err := msg.InstantiatePermission.ValidateBasic(); err != nil {
+			return errorsmod.Wrap(err, "instantiate permission")
+		}
+	}
+	return nil
+}
+
+func (msg MsgAddCodeUploadParamsAddresses) Route() string {
+	return RouterKey
+}
+
+func (msg MsgAddCodeUploadParamsAddresses) Type() string {
+	return "add-code-upload-params-addresses"
+}
+
+func (msg MsgAddCodeUploadParamsAddresses) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return errorsmod.Wrap(err, "authority")
+	}
+
+	if len(msg.Addresses) == 0 {
+		return errorsmod.Wrap(ErrEmpty, "addresses")
+	}
+
+	return checkDuplicatedAddresses(msg.Addresses)
+}
+
+func (msg MsgRemoveCodeUploadParamsAddresses) Route() string {
+	return RouterKey
+}
+
+func (msg MsgRemoveCodeUploadParamsAddresses) Type() string {
+	return "remove-code-upload-params-addresses"
+}
+
+func (msg MsgRemoveCodeUploadParamsAddresses) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return errorsmod.Wrap(err, "authority")
+	}
+
+	if len(msg.Addresses) == 0 {
+		return errorsmod.Wrap(ErrEmpty, "addresses")
+	}
+
+	return checkDuplicatedAddresses(msg.Addresses)
+}
+
+func checkDuplicatedAddresses(addresses []string) error {
+	index := map[string]struct{}{}
+	for _, addr := range addresses {
+		addr = strings.ToUpper(addr)
+		if _, err := sdk.AccAddressFromBech32(addr); err != nil {
+			return errorsmod.Wrap(err, "addresses")
+		}
+		if _, found := index[addr]; found {
+			return errorsmod.Wrap(ErrInvalid, "duplicate addresses")
+		}
+		index[addr] = struct{}{}
+	}
+	return nil
+}
+
+func (msg MsgStoreAndMigrateContract) Route() string {
+	return RouterKey
+}
+
+func (msg MsgStoreAndMigrateContract) Type() string {
+	return "store-and-migrate-contract"
+}
+
+func (msg MsgStoreAndMigrateContract) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return errorsmod.Wrap(err, "authority")
+	}
+
+	if _, err := sdk.AccAddressFromBech32(msg.Contract); err != nil {
+		return errorsmod.Wrap(err, "contract")
+	}
+
+	if err := msg.Msg.ValidateBasic(); err != nil {
+		return errorsmod.Wrap(err, "payload msg")
+	}
+
+	if err := validateWasmCode(msg.WASMByteCode, MaxWasmSize); err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "code bytes %s", err.Error())
+	}
+
+	if msg.InstantiatePermission != nil {
+		if err := msg.InstantiatePermission.ValidateBasic(); err != nil {
+			return errorsmod.Wrap(err, "instantiate permission")
+		}
+	}
+	return nil
+}
+
+// returns true when slice contains any duplicates
+func hasDuplicates[T comparable](s []T) bool {
+	index := make(map[T]struct{}, len(s))
+	for _, v := range s {
+		if _, exists := index[v]; exists {
+			return true
+		}
+		index[v] = struct{}{}
+	}
+	return false
+}
+
+func (msg MsgUpdateContractLabel) Route() string {
+	return RouterKey
+}
+
+func (msg MsgUpdateContractLabel) Type() string {
+	return "update-contract-label"
+}
+
+func (msg MsgUpdateContractLabel) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
+		return errorsmod.Wrap(err, "sender")
+	}
+	if err := ValidateLabel(msg.NewLabel); err != nil {
+		return errorsmod.Wrap(err, "label")
+	}
+	if _, err := sdk.AccAddressFromBech32(msg.Contract); err != nil {
+		return errorsmod.Wrap(err, "contract")
+	}
+	return nil
 }

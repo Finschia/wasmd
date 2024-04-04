@@ -3,50 +3,45 @@ package keeper
 import (
 	"encoding/json"
 	"os"
-	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Finschia/finschia-sdk/codec"
-	codectypes "github.com/Finschia/finschia-sdk/codec/types"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
-	authkeeper "github.com/Finschia/finschia-sdk/x/auth/keeper"
-	bankkeeper "github.com/Finschia/finschia-sdk/x/bank/keeper"
-	banktypes "github.com/Finschia/finschia-sdk/x/bank/types"
-	wasmvmtypes "github.com/Finschia/wasmvm/types"
+	errorsmod "cosmossdk.io/errors"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/Finschia/wasmd/x/wasm/keeper/testdata"
 	"github.com/Finschia/wasmd/x/wasm/types"
 )
 
-// ReflectInitMsg is {}
+const (
+	CyberpunkCapabilities = "staking,mask,stargate,cosmwasm_1_1,cosmwasm_1_2,cosmwasm_1_3,cosmwasm_1_4"
+	ReflectCapabilities   = CyberpunkCapabilities
+)
 
-func buildReflectQuery(t *testing.T, query *testdata.ReflectQueryMsg) []byte {
-	bz, err := json.Marshal(query)
-	require.NoError(t, err)
-	return bz
-}
-
-func mustParse(t *testing.T, data []byte, res interface{}) {
+func mustUnmarshal(t *testing.T, data []byte, res interface{}) {
+	t.Helper()
 	err := json.Unmarshal(data, res)
 	require.NoError(t, err)
 }
 
-const ReflectFeatures = "staking,mask,stargate,cosmwasm_1_1"
-
 func TestReflectContractSend(t *testing.T) {
-	cdc := MakeEncodingConfig(t).Marshaler
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, WithMessageEncoders(reflectEncoders(cdc)))
+	cdc := MakeEncodingConfig(t).Codec
+	ctx, keepers := CreateTestInput(t, false, ReflectCapabilities, WithMessageEncoders(reflectEncoders(cdc)))
 	accKeeper, keeper, bankKeeper := keepers.AccountKeeper, keepers.ContractKeeper, keepers.BankKeeper
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
 	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
-	_, _, bob := keyPubAddr()
+	_, bob := keyPubAddr()
 
 	// upload reflect code
 	reflectID, _, err := keeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
@@ -119,14 +114,14 @@ func TestReflectContractSend(t *testing.T) {
 }
 
 func TestReflectCustomMsg(t *testing.T) {
-	cdc := MakeEncodingConfig(t).Marshaler
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, WithMessageEncoders(reflectEncoders(cdc)), WithQueryPlugins(reflectPlugins()))
+	cdc := MakeEncodingConfig(t).Codec
+	ctx, keepers := CreateTestInput(t, false, ReflectCapabilities, WithMessageEncoders(reflectEncoders(cdc)), WithQueryPlugins(reflectPlugins()))
 	accKeeper, keeper, bankKeeper := keepers.AccountKeeper, keepers.ContractKeeper, keepers.BankKeeper
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
 	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
 	bob := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
-	_, _, fred := keyPubAddr()
+	_, fred := keyPubAddr()
 
 	// upload code
 	codeID, _, err := keeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
@@ -209,339 +204,27 @@ func TestReflectCustomMsg(t *testing.T) {
 	checkAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
 }
 
-func TestMaskReflectCustomQuery(t *testing.T) {
-	cdc := MakeEncodingConfig(t).Marshaler
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, WithMessageEncoders(reflectEncoders(cdc)), WithQueryPlugins(reflectPlugins()))
-	keeper := keepers.WasmKeeper
+func TestRustPanicIsHandled(t *testing.T) {
+	ctx, keepers := CreateTestInput(t, false, CyberpunkCapabilities)
+	keeper := keepers.ContractKeeper
 
-	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
-	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
+	creator := keepers.Faucet.NewFundedRandomAccount(ctx, sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))...)
 
 	// upload code
-	codeID, _, err := keepers.ContractKeeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
+	codeID, _, err := keeper.Create(ctx, creator, testdata.CyberpunkContractWasm(), nil)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), codeID)
 
-	// creator instantiates a contract and gives it tokens
-	contractStart := sdk.NewCoins(sdk.NewInt64Coin("denom", 40000))
-	contractAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, codeID, creator, nil, []byte("{}"), "reflect contract 1", contractStart)
+	contractAddr, _, err := keeper.Instantiate(ctx, codeID, creator, nil, []byte("{}"), "cyberpunk contract", nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, contractAddr)
 
-	// let's perform a normal query of state
-	ownerQuery := testdata.ReflectQueryMsg{
-		Owner: &struct{}{},
-	}
-	ownerQueryBz, err := json.Marshal(ownerQuery)
-	require.NoError(t, err)
-	ownerRes, err := keeper.QuerySmart(ctx, contractAddr, ownerQueryBz)
-	require.NoError(t, err)
-	var res testdata.OwnerResponse
-	err = json.Unmarshal(ownerRes, &res)
-	require.NoError(t, err)
-	assert.Equal(t, res.Owner, creator.String())
-
-	// and now making use of the custom querier callbacks
-	customQuery := testdata.ReflectQueryMsg{
-		Capitalized: &testdata.Text{
-			Text: "all Caps noW",
-		},
-	}
-	customQueryBz, err := json.Marshal(customQuery)
-	require.NoError(t, err)
-	custom, err := keeper.QuerySmart(ctx, contractAddr, customQueryBz)
-	require.NoError(t, err)
-	var resp capitalizedResponse
-	err = json.Unmarshal(custom, &resp)
-	require.NoError(t, err)
-	assert.Equal(t, resp.Text, "ALL CAPS NOW")
-}
-
-func TestReflectStargateQuery(t *testing.T) {
-	cdc := MakeEncodingConfig(t).Marshaler
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, WithMessageEncoders(reflectEncoders(cdc)), WithQueryPlugins(reflectPlugins()))
-	keeper := keepers.WasmKeeper
-
-	funds := sdk.NewCoins(sdk.NewInt64Coin("denom", 320000))
-	contractStart := sdk.NewCoins(sdk.NewInt64Coin("denom", 40000))
-	expectedBalance := funds.Sub(contractStart)
-	creator := keepers.Faucet.NewFundedRandomAccount(ctx, funds...)
-
-	// upload code
-	codeID, _, err := keepers.ContractKeeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
-	require.NoError(t, err)
-	require.Equal(t, uint64(1), codeID)
-
-	// creator instantiates a contract and gives it tokens
-	contractAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, codeID, creator, nil, []byte("{}"), "reflect contract 1", contractStart)
-	require.NoError(t, err)
-	require.NotEmpty(t, contractAddr)
-
-	// first, normal query for the bank balance (to make sure our query is proper)
-	bankQuery := wasmvmtypes.QueryRequest{
-		Bank: &wasmvmtypes.BankQuery{
-			AllBalances: &wasmvmtypes.AllBalancesQuery{
-				Address: creator.String(),
-			},
-		},
-	}
-	simpleQueryBz, err := json.Marshal(testdata.ReflectQueryMsg{
-		Chain: &testdata.ChainQuery{Request: &bankQuery},
-	})
-	require.NoError(t, err)
-	simpleRes, err := keeper.QuerySmart(ctx, contractAddr, simpleQueryBz)
-	require.NoError(t, err)
-	var simpleChain testdata.ChainResponse
-	mustParse(t, simpleRes, &simpleChain)
-	var simpleBalance wasmvmtypes.AllBalancesResponse
-	mustParse(t, simpleChain.Data, &simpleBalance)
-	require.Equal(t, len(expectedBalance), len(simpleBalance.Amount))
-	assert.Equal(t, simpleBalance.Amount[0].Amount, expectedBalance[0].Amount.String())
-	assert.Equal(t, simpleBalance.Amount[0].Denom, expectedBalance[0].Denom)
-}
-
-func TestReflectTotalSupplyQuery(t *testing.T) {
-	cdc := MakeEncodingConfig(t).Marshaler
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, WithMessageEncoders(reflectEncoders(cdc)), WithQueryPlugins(reflectPlugins()))
-	keeper := keepers.WasmKeeper
-	// upload code
-	codeID := StoreReflectContract(t, ctx, keepers).CodeID
-	// creator instantiates a contract and gives it tokens
-	creator := RandomAccountAddress(t)
-	contractAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, codeID, creator, nil, []byte("{}"), "testing", nil)
-	require.NoError(t, err)
-
-	currentStakeSupply := keepers.BankKeeper.GetSupply(ctx, "stake")
-	require.NotEmpty(t, currentStakeSupply.Amount) // ensure we have real data
-	specs := map[string]struct {
-		denom     string
-		expAmount wasmvmtypes.Coin
-	}{
-		"known denom": {
-			denom:     "stake",
-			expAmount: ConvertSdkCoinToWasmCoin(currentStakeSupply),
-		},
-		"unknown denom": {
-			denom:     "unknown",
-			expAmount: wasmvmtypes.Coin{Denom: "unknown", Amount: "0"},
-		},
-	}
-	for name, spec := range specs {
-		t.Run(name, func(t *testing.T) {
-			// when
-			queryBz := mustMarshal(t, testdata.ReflectQueryMsg{
-				Chain: &testdata.ChainQuery{
-					Request: &wasmvmtypes.QueryRequest{
-						Bank: &wasmvmtypes.BankQuery{
-							Supply: &wasmvmtypes.SupplyQuery{spec.denom},
-						},
-					},
-				},
-			})
-			simpleRes, err := keeper.QuerySmart(ctx, contractAddr, queryBz)
-
-			// then
-			require.NoError(t, err)
-			var rsp testdata.ChainResponse
-			mustParse(t, simpleRes, &rsp)
-			var supplyRsp wasmvmtypes.SupplyResponse
-			mustParse(t, rsp.Data, &supplyRsp)
-			assert.Equal(t, spec.expAmount, supplyRsp.Amount, spec.expAmount)
-		})
-	}
-}
-
-func TestReflectInvalidStargateQuery(t *testing.T) {
-	cdc := MakeEncodingConfig(t).Marshaler
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, WithMessageEncoders(reflectEncoders(cdc)), WithQueryPlugins(reflectPlugins()))
-	keeper := keepers.WasmKeeper
-
-	funds := sdk.NewCoins(sdk.NewInt64Coin("denom", 320000))
-	contractStart := sdk.NewCoins(sdk.NewInt64Coin("denom", 40000))
-	creator := keepers.Faucet.NewFundedRandomAccount(ctx, funds...)
-
-	// upload code
-	codeID, _, err := keepers.ContractKeeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
-	require.NoError(t, err)
-	require.Equal(t, uint64(1), codeID)
-
-	// creator instantiates a contract and gives it tokens
-	contractAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, codeID, creator, nil, []byte("{}"), "reflect contract 1", contractStart)
-	require.NoError(t, err)
-	require.NotEmpty(t, contractAddr)
-
-	// now, try to build a protobuf query
-	protoQuery := banktypes.QueryAllBalancesRequest{
-		Address: creator.String(),
-	}
-	protoQueryBin, err := proto.Marshal(&protoQuery)
-	protoRequest := wasmvmtypes.QueryRequest{
-		Stargate: &wasmvmtypes.StargateQuery{
-			Path: "/cosmos.bank.v1beta1.Query/AllBalances",
-			Data: protoQueryBin,
-		},
-	}
-	protoQueryBz, err := json.Marshal(testdata.ReflectQueryMsg{
-		Chain: &testdata.ChainQuery{Request: &protoRequest},
-	})
-	require.NoError(t, err)
-
-	// make a query on the chain, should not be whitelisted
-	_, err = keeper.QuerySmart(ctx, contractAddr, protoQueryBz)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Unsupported query")
-
-	// now, try to build a protobuf query
-	protoRequest = wasmvmtypes.QueryRequest{
-		Stargate: &wasmvmtypes.StargateQuery{
-			Path: "/cosmos.tx.v1beta1.Service/GetTx",
-			Data: []byte{},
-		},
-	}
-	protoQueryBz, err = json.Marshal(testdata.ReflectQueryMsg{
-		Chain: &testdata.ChainQuery{Request: &protoRequest},
-	})
-	require.NoError(t, err)
-
-	// make a query on the chain, should be blacklisted
-	_, err = keeper.QuerySmart(ctx, contractAddr, protoQueryBz)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Unsupported query")
-
-	// and another one
-	protoRequest = wasmvmtypes.QueryRequest{
-		Stargate: &wasmvmtypes.StargateQuery{
-			Path: "/lbm.base.ostracon.v1.Service/GetNodeInfo",
-			Data: []byte{},
-		},
-	}
-	protoQueryBz, err = json.Marshal(testdata.ReflectQueryMsg{
-		Chain: &testdata.ChainQuery{Request: &protoRequest},
-	})
-	require.NoError(t, err)
-
-	// make a query on the chain, should be blacklisted
-	_, err = keeper.QuerySmart(ctx, contractAddr, protoQueryBz)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Unsupported query")
-}
-
-type reflectState struct {
-	Owner string `json:"owner"`
-}
-
-func TestMaskReflectWasmQueries(t *testing.T) {
-	cdc := MakeEncodingConfig(t).Marshaler
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, WithMessageEncoders(reflectEncoders(cdc)), WithQueryPlugins(reflectPlugins()))
-	keeper := keepers.WasmKeeper
-
-	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
-	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
-
-	// upload reflect code
-	reflectID, _, err := keepers.ContractKeeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
-	require.NoError(t, err)
-	require.Equal(t, uint64(1), reflectID)
-
-	// creator instantiates a contract and gives it tokens
-	reflectStart := sdk.NewCoins(sdk.NewInt64Coin("denom", 40000))
-	reflectAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, reflectID, creator, nil, []byte("{}"), "reflect contract 2", reflectStart)
-	require.NoError(t, err)
-	require.NotEmpty(t, reflectAddr)
-
-	// for control, let's make some queries directly on the reflect
-	ownerQuery := buildReflectQuery(t, &testdata.ReflectQueryMsg{Owner: &struct{}{}})
-	res, err := keeper.QuerySmart(ctx, reflectAddr, ownerQuery)
-	require.NoError(t, err)
-	var ownerRes testdata.OwnerResponse
-	mustParse(t, res, &ownerRes)
-	require.Equal(t, ownerRes.Owner, creator.String())
-
-	// and a raw query: cosmwasm_storage::Singleton uses 2 byte big-endian length-prefixed to store data
-	configKey := append([]byte{0, 6}, []byte("config")...)
-	raw := keeper.QueryRaw(ctx, reflectAddr, configKey)
-	var stateRes reflectState
-	mustParse(t, raw, &stateRes)
-	require.Equal(t, stateRes.Owner, creator.String())
-
-	// now, let's reflect a smart query into the x/wasm handlers and see if we get the same result
-	reflectOwnerQuery := testdata.ReflectQueryMsg{Chain: &testdata.ChainQuery{Request: &wasmvmtypes.QueryRequest{Wasm: &wasmvmtypes.WasmQuery{
-		Smart: &wasmvmtypes.SmartQuery{
-			ContractAddr: reflectAddr.String(),
-			Msg:          ownerQuery,
-		},
-	}}}}
-	reflectOwnerBin := buildReflectQuery(t, &reflectOwnerQuery)
-	res, err = keeper.QuerySmart(ctx, reflectAddr, reflectOwnerBin)
-	require.NoError(t, err)
-	// first we pull out the data from chain response, before parsing the original response
-	var reflectRes testdata.ChainResponse
-	mustParse(t, res, &reflectRes)
-	var reflectOwnerRes testdata.OwnerResponse
-	mustParse(t, reflectRes.Data, &reflectOwnerRes)
-	require.Equal(t, reflectOwnerRes.Owner, creator.String())
-
-	// and with queryRaw
-	reflectStateQuery := testdata.ReflectQueryMsg{Chain: &testdata.ChainQuery{Request: &wasmvmtypes.QueryRequest{Wasm: &wasmvmtypes.WasmQuery{
-		Raw: &wasmvmtypes.RawQuery{
-			ContractAddr: reflectAddr.String(),
-			Key:          configKey,
-		},
-	}}}}
-	reflectStateBin := buildReflectQuery(t, &reflectStateQuery)
-	res, err = keeper.QuerySmart(ctx, reflectAddr, reflectStateBin)
-	require.NoError(t, err)
-	// first we pull out the data from chain response, before parsing the original response
-	var reflectRawRes testdata.ChainResponse
-	mustParse(t, res, &reflectRawRes)
-	// now, with the raw data, we can parse it into state
-	var reflectStateRes reflectState
-	mustParse(t, reflectRawRes.Data, &reflectStateRes)
-	require.Equal(t, reflectStateRes.Owner, creator.String())
-}
-
-func TestWasmRawQueryWithNil(t *testing.T) {
-	cdc := MakeEncodingConfig(t).Marshaler
-	ctx, keepers := CreateTestInput(t, false, ReflectFeatures, WithMessageEncoders(reflectEncoders(cdc)), WithQueryPlugins(reflectPlugins()))
-	keeper := keepers.WasmKeeper
-
-	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
-	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
-
-	// upload reflect code
-	reflectID, _, err := keepers.ContractKeeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
-	require.NoError(t, err)
-	require.Equal(t, uint64(1), reflectID)
-
-	// creator instantiates a contract and gives it tokens
-	reflectStart := sdk.NewCoins(sdk.NewInt64Coin("denom", 40000))
-	reflectAddr, _, err := keepers.ContractKeeper.Instantiate(ctx, reflectID, creator, nil, []byte("{}"), "reflect contract 2", reflectStart)
-	require.NoError(t, err)
-	require.NotEmpty(t, reflectAddr)
-
-	// control: query directly
-	missingKey := []byte{0, 1, 2, 3, 4}
-	raw := keeper.QueryRaw(ctx, reflectAddr, missingKey)
-	require.Nil(t, raw)
-
-	// and with queryRaw
-	reflectQuery := testdata.ReflectQueryMsg{Chain: &testdata.ChainQuery{Request: &wasmvmtypes.QueryRequest{Wasm: &wasmvmtypes.WasmQuery{
-		Raw: &wasmvmtypes.RawQuery{
-			ContractAddr: reflectAddr.String(),
-			Key:          missingKey,
-		},
-	}}}}
-	reflectStateBin := buildReflectQuery(t, &reflectQuery)
-	res, err := keeper.QuerySmart(ctx, reflectAddr, reflectStateBin)
-	require.NoError(t, err)
-
-	// first we pull out the data from chain response, before parsing the original response
-	var reflectRawRes testdata.ChainResponse
-	mustParse(t, res, &reflectRawRes)
-	// and make sure there is no data
-	require.Empty(t, reflectRawRes.Data)
-	// we get an empty byte slice not nil (if anyone care in go-land)
-	require.Equal(t, []byte{}, reflectRawRes.Data)
+	// when panic is triggered
+	msg := []byte(`{"panic":{}}`)
+	gotData, err := keeper.Execute(ctx, contractAddr, creator, msg, nil)
+	require.ErrorIs(t, err, types.ErrExecuteFailed)
+	assert.Contains(t, err.Error(), "panicked at 'This page intentionally faulted'")
+	assert.Nil(t, gotData)
 }
 
 func checkAccount(t *testing.T, ctx sdk.Context, accKeeper authkeeper.AccountKeeper, bankKeeper bankkeeper.Keeper, addr sdk.AccAddress, expected sdk.Coins) {
@@ -569,21 +252,21 @@ type reflectCustomMsg struct {
 // toReflectRawMsg encodes an sdk msg using any type with json encoding.
 // Then wraps it as an opaque message
 func toReflectRawMsg(cdc codec.Codec, msg sdk.Msg) (wasmvmtypes.CosmosMsg, error) {
-	any, err := codectypes.NewAnyWithValue(msg)
+	codecAny, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
 		return wasmvmtypes.CosmosMsg{}, err
 	}
-	rawBz, err := cdc.MarshalJSON(any)
+	rawBz, err := cdc.MarshalJSON(codecAny)
 	if err != nil {
-		return wasmvmtypes.CosmosMsg{}, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+		return wasmvmtypes.CosmosMsg{}, errorsmod.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
-	customMsg, err := json.Marshal(reflectCustomMsg{
+	customMsg, _ := json.Marshal(reflectCustomMsg{
 		Raw: rawBz,
 	})
 	res := wasmvmtypes.CosmosMsg{
 		Custom: customMsg,
 	}
-	return res, nil
+	return res, err
 }
 
 // reflectEncoders needs to be registered in test setup to handle custom message callbacks
@@ -600,68 +283,22 @@ func fromReflectRawMsg(cdc codec.Codec) CustomEncoder {
 		var custom reflectCustomMsg
 		err := json.Unmarshal(msg, &custom)
 		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
+			return nil, errorsmod.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 		}
 		if custom.Raw != nil {
-			var any codectypes.Any
-			if err := cdc.UnmarshalJSON(custom.Raw, &any); err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
+			var codecAny codectypes.Any
+			if err := cdc.UnmarshalJSON(custom.Raw, &codecAny); err != nil {
+				return nil, errorsmod.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 			}
 			var msg sdk.Msg
-			if err := cdc.UnpackAny(&any, &msg); err != nil {
+			if err := cdc.UnpackAny(&codecAny, &msg); err != nil {
 				return nil, err
 			}
 			return []sdk.Msg{msg}, nil
 		}
 		if custom.Debug != "" {
-			return nil, sdkerrors.Wrapf(types.ErrInvalidMsg, "Custom Debug: %s", custom.Debug)
+			return nil, errorsmod.Wrapf(types.ErrInvalidMsg, "Custom Debug: %s", custom.Debug)
 		}
-		return nil, sdkerrors.Wrap(types.ErrInvalidMsg, "Unknown Custom message variant")
+		return nil, errorsmod.Wrap(types.ErrInvalidMsg, "Unknown Custom message variant")
 	}
-}
-
-type reflectCustomQuery struct {
-	Ping        *struct{}      `json:"ping,omitempty"`
-	Capitalized *testdata.Text `json:"capitalized,omitempty"`
-}
-
-// this is from the go code back to the contract (capitalized or ping)
-type customQueryResponse struct {
-	Msg string `json:"msg"`
-}
-
-// these are the return values from contract -> go depending on type of query
-type ownerResponse struct {
-	Owner string `json:"owner"`
-}
-
-type capitalizedResponse struct {
-	Text string `json:"text"`
-}
-
-type chainResponse struct {
-	Data []byte `json:"data"`
-}
-
-// reflectPlugins needs to be registered in test setup to handle custom query callbacks
-func reflectPlugins() *QueryPlugins {
-	return &QueryPlugins{
-		Custom: performCustomQuery,
-	}
-}
-
-func performCustomQuery(_ sdk.Context, request json.RawMessage) ([]byte, error) {
-	var custom reflectCustomQuery
-	err := json.Unmarshal(request, &custom)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
-	}
-	if custom.Capitalized != nil {
-		msg := strings.ToUpper(custom.Capitalized.Text)
-		return json.Marshal(customQueryResponse{Msg: msg})
-	}
-	if custom.Ping != nil {
-		return json.Marshal(customQueryResponse{Msg: "pong"})
-	}
-	return nil, sdkerrors.Wrap(types.ErrInvalidMsg, "Unknown Custom query variant")
 }

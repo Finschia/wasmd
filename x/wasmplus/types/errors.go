@@ -1,7 +1,7 @@
 package types
 
 import (
-	sdkErrors "github.com/Finschia/finschia-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
 )
@@ -9,5 +9,5 @@ import (
 // Codes for wasm contract errors
 var (
 	// ErrInactiveContract error if the contract set inactive
-	ErrInactiveContract = sdkErrors.Register(wasmtypes.DefaultCodespace, 101, "inactive contract")
+	ErrInactiveContract = errorsmod.Register(wasmtypes.DefaultCodespace, 101, "inactive contract")
 )

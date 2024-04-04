@@ -7,8 +7,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	clitestutil "github.com/Finschia/finschia-sdk/testutil/cli"
-	"github.com/Finschia/finschia-sdk/types/query"
+	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/Finschia/wasmd/x/wasm/client/cli"
 	"github.com/Finschia/wasmd/x/wasm/types"
@@ -99,7 +99,6 @@ func (s *IntegrationTestSuite) TestGetCmdQueryCodeInfo() {
 				DataHash: expectedDataHash,
 				InstantiatePermission: types.AccessConfig{
 					Permission: types.AccessTypeEverybody,
-					Address:    "",
 					Addresses:  []string{},
 				},
 			},

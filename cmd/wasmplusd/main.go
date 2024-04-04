@@ -3,22 +3,18 @@ package main
 import (
 	"os"
 
-	"github.com/Finschia/finschia-sdk/server"
-	svrcmd "github.com/Finschia/finschia-sdk/server/cmd"
+	"cosmossdk.io/log"
+
+	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
 	app "github.com/Finschia/wasmd/appplus"
 )
 
 func main() {
-	rootCmd, _ := NewRootCmd()
+	rootCmd := NewRootCmd()
 
-	if err := svrcmd.Execute(rootCmd, app.DefaultNodeHome); err != nil {
-		switch e := err.(type) {
-		case server.ErrorCode:
-			os.Exit(e.Code)
-
-		default:
-			os.Exit(1)
-		}
+	if err := svrcmd.Execute(rootCmd, "", app.DefaultNodeHome); err != nil {
+		log.NewLogger(rootCmd.OutOrStderr()).Error("failure when running app", "err", err)
+		os.Exit(1)
 	}
 }

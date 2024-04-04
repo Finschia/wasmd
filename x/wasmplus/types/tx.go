@@ -1,8 +1,10 @@
 package types
 
 import (
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 func (msg MsgStoreCodeAndInstantiateContract) Route() string {
@@ -19,17 +21,17 @@ func (msg MsgStoreCodeAndInstantiateContract) ValidateBasic() error {
 	}
 
 	if err := validateWasmCode(msg.WASMByteCode); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "code bytes %s", err.Error())
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "code bytes %s", err.Error())
 	}
 
 	if msg.InstantiatePermission != nil {
 		if err := msg.InstantiatePermission.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "instantiate permission")
+			return errorsmod.Wrap(err, "instantiate permission")
 		}
 	}
 
 	if err := validateLabel(msg.Label); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "label is required")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "label is required")
 	}
 
 	if !msg.Funds.IsValid() {
@@ -38,12 +40,12 @@ func (msg MsgStoreCodeAndInstantiateContract) ValidateBasic() error {
 
 	if len(msg.Admin) != 0 {
 		if _, err := sdk.AccAddressFromBech32(msg.Admin); err != nil {
-			return sdkerrors.Wrap(err, "admin")
+			return errorsmod.Wrap(err, "admin")
 		}
 	}
 
 	if err := msg.Msg.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "payload msg")
+		return errorsmod.Wrap(err, "payload msg")
 	}
 	return nil
 }

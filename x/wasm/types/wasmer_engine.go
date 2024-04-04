@@ -3,13 +3,15 @@ package types
 import (
 	wasmvm "github.com/Finschia/wasmvm"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+
+	storetypes "cosmossdk.io/store/types"
 )
 
 // DefaultMaxQueryStackSize maximum size of the stack of contract instances doing queries
 const DefaultMaxQueryStackSize uint32 = 10
 
-// WasmerEngine defines the WASM contract runtime engine.
-type WasmerEngine interface {
+// WasmEngine defines the WASM contract runtime engine.
+type WasmEngine interface {
 	// Create will compile the wasm code, and store the resulting pre-compile
 	// as well as the original code. Both can be referenced later via CodeID
 	// This must be done one time for given code, after which it can be
@@ -18,7 +20,23 @@ type WasmerEngine interface {
 	// For example, the code for all ERC-20 contracts should be the same.
 	// This function stores the code for that contract only once, but it can
 	// be instantiated with custom inputs in the future.
+	//
+	// Deprecated: use StoreCode instead.
 	Create(code wasmvm.WasmCode) (wasmvm.Checksum, error)
+
+	// Create will compile the wasm code, and store the resulting pre-compile
+	// as well as the original code. Both can be referenced later via checksum
+	// This must be done one time for given code, after which it can be
+	// instatitated many times, and each instance called many times.
+	// It does the same as StoreCodeUnchecked plus the static checks.
+	StoreCode(code wasmvm.WasmCode) (wasmvm.Checksum, error)
+
+	// Create will compile the wasm code, and store the resulting pre-compile
+	// as well as the original code. Both can be referenced later via checksum
+	// This must be done one time for given code, after which it can be
+	// instatitated many times, and each instance called many times.
+	// It does the same as StoreCode but without the static checks.
+	StoreCodeUnchecked(code wasmvm.WasmCode) (wasmvm.Checksum, error)
 
 	// AnalyzeCode will statically analyze the code.
 	// Currently just reports if it exposes all IBC entry points.
@@ -140,7 +158,7 @@ type WasmerEngine interface {
 	Cleanup()
 
 	// IBCChannelOpen is available on IBC-enabled contracts and is a hook to call into
-	// during the handshake pahse
+	// during the handshake phase
 	IBCChannelOpen(
 		checksum wasmvm.Checksum,
 		env wasmvmtypes.Env,
@@ -154,7 +172,7 @@ type WasmerEngine interface {
 	) (*wasmvmtypes.IBC3ChannelOpenResponse, uint64, error)
 
 	// IBCChannelConnect is available on IBC-enabled contracts and is a hook to call into
-	// during the handshake pahse
+	// during the handshake phase
 	IBCChannelConnect(
 		checksum wasmvm.Checksum,
 		env wasmvmtypes.Env,
@@ -211,7 +229,7 @@ type WasmerEngine interface {
 	) (*wasmvmtypes.IBCBasicResponse, uint64, error)
 
 	// IBCPacketTimeout is available on IBC-enabled contracts and is called when an
-	// outgoing packet (previously sent by this contract) will provably never be executed.
+	// outgoing packet (previously sent by this contract) will probably never be executed.
 	// Usually handled like ack returning an error
 	IBCPacketTimeout(
 		checksum wasmvm.Checksum,
@@ -238,4 +256,39 @@ type WasmerEngine interface {
 
 	// GetMetrics some internal metrics for monitoring purposes.
 	GetMetrics() (*wasmvmtypes.Metrics, error)
+}
+
+var _ wasmvm.KVStore = &StoreAdapter{}
+
+// StoreAdapter adapter to bridge SDK store impl to wasmvm
+type StoreAdapter struct {
+	parent storetypes.KVStore
+}
+
+// NewStoreAdapter constructor
+func NewStoreAdapter(s storetypes.KVStore) *StoreAdapter {
+	if s == nil {
+		panic("store must not be nil")
+	}
+	return &StoreAdapter{parent: s}
+}
+
+func (s StoreAdapter) Get(key []byte) []byte {
+	return s.parent.Get(key)
+}
+
+func (s StoreAdapter) Set(key, value []byte) {
+	s.parent.Set(key, value)
+}
+
+func (s StoreAdapter) Delete(key []byte) {
+	s.parent.Delete(key)
+}
+
+func (s StoreAdapter) Iterator(start, end []byte) wasmvmtypes.Iterator {
+	return s.parent.Iterator(start, end)
+}
+
+func (s StoreAdapter) ReverseIterator(start, end []byte) wasmvmtypes.Iterator {
+	return s.parent.ReverseIterator(start, end)
 }

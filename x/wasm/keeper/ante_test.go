@@ -4,25 +4,29 @@ import (
 	"testing"
 	"time"
 
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
-	"github.com/Finschia/finschia-sdk/store"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	"github.com/Finschia/ostracon/libs/log"
+	"cosmossdk.io/log"
+	"cosmossdk.io/store"
+	storemetrics "cosmossdk.io/store/metrics"
+	storetypes "cosmossdk.io/store/types"
+
+	"github.com/cosmos/cosmos-sdk/runtime"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Finschia/wasmd/x/wasm/keeper"
+	"github.com/Finschia/wasmd/x/wasm/keeper/wasmtesting"
 	"github.com/Finschia/wasmd/x/wasm/types"
 )
 
 func TestCountTxDecorator(t *testing.T) {
-	keyWasm := sdk.NewKVStoreKey(types.StoreKey)
+	keyWasm := storetypes.NewKVStoreKey(types.StoreKey)
 	db := dbm.NewMemDB()
-	ms := store.NewCommitMultiStore(db)
-	ms.MountStoreWithDB(keyWasm, sdk.StoreTypeIAVL, db)
+	ms := store.NewCommitMultiStore(db, log.NewTestLogger(t), storemetrics.NewNoOpMetrics())
+	ms.MountStoreWithDB(keyWasm, storetypes.StoreTypeIAVL, db)
 	require.NoError(t, ms.LoadLatestVersion())
 	const myCurrentBlockHeight = 100
 
@@ -30,7 +34,6 @@ func TestCountTxDecorator(t *testing.T) {
 		setupDB        func(t *testing.T, ctx sdk.Context)
 		simulate       bool
 		nextAssertAnte func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error)
-		expErr         bool
 	}{
 		"no initial counter set": {
 			setupDB: func(t *testing.T, ctx sdk.Context) {},
@@ -91,7 +94,7 @@ func TestCountTxDecorator(t *testing.T) {
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
-			ctx := sdk.NewContext(ms.CacheMultiStore(), tmproto.Header{
+			ctx := sdk.NewContext(ms.CacheMultiStore(), cmtproto.Header{
 				Height: myCurrentBlockHeight,
 				Time:   time.Date(2021, time.September, 27, 12, 0, 0, 0, time.UTC),
 			}, false, log.NewNopLogger())
@@ -100,12 +103,8 @@ func TestCountTxDecorator(t *testing.T) {
 			var anyTx sdk.Tx
 
 			// when
-			ante := keeper.NewCountTXDecorator(keyWasm)
+			ante := keeper.NewCountTXDecorator(runtime.NewKVStoreService(keyWasm))
 			_, gotErr := ante.AnteHandle(ctx, anyTx, spec.simulate, spec.nextAssertAnte)
-			if spec.expErr {
-				require.Error(t, gotErr)
-				return
-			}
 			require.NoError(t, gotErr)
 		})
 	}
@@ -113,12 +112,12 @@ func TestCountTxDecorator(t *testing.T) {
 
 func TestLimitSimulationGasDecorator(t *testing.T) {
 	var (
-		hundred sdk.Gas = 100
-		zero    sdk.Gas = 0
+		hundred storetypes.Gas = 100
+		zero    storetypes.Gas = 0
 	)
 	specs := map[string]struct {
-		customLimit *sdk.Gas
-		consumeGas  sdk.Gas
+		customLimit *storetypes.Gas
+		consumeGas  storetypes.Gas
 		maxBlockGas int64
 		simulation  bool
 		expErr      interface{}
@@ -128,13 +127,13 @@ func TestLimitSimulationGasDecorator(t *testing.T) {
 			consumeGas:  hundred + 1,
 			maxBlockGas: -1,
 			simulation:  true,
-			expErr:      sdk.ErrorOutOfGas{Descriptor: "testing"},
+			expErr:      storetypes.ErrorOutOfGas{Descriptor: "testing"},
 		},
 		"block limit set": {
 			maxBlockGas: 100,
 			consumeGas:  hundred + 1,
 			simulation:  true,
-			expErr:      sdk.ErrorOutOfGas{Descriptor: "testing"},
+			expErr:      storetypes.ErrorOutOfGas{Descriptor: "testing"},
 		},
 		"no limits set": {
 			maxBlockGas: -1,
@@ -162,27 +161,74 @@ func TestLimitSimulationGasDecorator(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			nextAnte := consumeGasAnteHandler(spec.consumeGas)
 			ctx := sdk.Context{}.
-				WithGasMeter(sdk.NewInfiniteGasMeter()).
-				WithConsensusParams(&abci.ConsensusParams{
-					Block: &abci.BlockParams{MaxGas: spec.maxBlockGas},
+				WithGasMeter(storetypes.NewInfiniteGasMeter()).
+				WithConsensusParams(cmtproto.ConsensusParams{
+					Block: &cmtproto.BlockParams{MaxGas: spec.maxBlockGas},
 				})
 			// when
 			if spec.expErr != nil {
 				require.PanicsWithValue(t, spec.expErr, func() {
 					ante := keeper.NewLimitSimulationGasDecorator(spec.customLimit)
-					ante.AnteHandle(ctx, nil, spec.simulation, nextAnte)
+					_, err := ante.AnteHandle(ctx, nil, spec.simulation, nextAnte)
+					require.NoError(t, err)
 				})
 				return
 			}
 			ante := keeper.NewLimitSimulationGasDecorator(spec.customLimit)
-			ante.AnteHandle(ctx, nil, spec.simulation, nextAnte)
+			_, err := ante.AnteHandle(ctx, nil, spec.simulation, nextAnte)
+			require.NoError(t, err)
 		})
 	}
 }
 
-func consumeGasAnteHandler(gasToConsume sdk.Gas) sdk.AnteHandler {
+func consumeGasAnteHandler(gasToConsume storetypes.Gas) sdk.AnteHandler {
 	return func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
 		ctx.GasMeter().ConsumeGas(gasToConsume, "testing")
 		return ctx, nil
+	}
+}
+
+func TestGasRegisterDecorator(t *testing.T) {
+	db := dbm.NewMemDB()
+	ms := store.NewCommitMultiStore(db, log.NewTestLogger(t), storemetrics.NewNoOpMetrics())
+
+	specs := map[string]struct {
+		simulate       bool
+		nextAssertAnte func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error)
+	}{
+		"simulation": {
+			simulate: true,
+			nextAssertAnte: func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+				_, ok := types.GasRegisterFromContext(ctx)
+				assert.True(t, ok)
+				require.True(t, simulate)
+				return ctx, nil
+			},
+		},
+		"not simulation": {
+			simulate: false,
+			nextAssertAnte: func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+				_, ok := types.GasRegisterFromContext(ctx)
+				assert.True(t, ok)
+				require.False(t, simulate)
+				return ctx, nil
+			},
+		},
+	}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			ctx := sdk.NewContext(ms, cmtproto.Header{
+				Height: 100,
+				Time:   time.Now(),
+			}, false, log.NewNopLogger())
+			var anyTx sdk.Tx
+
+			// when
+			ante := keeper.NewGasRegisterDecorator(&wasmtesting.MockGasRegister{})
+			_, gotErr := ante.AnteHandle(ctx, anyTx, spec.simulate, spec.nextAssertAnte)
+
+			// then
+			require.NoError(t, gotErr)
+		})
 	}
 }

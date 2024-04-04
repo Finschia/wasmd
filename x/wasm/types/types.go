@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
-
-	codectypes "github.com/Finschia/finschia-sdk/codec/types"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+	"github.com/cosmos/gogoproto/proto"
+
+	errorsmod "cosmossdk.io/errors"
+
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
@@ -25,20 +27,20 @@ const (
 
 func (m Model) ValidateBasic() error {
 	if len(m.Key) == 0 {
-		return sdkerrors.Wrap(ErrEmpty, "key")
+		return errorsmod.Wrap(ErrEmpty, "key")
 	}
 	return nil
 }
 
 func (c CodeInfo) ValidateBasic() error {
 	if len(c.CodeHash) == 0 {
-		return sdkerrors.Wrap(ErrEmpty, "code hash")
+		return errorsmod.Wrap(ErrEmpty, "code hash")
 	}
 	if _, err := sdk.AccAddressFromBech32(c.Creator); err != nil {
-		return sdkerrors.Wrap(err, "creator")
+		return errorsmod.Wrap(err, "creator")
 	}
 	if err := c.InstantiateConfig.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "instantiate config")
+		return errorsmod.Wrap(err, "instantiate config")
 	}
 	return nil
 }
@@ -79,18 +81,18 @@ type validatable interface {
 // but also in the genesis import process.
 func (c *ContractInfo) ValidateBasic() error {
 	if c.CodeID == 0 {
-		return sdkerrors.Wrap(ErrEmpty, "code id")
+		return errorsmod.Wrap(ErrEmpty, "code id")
 	}
 	if _, err := sdk.AccAddressFromBech32(c.Creator); err != nil {
-		return sdkerrors.Wrap(err, "creator")
+		return errorsmod.Wrap(err, "creator")
 	}
 	if len(c.Admin) != 0 {
 		if _, err := sdk.AccAddressFromBech32(c.Admin); err != nil {
-			return sdkerrors.Wrap(err, "admin")
+			return errorsmod.Wrap(err, "admin")
 		}
 	}
 	if err := ValidateLabel(c.Label); err != nil {
-		return sdkerrors.Wrap(err, "label")
+		return errorsmod.Wrap(err, "label")
 	}
 	if c.Extension == nil {
 		return nil
@@ -101,7 +103,7 @@ func (c *ContractInfo) ValidateBasic() error {
 		return nil
 	}
 	if err := e.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "extension")
+		return errorsmod.Wrap(err, "extension")
 	}
 	return nil
 }
@@ -118,12 +120,12 @@ func (c *ContractInfo) SetExtension(ext ContractInfoExtension) error {
 			return err
 		}
 	}
-	any, err := codectypes.NewAnyWithValue(ext)
+	codecAny, err := codectypes.NewAnyWithValue(ext)
 	if err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrPackAny, err.Error())
+		return errorsmod.Wrap(sdkerrors.ErrPackAny, err.Error())
 	}
 
-	c.Extension = any
+	c.Extension = codecAny
 	return nil
 }
 
@@ -132,12 +134,12 @@ func (c *ContractInfo) SetExtension(ext ContractInfoExtension) error {
 //
 //	var d MyContractDetails
 //	if err := info.ReadExtension(&d); err != nil {
-//		return nil, sdkerrors.Wrap(err, "extension")
+//		return nil, errorsmod.Wrap(err, "extension")
 //	}
 func (c *ContractInfo) ReadExtension(e ContractInfoExtension) error {
 	rv := reflect.ValueOf(e)
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidType, "not a pointer")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidType, "not a pointer")
 	}
 	if c.Extension == nil {
 		return nil
@@ -146,7 +148,7 @@ func (c *ContractInfo) ReadExtension(e ContractInfoExtension) error {
 	cached := c.Extension.GetCachedValue()
 	elem := reflect.ValueOf(cached).Elem()
 	if !elem.Type().AssignableTo(rv.Elem().Type()) {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "extension is of type %s but argument of %s", elem.Type(), rv.Elem().Type())
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidType, "extension is of type %s but argument of %s", elem.Type(), rv.Elem().Type())
 	}
 	rv.Elem().Set(elem)
 	return nil
@@ -170,16 +172,6 @@ func (c *ContractInfo) AddMigration(ctx sdk.Context, codeID uint64, msg []byte) 
 	}
 	c.CodeID = codeID
 	return h
-}
-
-// ResetFromGenesis resets contracts timestamp and history.
-func (c *ContractInfo) ResetFromGenesis(ctx sdk.Context) ContractCodeHistoryEntry {
-	c.Created = NewAbsoluteTxPosition(ctx)
-	return ContractCodeHistoryEntry{
-		Operation: ContractCodeHistoryOperationTypeGenesis,
-		CodeID:    c.CodeID,
-		Updated:   c.Created,
-	}
 }
 
 // AdminAddr convert into sdk.AccAddress or nil when not set
@@ -254,6 +246,27 @@ func (a *AbsoluteTxPosition) Bytes() []byte {
 	return r
 }
 
+// ValidateBasic syntax checks
+func (c ContractCodeHistoryEntry) ValidateBasic() error {
+	var found bool
+	for _, v := range AllCodeHistoryTypes {
+		if c.Operation == v {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return ErrInvalid.Wrap("operation")
+	}
+	if c.CodeID == 0 {
+		return ErrEmpty.Wrap("code id")
+	}
+	if c.Updated == nil {
+		return ErrEmpty.Wrap("updated")
+	}
+	return errorsmod.Wrap(c.Msg.ValidateBasic(), "msg")
+}
+
 // NewEnv initializes the environment for a contract instance
 func NewEnv(ctx sdk.Context, contractAddr sdk.AccAddress) wasmvmtypes.Env {
 	// safety checks before casting below
@@ -305,11 +318,11 @@ func NewWasmCoins(cosmosCoins sdk.Coins) (wasmCoins []wasmvmtypes.Coin) {
 type WasmConfig struct {
 	// SimulationGasLimit is the max gas to be used in a tx simulation call.
 	// When not set the consensus max block gas is used instead
-	SimulationGasLimit *uint64
-	// SimulationGasLimit is the max gas to be used in a smart query contract call
-	SmartQueryGasLimit uint64
+	SimulationGasLimit *uint64 `mapstructure:"simulation_gas_limit"`
+	// SmartQueryGasLimit is the max gas to be used in a smart query contract call
+	SmartQueryGasLimit uint64 `mapstructure:"query_gas_limit"`
 	// MemoryCacheSize in MiB not bytes
-	MemoryCacheSize uint32
+	MemoryCacheSize uint32 `mapstructure:"memory_cache_size"`
 	// ContractDebugMode log what contract print
 	ContractDebugMode bool
 }
@@ -321,6 +334,33 @@ func DefaultWasmConfig() WasmConfig {
 		MemoryCacheSize:    defaultMemoryCacheSize,
 		ContractDebugMode:  defaultContractDebugMode,
 	}
+}
+
+// DefaultConfigTemplate toml snippet with default values for app.toml
+func DefaultConfigTemplate() string {
+	return ConfigTemplate(DefaultWasmConfig())
+}
+
+// ConfigTemplate toml snippet for app.toml
+func ConfigTemplate(c WasmConfig) string {
+	simGasLimit := `# simulation_gas_limit =`
+	if c.SimulationGasLimit != nil {
+		simGasLimit = fmt.Sprintf(`simulation_gas_limit = %d`, *c.SimulationGasLimit)
+	}
+
+	return fmt.Sprintf(`
+[wasm]
+# Smart query gas limit is the max gas to be used in a smart query contract call
+query_gas_limit = %d
+
+# in-memory cache for Wasm contracts. Set to 0 to disable.
+# The value is in MiB not bytes
+memory_cache_size = %d
+
+# Simulation gas limit is the max gas to be used in a tx simulation call.
+# When not set the consensus max block gas is used instead
+%s
+`, c.SmartQueryGasLimit, c.MemoryCacheSize, simGasLimit)
 }
 
 // VerifyAddressLen ensures that the address matches the expected length
@@ -343,9 +383,9 @@ func (a AccessType) IsSubset(superSet AccessType) bool {
 	case AccessTypeNobody:
 		// Only an exact match is a subset of this
 		return a == AccessTypeNobody
-	case AccessTypeOnlyAddress, AccessTypeAnyOfAddresses:
+	case AccessTypeAnyOfAddresses:
 		// Nobody or address(es)
-		return a == AccessTypeNobody || a == AccessTypeOnlyAddress || a == AccessTypeAnyOfAddresses
+		return a == AccessTypeNobody || a == AccessTypeAnyOfAddresses
 	default:
 		return false
 	}
@@ -355,14 +395,9 @@ func (a AccessType) IsSubset(superSet AccessType) bool {
 // or if the caller is more restrictive than the superset.
 func (a AccessConfig) IsSubset(superSet AccessConfig) bool {
 	switch superSet.Permission {
-	case AccessTypeOnlyAddress:
-		// An exact match or nobody
-		return a.Permission == AccessTypeNobody || (a.Permission == AccessTypeOnlyAddress && a.Address == superSet.Address) ||
-			(a.Permission == AccessTypeAnyOfAddresses && isSubset([]string{superSet.Address}, a.Addresses))
 	case AccessTypeAnyOfAddresses:
 		// An exact match or nobody
-		return a.Permission == AccessTypeNobody || (a.Permission == AccessTypeOnlyAddress && isSubset(superSet.Addresses, []string{a.Address})) ||
-			a.Permission == AccessTypeAnyOfAddresses && isSubset(superSet.Addresses, a.Addresses)
+		return a.Permission == AccessTypeNobody || a.Permission == AccessTypeAnyOfAddresses && isSubset(superSet.Addresses, a.Addresses)
 	case AccessTypeUnspecified:
 		return false
 	default:
@@ -389,11 +424,8 @@ func isSubset(super, sub []string) bool {
 
 // AllAuthorizedAddresses returns the list of authorized addresses. Can be empty.
 func (a AccessConfig) AllAuthorizedAddresses() []string {
-	switch a.Permission {
-	case AccessTypeAnyOfAddresses:
+	if a.Permission == AccessTypeAnyOfAddresses {
 		return a.Addresses
-	case AccessTypeOnlyAddress:
-		return []string{a.Address}
 	}
 	return []string{}
 }

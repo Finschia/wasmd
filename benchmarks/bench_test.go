@@ -5,16 +5,14 @@ import (
 	"testing"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
-	"github.com/Finschia/finschia-sdk/crypto/keys/secp256k1"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	banktypes "github.com/Finschia/finschia-sdk/x/bank/types"
-	ocabci "github.com/Finschia/ostracon/abci/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
 )
@@ -97,27 +95,24 @@ func BenchmarkTxSending(b *testing.B) {
 
 			// number of Tx per block for the benchmarks
 			blockSize := tc.blockSize
-			height := int64(3)
+			height := int64(2)
 			txEncoder := appInfo.TxConfig.TxEncoder()
 
 			b.ResetTimer()
 
 			for i := 0; i < b.N/blockSize; i++ {
-				appInfo.App.BeginBlock(ocabci.RequestBeginBlock{Header: tmproto.Header{Height: height, Time: time.Now()}})
-
+				xxx := make([][]byte, blockSize)
 				for j := 0; j < blockSize; j++ {
 					idx := i*blockSize + j
-
-					_, err := appInfo.App.Check(txEncoder, txs[idx])
-					if err != nil {
-						panic("something is broken in checking transaction")
-					}
-					_, _, err = appInfo.App.Deliver(txEncoder, txs[idx])
+					bz, err := txEncoder(txs[idx])
 					require.NoError(b, err)
+					xxx[j] = bz
 				}
+				_, err := appInfo.App.FinalizeBlock(&abci.RequestFinalizeBlock{Txs: xxx, Height: height, Time: time.Now()})
+				require.NoError(b, err)
 
-				appInfo.App.EndBlock(abci.RequestEndBlock{Height: height})
-				appInfo.App.Commit()
+				_, err = appInfo.App.Commit()
+				require.NoError(b, err)
 				height++
 			}
 		})
@@ -157,7 +152,7 @@ func buildTxFromMsg(builder func(info *AppInfo) ([]sdk.Msg, error)) func(b *test
 	}
 }
 
-func buildMemDB(b *testing.B) dbm.DB {
+func buildMemDB(_ *testing.B) dbm.DB {
 	return dbm.NewMemDB()
 }
 

@@ -6,18 +6,21 @@ import (
 	"net/url"
 	"testing"
 
+	errorsmod "cosmossdk.io/errors"
+
+	cmtrpcmocks "github.com/cometbft/cometbft/rpc/client/mocks"
+	cmtrpctypes "github.com/cometbft/cometbft/rpc/core/types"
+
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/Finschia/finschia-sdk/client"
-	"github.com/Finschia/finschia-sdk/codec"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
-	ocrpcmocks "github.com/Finschia/ostracon/rpc/client/mocks"
-	ocrpctypes "github.com/Finschia/ostracon/rpc/core/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Finschia/wasmd/x/wasmplus/types"
 )
@@ -48,7 +51,7 @@ func TestGetCmdListInactiveContracts(t *testing.T) {
 		},
 		{
 			"invalid request",
-			sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
+			errorsmod.Wrap(sdkerrors.ErrInvalidRequest,
 				"page and offset cannot be used together"),
 			ctx,
 			[]string{"--page=2", "--offset=1"},
@@ -123,8 +126,8 @@ func TestGetCmdIsInactiveContract(t *testing.T) {
 }
 
 func makeContext(bz []byte) context.Context {
-	result := ocrpctypes.ResultABCIQuery{Response: abci.ResponseQuery{Value: bz}}
-	mockClient := ocrpcmocks.RemoteClient{}
+	result := cmtrpctypes.ResultABCIQuery{Response: abci.ResponseQuery{Value: bz}}
+	mockClient := cmtrpcmocks.Client{}
 	{
 		// #1
 		mockClient.On("ABCIQueryWithOptions",

@@ -1,8 +1,8 @@
 package wasmtesting
 
 import (
-	"github.com/Finschia/finschia-sdk/baseapp"
-	sdk "github.com/Finschia/finschia-sdk/types"
+	"github.com/cosmos/cosmos-sdk/baseapp"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // MockMessageRouter mock for testing

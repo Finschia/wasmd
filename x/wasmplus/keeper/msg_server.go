@@ -3,8 +3,9 @@ package keeper
 import (
 	"context"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
 	"github.com/Finschia/wasmd/x/wasmplus/types"
@@ -26,7 +27,7 @@ func (m msgServer) StoreCodeAndInstantiateContract(goCtx context.Context,
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	senderAddr, err := sdk.AccAddressFromBech32(msg.Sender)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "sender")
+		return nil, errorsmod.Wrap(err, "sender")
 	}
 	codeID, _, err := m.keeper.Create(ctx, senderAddr, msg.WASMByteCode, msg.InstantiatePermission)
 	if err != nil {
@@ -37,7 +38,7 @@ func (m msgServer) StoreCodeAndInstantiateContract(goCtx context.Context,
 	if msg.Admin != "" {
 		adminAddr, err = sdk.AccAddressFromBech32(msg.Admin)
 		if err != nil {
-			return nil, sdkerrors.Wrap(err, "admin")
+			return nil, errorsmod.Wrap(err, "admin")
 		}
 	}
 

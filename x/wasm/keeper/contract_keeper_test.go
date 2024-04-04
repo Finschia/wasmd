@@ -10,7 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
+	storetypes "cosmossdk.io/store/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Finschia/wasmd/x/wasm/keeper/wasmtesting"
 	"github.com/Finschia/wasmd/x/wasm/types"
@@ -18,16 +20,17 @@ import (
 
 func TestInstantiate2(t *testing.T) {
 	parentCtx, keepers := CreateTestInput(t, false, AvailableCapabilities)
+	parentCtx = parentCtx.WithGasMeter(storetypes.NewInfiniteGasMeter())
+
 	example := StoreHackatomExampleContract(t, parentCtx, keepers)
 	otherExample := StoreReflectContract(t, parentCtx, keepers)
-	mock := &wasmtesting.MockWasmer{}
+	mock := &wasmtesting.MockWasmEngine{}
 	wasmtesting.MakeInstantiable(mock)
 	keepers.WasmKeeper.wasmVM = mock // set mock to not fail on contract init message
 
 	verifierAddr := RandomAccountAddress(t)
 	beneficiaryAddr := RandomAccountAddress(t)
 	initMsg := mustMarshal(t, HackatomExampleInitMsg{Verifier: verifierAddr, Beneficiary: beneficiaryAddr})
-
 	otherAddr := keepers.Faucet.NewFundedRandomAccount(parentCtx, sdk.NewInt64Coin("denom", 1_000_000_000))
 
 	const (

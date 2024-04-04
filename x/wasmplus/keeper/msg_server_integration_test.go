@@ -5,15 +5,14 @@ import (
 	"testing"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Finschia/wasmd/appplus"
-
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
 	"github.com/Finschia/wasmd/x/wasmplus/types"
 )
@@ -22,8 +21,8 @@ import (
 var wasmContract []byte
 
 func TestStoreAndInstantiateContract(t *testing.T) {
-	wasmApp := appplus.Setup(false)
-	ctx := wasmApp.BaseApp.NewContext(false, tmproto.Header{Time: time.Now()})
+	wasmApp := appplus.Setup(t)
+	ctx := wasmApp.BaseApp.NewContextLegacy(false, tmproto.Header{Time: time.Now()})
 
 	var myAddress sdk.AccAddress = make([]byte, wasmtypes.ContractAddrLen)
 
@@ -41,12 +40,12 @@ func TestStoreAndInstantiateContract(t *testing.T) {
 					Type: "store_code",
 					Attributes: []abci.EventAttribute{
 						{
-							Key:   []byte("code_checksum"),
-							Value: []byte("2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89"),
+							Key:   "code_checksum",
+							Value: "2843664c3b6c1de8bdeca672267c508aeb79bb947c87f75d8053f971d8658c89",
 							Index: false,
 						}, {
-							Key:   []byte("code_id"),
-							Value: []byte("1"),
+							Key:   "code_id",
+							Value: "1",
 							Index: false,
 						},
 					},
@@ -55,12 +54,12 @@ func TestStoreAndInstantiateContract(t *testing.T) {
 					Type: "instantiate",
 					Attributes: []abci.EventAttribute{
 						{
-							Key:   []byte("_contract_address"),
-							Value: []byte("link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8"),
+							Key:   "_contract_address",
+							Value: "link14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sgf2vn8",
 							Index: false,
 						}, {
-							Key:   []byte("code_id"),
-							Value: []byte("1"),
+							Key:   "code_id",
+							Value: "1",
 							Index: false,
 						},
 					},

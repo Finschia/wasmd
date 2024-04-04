@@ -1,9 +1,10 @@
 package keeper
 
 import (
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
-	govtypes "github.com/Finschia/finschia-sdk/x/gov/types"
+	errorsmod "cosmossdk.io/errors"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
@@ -11,23 +12,23 @@ import (
 )
 
 // NewWasmProposalHandler creates a new governance Handler for wasm proposals
-func NewWasmProposalHandler(k *Keeper, enabledProposalType []wasmtypes.ProposalType) govtypes.Handler {
+func NewWasmProposalHandler(k *Keeper, enabledProposalType []wasmtypes.ProposalType) v1beta1.Handler {
 	govPerm := wasmkeeper.NewGovPermissionKeeper(k)
 	return NewWasmProposalHandlerX(NewPermissionedKeeper(*govPerm, k), enabledProposalType)
 }
 
 // NewWasmProposalHandlerX creates a new governance Handler for wasm proposals
-func NewWasmProposalHandlerX(k types.ContractOpsKeeper, enabledProposalTypes []wasmtypes.ProposalType) govtypes.Handler {
-	handler := wasmkeeper.NewWasmProposalHandlerX(k, enabledProposalTypes)
+func NewWasmProposalHandlerX(k types.ContractOpsKeeper, enabledProposalTypes []wasmtypes.ProposalType) v1beta1.Handler {
+	handler := wasmkeeper.NewLegacyWasmProposalHandlerX(k, enabledProposalTypes)
 	enabledTypes := make(map[string]struct{}, len(enabledProposalTypes))
 	for i := range enabledProposalTypes {
 		enabledTypes[string(enabledProposalTypes[i])] = struct{}{}
 	}
-	return func(ctx sdk.Context, content govtypes.Content) error {
+	return func(ctx sdk.Context, content v1beta1.Content) error {
 		err := handler(ctx, content)
 		if err != nil {
 			if _, ok := enabledTypes[content.ProposalType()]; !ok {
-				return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unsupported wasm proposal content type: %q", content.ProposalType())
+				return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unsupported wasm proposal content type: %q", content.ProposalType())
 			}
 			switch c := content.(type) {
 			case *types.DeactivateContractProposal:
@@ -35,7 +36,7 @@ func NewWasmProposalHandlerX(k types.ContractOpsKeeper, enabledProposalTypes []w
 			case *types.ActivateContractProposal:
 				return handleActivateContractProposal(ctx, k, *c)
 			default:
-				return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized wasm proposal content type: %T", c)
+				return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized wasm proposal content type: %T", c)
 			}
 		}
 		return nil

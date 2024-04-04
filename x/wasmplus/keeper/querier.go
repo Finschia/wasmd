@@ -3,33 +3,36 @@ package keeper
 import (
 	"context"
 
+	corestoretypes "cosmossdk.io/core/store"
+	"github.com/cosmos/cosmos-sdk/runtime"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/Finschia/finschia-sdk/store/prefix"
-	sdk "github.com/Finschia/finschia-sdk/types"
-	"github.com/Finschia/finschia-sdk/types/query"
+	"cosmossdk.io/store/prefix"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
 	"github.com/Finschia/wasmd/x/wasmplus/types"
 )
 
 type queryKeeper interface {
-	IterateInactiveContracts(ctx sdk.Context, fn func(contractAddress sdk.AccAddress) bool)
-	IsInactiveContract(ctx sdk.Context, contractAddress sdk.AccAddress) bool
-	HasContractInfo(ctx sdk.Context, contractAddress sdk.AccAddress) bool
+	IterateInactiveContracts(ctx context.Context, fn func(contractAddress sdk.AccAddress) bool)
+	IsInactiveContract(ctx context.Context, contractAddress sdk.AccAddress) bool
+	HasContractInfo(ctx context.Context, contractAddress sdk.AccAddress) bool
 }
 
 var _ types.QueryServer = &grpcQuerier{}
 
 type grpcQuerier struct {
-	keeper   queryKeeper
-	storeKey sdk.StoreKey
+	keeper       queryKeeper
+	storeService corestoretypes.KVStoreService
 }
 
 // newGrpcQuerier constructor
-func newGrpcQuerier(storeKey sdk.StoreKey, keeper queryKeeper) *grpcQuerier {
-	return &grpcQuerier{storeKey: storeKey, keeper: keeper}
+func newGrpcQuerier(storeService corestoretypes.KVStoreService, keeper queryKeeper) *grpcQuerier {
+	return &grpcQuerier{storeService: storeService, keeper: keeper}
 }
 
 func (q grpcQuerier) InactiveContracts(c context.Context, req *types.QueryInactiveContractsRequest) (*types.QueryInactiveContractsResponse, error) {
@@ -39,7 +42,7 @@ func (q grpcQuerier) InactiveContracts(c context.Context, req *types.QueryInacti
 	ctx := sdk.UnwrapSDKContext(c)
 
 	addresses := make([]string, 0)
-	prefixStore := prefix.NewStore(ctx.KVStore(q.storeKey), types.InactiveContractPrefix)
+	prefixStore := prefix.NewStore(runtime.KVStoreAdapter(q.storeService.OpenKVStore(ctx)), types.InactiveContractPrefix)
 	pageRes, err := query.FilteredPaginate(prefixStore, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
 		if accumulate {
 			contractAddress := sdk.AccAddress(value)

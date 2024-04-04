@@ -1,7 +1,7 @@
 package client
 
 import (
-	govclient "github.com/Finschia/finschia-sdk/x/gov/client"
+	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 
 	"github.com/Finschia/wasmd/x/wasmplus/client/cli"
 

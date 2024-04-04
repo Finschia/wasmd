@@ -1,26 +1,29 @@
 package keeper
 
 import (
-	sdk "github.com/Finschia/finschia-sdk/types"
 	wasmvm "github.com/Finschia/wasmvm"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/Finschia/wasmd/x/wasm/types"
 )
 
 const (
-	// DefaultGasCostHumanAddress is how moch SDK gas we charge to convert to a human address format
+	// DefaultGasCostHumanAddress is how much SDK gas we charge to convert to a human address format
 	DefaultGasCostHumanAddress = 5
-	// DefaultGasCostCanonicalAddress is how moch SDK gas we charge to convert to a canonical address format
+	// DefaultGasCostCanonicalAddress is how much SDK gas we charge to convert to a canonical address format
 	DefaultGasCostCanonicalAddress = 4
 
-	// DefaultDeserializationCostPerByte The formular should be `len(data) * deserializationCostPerByte`
+	// DefaultDeserializationCostPerByte The formula should be `len(data) * deserializationCostPerByte`
 	DefaultDeserializationCostPerByte = 1
 )
 
 var (
-	costHumanize            = DefaultGasCostHumanAddress * DefaultGasMultiplier
-	costCanonical           = DefaultGasCostCanonicalAddress * DefaultGasMultiplier
+	costHumanize            = DefaultGasCostHumanAddress * types.DefaultGasMultiplier
+	costCanonical           = DefaultGasCostCanonicalAddress * types.DefaultGasMultiplier
 	costJSONDeserialization = wasmvmtypes.UFraction{
-		Numerator:   DefaultDeserializationCostPerByte * DefaultGasMultiplier,
+		Numerator:   DefaultDeserializationCostPerByte * types.DefaultGasMultiplier,
 		Denominator: 1,
 	}
 )

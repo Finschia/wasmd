@@ -3,8 +3,9 @@ package wasmtesting
 import (
 	"errors"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type MockMessageHandler struct {

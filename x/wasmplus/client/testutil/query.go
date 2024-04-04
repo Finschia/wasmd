@@ -3,8 +3,8 @@ package testutil
 import (
 	"github.com/gogo/protobuf/proto"
 
-	clitestutil "github.com/Finschia/finschia-sdk/testutil/cli"
-	"github.com/Finschia/finschia-sdk/types/query"
+	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/Finschia/wasmd/x/wasmplus/client/cli"
 	"github.com/Finschia/wasmd/x/wasmplus/types"

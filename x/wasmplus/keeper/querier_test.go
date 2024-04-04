@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Finschia/finschia-sdk/types/query"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	wasmtypes "github.com/Finschia/wasmd/x/wasm/types"
 	"github.com/Finschia/wasmd/x/wasmplus/types"

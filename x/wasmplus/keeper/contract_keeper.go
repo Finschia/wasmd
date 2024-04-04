@@ -1,8 +1,11 @@
 package keeper
 
 import (
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
+	"context"
+
+	errorsmod "cosmossdk.io/errors"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
 	"github.com/Finschia/wasmd/x/wasmplus/types"
@@ -12,8 +15,8 @@ var _ types.ContractOpsKeeper = PermissionedKeeper{}
 
 type decoratedKeeper interface {
 	types.ViewKeeper
-	activateContract(ctx sdk.Context, contractAddress sdk.AccAddress) error
-	deactivateContract(ctx sdk.Context, contractAddress sdk.AccAddress) error
+	activateContract(ctx context.Context, contractAddress sdk.AccAddress) error
+	deactivateContract(ctx context.Context, contractAddress sdk.AccAddress) error
 }
 
 type PermissionedKeeper struct {
@@ -27,28 +30,28 @@ func NewPermissionedKeeper(k wasmkeeper.PermissionedKeeper, extended decoratedKe
 
 func (p PermissionedKeeper) Execute(ctx sdk.Context, contractAddress sdk.AccAddress, caller sdk.AccAddress, msg []byte, coins sdk.Coins) ([]byte, error) {
 	if p.extended.IsInactiveContract(ctx, contractAddress) {
-		return nil, sdkerrors.Wrap(types.ErrInactiveContract, "can not execute")
+		return nil, errorsmod.Wrap(types.ErrInactiveContract, "can not execute")
 	}
 	return p.PermissionedKeeper.Execute(ctx, contractAddress, caller, msg, coins)
 }
 
 func (p PermissionedKeeper) Migrate(ctx sdk.Context, contractAddress sdk.AccAddress, caller sdk.AccAddress, newCodeID uint64, msg []byte) ([]byte, error) {
 	if p.extended.IsInactiveContract(ctx, contractAddress) {
-		return nil, sdkerrors.Wrap(types.ErrInactiveContract, "can not execute")
+		return nil, errorsmod.Wrap(types.ErrInactiveContract, "can not execute")
 	}
 	return p.PermissionedKeeper.Migrate(ctx, contractAddress, caller, newCodeID, msg)
 }
 
 func (p PermissionedKeeper) UpdateContractAdmin(ctx sdk.Context, contractAddress sdk.AccAddress, caller sdk.AccAddress, newAdmin sdk.AccAddress) error {
 	if p.extended.IsInactiveContract(ctx, contractAddress) {
-		return sdkerrors.Wrap(types.ErrInactiveContract, "can not execute")
+		return errorsmod.Wrap(types.ErrInactiveContract, "can not execute")
 	}
 	return p.PermissionedKeeper.UpdateContractAdmin(ctx, contractAddress, caller, newAdmin)
 }
 
 func (p PermissionedKeeper) ClearContractAdmin(ctx sdk.Context, contractAddress sdk.AccAddress, caller sdk.AccAddress) error {
 	if p.extended.IsInactiveContract(ctx, contractAddress) {
-		return sdkerrors.Wrap(types.ErrInactiveContract, "can not execute")
+		return errorsmod.Wrap(types.ErrInactiveContract, "can not execute")
 	}
 	return p.PermissionedKeeper.ClearContractAdmin(ctx, contractAddress, caller)
 }

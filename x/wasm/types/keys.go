@@ -1,7 +1,8 @@
 package types
 
 import (
-	sdk "github.com/Finschia/finschia-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 )
 
 const (
@@ -21,7 +22,6 @@ const (
 	RouterKey = ModuleName
 )
 
-// nolint
 var (
 	CodeKeyPrefix                                  = []byte{0x01}
 	ContractKeyPrefix                              = []byte{0x02}
@@ -31,9 +31,11 @@ var (
 	ContractByCodeIDAndCreatedSecondaryIndexPrefix = []byte{0x06}
 	PinnedCodeIndexPrefix                          = []byte{0x07}
 	TXCounterPrefix                                = []byte{0x08}
+	ContractsByCreatorPrefix                       = []byte{0x09}
+	ParamsKey                                      = []byte{0x10}
 
-	KeyLastCodeID     = append(SequenceKeyPrefix, []byte("lastCodeId")...)
-	KeyLastInstanceID = append(SequenceKeyPrefix, []byte("lastContractId")...)
+	KeySequenceCodeID     = append(SequenceKeyPrefix, []byte("lastCodeId")...)
+	KeySequenceInstanceID = append(SequenceKeyPrefix, []byte("lastContractId")...)
 )
 
 // GetCodeKey constructs the key for retreiving the ID for the WASM code
@@ -45,6 +47,12 @@ func GetCodeKey(codeID uint64) []byte {
 // GetContractAddressKey returns the key for the WASM contract instance
 func GetContractAddressKey(addr sdk.AccAddress) []byte {
 	return append(ContractKeyPrefix, addr...)
+}
+
+// GetContractsByCreatorPrefix returns the contracts by creator prefix for the WASM contract instance
+func GetContractsByCreatorPrefix(addr sdk.AccAddress) []byte {
+	bz := address.MustLengthPrefix(addr)
+	return append(ContractsByCreatorPrefix, bz...)
 }
 
 // GetContractStorePrefix returns the store prefix for the WASM contract instance
@@ -72,6 +80,19 @@ func GetContractByCodeIDSecondaryIndexPrefix(codeID uint64) []byte {
 	r := make([]byte, prefixLen+codeIDLen)
 	copy(r[0:], ContractByCodeIDAndCreatedSecondaryIndexPrefix)
 	copy(r[prefixLen:], sdk.Uint64ToBigEndian(codeID))
+	return r
+}
+
+// GetContractByCreatorSecondaryIndexKey returns the key for the second index: `<prefix><creatorAddress length><created time><creatorAddress><contractAddr>`
+func GetContractByCreatorSecondaryIndexKey(bz, position []byte, contractAddr sdk.AccAddress) []byte {
+	prefixBytes := GetContractsByCreatorPrefix(bz)
+	lenPrefixBytes := len(prefixBytes)
+	r := make([]byte, lenPrefixBytes+AbsoluteTxPositionLen+len(contractAddr))
+
+	copy(r[:lenPrefixBytes], prefixBytes)
+	copy(r[lenPrefixBytes:lenPrefixBytes+AbsoluteTxPositionLen], position)
+	copy(r[lenPrefixBytes+AbsoluteTxPositionLen:], contractAddr)
+
 	return r
 }
 

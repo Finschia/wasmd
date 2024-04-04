@@ -6,27 +6,23 @@ package types
 import (
 	context "context"
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-
-	query "github.com/Finschia/finschia-sdk/types/query"
-	_ "github.com/gogo/protobuf/gogoproto"
-	grpc1 "github.com/gogo/protobuf/grpc"
-	proto "github.com/gogo/protobuf/proto"
+	query "github.com/cosmos/cosmos-sdk/types/query"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	grpc1 "github.com/cosmos/gogoproto/grpc"
+	proto "github.com/cosmos/gogoproto/proto"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
-
-var (
-	_ = fmt.Errorf
-	_ = math.Inf
-)
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -47,11 +43,9 @@ func (*QueryInactiveContractsRequest) ProtoMessage()    {}
 func (*QueryInactiveContractsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f1bdb66850244231, []int{0}
 }
-
 func (m *QueryInactiveContractsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *QueryInactiveContractsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QueryInactiveContractsRequest.Marshal(b, m, deterministic)
@@ -64,15 +58,12 @@ func (m *QueryInactiveContractsRequest) XXX_Marshal(b []byte, deterministic bool
 		return b[:n], nil
 	}
 }
-
 func (m *QueryInactiveContractsRequest) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_QueryInactiveContractsRequest.Merge(m, src)
 }
-
 func (m *QueryInactiveContractsRequest) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *QueryInactiveContractsRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_QueryInactiveContractsRequest.DiscardUnknown(m)
 }
@@ -82,7 +73,8 @@ var xxx_messageInfo_QueryInactiveContractsRequest proto.InternalMessageInfo
 // QueryInactiveContractsResponse is the response type for the
 // Query/InactiveContract RPC method.
 type QueryInactiveContractsResponse struct {
-	// addresses is the inactive address list of strings, in ascending order of byte format
+	// addresses is the inactive address list of strings, in ascending order of
+	// byte format
 	Addresses []string `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
 	// pagination defines the pagination in the response
 	Pagination *query.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -94,11 +86,9 @@ func (*QueryInactiveContractsResponse) ProtoMessage()    {}
 func (*QueryInactiveContractsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f1bdb66850244231, []int{1}
 }
-
 func (m *QueryInactiveContractsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *QueryInactiveContractsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QueryInactiveContractsResponse.Marshal(b, m, deterministic)
@@ -111,15 +101,12 @@ func (m *QueryInactiveContractsResponse) XXX_Marshal(b []byte, deterministic boo
 		return b[:n], nil
 	}
 }
-
 func (m *QueryInactiveContractsResponse) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_QueryInactiveContractsResponse.Merge(m, src)
 }
-
 func (m *QueryInactiveContractsResponse) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *QueryInactiveContractsResponse) XXX_DiscardUnknown() {
 	xxx_messageInfo_QueryInactiveContractsResponse.DiscardUnknown(m)
 }
@@ -139,11 +126,9 @@ func (*QueryInactiveContractRequest) ProtoMessage()    {}
 func (*QueryInactiveContractRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f1bdb66850244231, []int{2}
 }
-
 func (m *QueryInactiveContractRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *QueryInactiveContractRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QueryInactiveContractRequest.Marshal(b, m, deterministic)
@@ -156,15 +141,12 @@ func (m *QueryInactiveContractRequest) XXX_Marshal(b []byte, deterministic bool)
 		return b[:n], nil
 	}
 }
-
 func (m *QueryInactiveContractRequest) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_QueryInactiveContractRequest.Merge(m, src)
 }
-
 func (m *QueryInactiveContractRequest) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *QueryInactiveContractRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_QueryInactiveContractRequest.DiscardUnknown(m)
 }
@@ -184,11 +166,9 @@ func (*QueryInactiveContractResponse) ProtoMessage()    {}
 func (*QueryInactiveContractResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f1bdb66850244231, []int{3}
 }
-
 func (m *QueryInactiveContractResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *QueryInactiveContractResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QueryInactiveContractResponse.Marshal(b, m, deterministic)
@@ -201,15 +181,12 @@ func (m *QueryInactiveContractResponse) XXX_Marshal(b []byte, deterministic bool
 		return b[:n], nil
 	}
 }
-
 func (m *QueryInactiveContractResponse) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_QueryInactiveContractResponse.Merge(m, src)
 }
-
 func (m *QueryInactiveContractResponse) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *QueryInactiveContractResponse) XXX_DiscardUnknown() {
 	xxx_messageInfo_QueryInactiveContractResponse.DiscardUnknown(m)
 }
@@ -310,12 +287,12 @@ type QueryServer interface {
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
-type UnimplementedQueryServer struct{}
+type UnimplementedQueryServer struct {
+}
 
 func (*UnimplementedQueryServer) InactiveContracts(ctx context.Context, req *QueryInactiveContractsRequest) (*QueryInactiveContractsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InactiveContracts not implemented")
 }
-
 func (*UnimplementedQueryServer) InactiveContract(ctx context.Context, req *QueryInactiveContractRequest) (*QueryInactiveContractResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InactiveContract not implemented")
 }
@@ -530,7 +507,6 @@ func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-
 func (m *QueryInactiveContractsRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -591,11 +567,9 @@ func (m *QueryInactiveContractResponse) Size() (n int) {
 func sovQuery(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
-
 func sozQuery(x uint64) (n int) {
 	return sovQuery(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-
 func (m *QueryInactiveContractsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -682,7 +656,6 @@ func (m *QueryInactiveContractsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *QueryInactiveContractsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -801,7 +774,6 @@ func (m *QueryInactiveContractsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *QueryInactiveContractRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -884,7 +856,6 @@ func (m *QueryInactiveContractRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *QueryInactiveContractResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -955,7 +926,6 @@ func (m *QueryInactiveContractResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func skipQuery(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

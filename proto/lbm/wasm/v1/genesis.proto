@@ -20,11 +20,8 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (gogoproto.jsontag) = "sequences,omitempty"
   ];
-  repeated cosmwasm.wasm.v1.GenesisState.GenMsgs gen_msgs = 5 [
-    (gogoproto.nullable) = false,
-    (gogoproto.jsontag) = "gen_msgs,omitempty"
-  ];
-
+  // remove cosmwasm.wasm.v1.GenesisState.GenMsgs gen_msgs = 5
+  reserved 5;
   // InactiveContractAddresses is a list of contract address that set inactive
   repeated string inactive_contract_addresses = 6
       [ (gogoproto.jsontag) = "inactive_contract_address,omitempty" ];

@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
-	"github.com/Finschia/finschia-sdk/client"
-	"github.com/Finschia/finschia-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 
 	wasmcli "github.com/Finschia/wasmd/x/wasm/client/cli"
 	"github.com/Finschia/wasmd/x/wasmplus/types"

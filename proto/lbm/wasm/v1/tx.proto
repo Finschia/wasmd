@@ -3,13 +3,17 @@ package lbm.wasm.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
 import "cosmwasm/wasm/v1/types.proto";
+import "amino/amino.proto";
 
 option go_package = "github.com/Finschia/wasmd/x/wasmplus/types";
 option (gogoproto.goproto_getters_all) = false;
 
 // Msg defines the wasm Msg service for finschia-sdk.
 service Msg {
+  option (cosmos.msg.v1.service) = true;
+
   // StoreCodeAndInstantiateContract upload code and instantiate a contract
   // using it
   rpc StoreCodeAndInstantiateContract(MsgStoreCodeAndInstantiateContract)
@@ -19,6 +23,7 @@ service Msg {
 // MsgStoreCodeAndInstantiateContract submit Wasm code to the system and
 // instantiate a contract using it.
 message MsgStoreCodeAndInstantiateContract {
+  option (amino.name) = "wasm/MsgStoreCodeAndInstantiateContract";
   // Sender is the that actor that signed the messages
   string sender = 1;
   // WASMByteCode can be raw or gzip compressed
@@ -37,7 +42,8 @@ message MsgStoreCodeAndInstantiateContract {
   // Funds coins that are transferred to the contract on instantiation
   repeated cosmos.base.v1beta1.Coin funds = 9 [
     (gogoproto.nullable) = false,
-    (gogoproto.castrepeated) = "github.com/Finschia/finschia-sdk/types.Coins"
+    (amino.dont_omitempty) = true,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
 }
 

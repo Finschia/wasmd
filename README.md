@@ -1,3 +1,4 @@
+
 # Wasm Zone
 
 [![codecov](https://codecov.io/gh/Finschia/wasmd/branch/main/graph/badge.svg)](https://codecov.io/gh/Finschia/wasmd)
@@ -13,7 +14,7 @@ from the `cosmos/gaia` repository, and then we change `x/wasm`.
 However, the `wasmd` binary should function just like `gaiad` except for the
 addition of the `x/wasm` module.
 
-**Note**: Requires [Go 1.20+](https://golang.org/dl/)
+**Note**: Requires [Go 1.21+](https://golang.org/dl/)
 
 For critical security issues & disclosure, see [SECURITY.md](SECURITY.md).
 ## Compatibility with CosmWasm contracts
@@ -117,7 +118,9 @@ The protobuf files for this project are published automatically to the [buf repo
 
 | wasmd version | buf tag                                                                                                                                     |
 |---------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| 0.26.x        | [51931206dbe09529c1819a8a2863d291035a2549](https://buf.build/cosmwasm/wasmd/tree/51931206dbe09529c1819a8a2863d291035a2549:cosmwasm/wasm/v1) | 
+| 0.31.x        | [e0e5a6fa433449e695af692478c86fb5](https://buf.build/cosmwasm/wasmd/tree/e0e5a6fa433449e695af692478c86fb5:cosmwasm/wasm/v1) | 
+| 0.30.x        | [6508ee062011440c907de6f5c40398ea](https://buf.build/cosmwasm/wasmd/tree/6508ee062011440c907de6f5c40398ea:cosmwasm/wasm/v1) | 
+| 0.29.x        | [51931206dbe09529c1819a8a2863d291035a2549](https://buf.build/cosmwasm/wasmd/tree/51931206dbe09529c1819a8a2863d291035a2549:cosmwasm/wasm/v1) | 
 
 Generate protobuf
 ```shell script
@@ -135,9 +138,6 @@ Available flags:
  
 * `-X github.com/Finschia/wasmd/app.NodeDir=.corald` - set the config/data directory for the node (default `~/.wasmd`)
 * `-X github.com/Finschia/wasmd/app.Bech32Prefix=coral` - set the bech32 prefix for all accounts (default `wasm`)
-* `-X github.com/Finschia/wasmd/app.ProposalsEnabled=true` - enable all x/wasm governance proposals (default `false`)
-* `-X github.com/Finschia/wasmd/app.EnableSpecificProposals=MigrateContract,UpdateAdmin,ClearAdmin` - 
-    enable a subset of the x/wasm governance proposal types (overrides `ProposalsEnabled`)
 
 Examples:
 
@@ -153,6 +153,7 @@ file of your custom chain.
 
 * `wasmtypes.MaxLabelSize = 64` to set the maximum label size on instantiation (default 128)
 * `wasmtypes.MaxWasmSize=777000` to set the max size of compiled wasm to be accepted (default 819200)
+* `wasmtypes.MaxProposalWasmSize=888000` to set the max size of gov proposal compiled wasm to be accepted (default 3145728)
 
 ## Genesis Configuration
 We strongly suggest **to limit the max block gas in the genesis** and not use the default value (`-1` for infinite).
@@ -163,8 +164,7 @@ We strongly suggest **to limit the max block gas in the genesis** and not use th
 ```
 
 Tip: if you want to lock this down to a permisisoned network, the following script can edit the genesis file
-to only allow permissioned use of code upload or instantiating. (Make sure you set `app.ProposalsEnabled=true`
-in this binary):
+to only allow permissioned use of code upload or instantiating:
 
 `sed -i 's/permission": "Everybody"/permission": "Nobody"/'  .../config/genesis.json`
 

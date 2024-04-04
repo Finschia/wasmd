@@ -1,8 +1,9 @@
 package wasmtesting
 
 import (
-	sdk "github.com/Finschia/finschia-sdk/types"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type MockMsgDispatcher struct {

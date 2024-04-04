@@ -3,10 +3,10 @@ package keeper
 import (
 	"encoding/json"
 
+	tmBytes "github.com/cometbft/cometbft/libs/bytes"
 	fuzz "github.com/google/gofuzz"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
-	tmBytes "github.com/Finschia/ostracon/libs/bytes"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )
@@ -52,10 +52,12 @@ func FuzzContractCodeHistory(m *types.ContractCodeHistoryEntry, c fuzz.Continue)
 
 func FuzzStateModel(m *types.Model, c fuzz.Continue) {
 	m.Key = tmBytes.HexBytes(c.RandString())
-	if len(m.Key) == 0 {
-		m.Key = tmBytes.HexBytes("non empty key")
+	if len(m.Key) != 0 {
+		c.Fuzz(&m.Value)
+		return
 	}
-	c.Fuzz(&m.Value)
+	// try again, keys must not be empty
+	FuzzStateModel(m, c)
 }
 
 func FuzzAccessType(m *types.AccessType, c fuzz.Continue) {

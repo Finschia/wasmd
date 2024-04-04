@@ -3,12 +3,11 @@ package wasm_test
 import (
 	"testing"
 
+	wasmvmtypes "github.com/Finschia/wasmvm/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibctesting "github.com/cosmos/ibc-go/v8/testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	wasmvmtypes "github.com/Finschia/wasmvm/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibctesting "github.com/cosmos/ibc-go/v4/testing"
 
 	wasmibctesting "github.com/Finschia/wasmd/x/wasm/ibctesting"
 	wasmkeeper "github.com/Finschia/wasmd/x/wasm/keeper"
@@ -26,8 +25,8 @@ func TestIBCReflectContract(t *testing.T) {
 
 	var (
 		coordinator = wasmibctesting.NewCoordinator(t, 2)
-		chainA      = coordinator.GetChain(wasmibctesting.GetChainID(0))
-		chainB      = coordinator.GetChain(wasmibctesting.GetChainID(1))
+		chainA      = coordinator.GetChain(wasmibctesting.GetChainID(1))
+		chainB      = coordinator.GetChain(wasmibctesting.GetChainID(2))
 	)
 	coordinator.CommitBlock(chainA, chainB)
 

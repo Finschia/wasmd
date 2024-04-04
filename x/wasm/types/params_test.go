@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Finschia/finschia-sdk/codec"
-	codectypes "github.com/Finschia/finschia-sdk/codec/types"
-	sdk "github.com/Finschia/finschia-sdk/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func TestValidateParams(t *testing.T) {
@@ -39,12 +39,6 @@ func TestValidateParams(t *testing.T) {
 				InstantiateDefaultPermission: AccessTypeEverybody,
 			},
 		},
-		"all good with only address": {
-			src: Params{
-				CodeUploadAccess:             AccessTypeOnlyAddress.With(anyAddress),
-				InstantiateDefaultPermission: AccessTypeOnlyAddress,
-			},
-		},
 		"all good with anyOf address": {
 			src: Params{
 				CodeUploadAccess:             AccessTypeAnyOfAddresses.With(anyAddress),
@@ -70,44 +64,16 @@ func TestValidateParams(t *testing.T) {
 			},
 			expErr: true,
 		},
-		"reject CodeUploadAccess invalid address in only address": {
-			src: Params{
-				CodeUploadAccess:             AccessConfig{Permission: AccessTypeOnlyAddress, Address: invalidAddress},
-				InstantiateDefaultPermission: AccessTypeOnlyAddress,
-			},
-			expErr: true,
-		},
-		"reject wrong field addresses in only address": {
-			src: Params{
-				CodeUploadAccess:             AccessConfig{Permission: AccessTypeOnlyAddress, Address: anyAddress.String(), Addresses: []string{anyAddress.String()}},
-				InstantiateDefaultPermission: AccessTypeOnlyAddress,
-			},
-			expErr: true,
-		},
-		"reject CodeUploadAccess Everybody with obsolete address": {
-			src: Params{
-				CodeUploadAccess:             AccessConfig{Permission: AccessTypeEverybody, Address: anyAddress.String()},
-				InstantiateDefaultPermission: AccessTypeOnlyAddress,
-			},
-			expErr: true,
-		},
-		"reject CodeUploadAccess Nobody with obsolete address": {
-			src: Params{
-				CodeUploadAccess:             AccessConfig{Permission: AccessTypeNobody, Address: anyAddress.String()},
-				InstantiateDefaultPermission: AccessTypeOnlyAddress,
-			},
-			expErr: true,
-		},
 		"reject empty CodeUploadAccess": {
 			src: Params{
-				InstantiateDefaultPermission: AccessTypeOnlyAddress,
+				InstantiateDefaultPermission: AccessTypeAnyOfAddresses,
 			},
 			expErr: true,
 		},
 		"reject undefined permission in CodeUploadAccess": {
 			src: Params{
 				CodeUploadAccess:             AccessConfig{Permission: AccessTypeUnspecified},
-				InstantiateDefaultPermission: AccessTypeOnlyAddress,
+				InstantiateDefaultPermission: AccessTypeAnyOfAddresses,
 			},
 			expErr: true,
 		},
@@ -139,13 +105,6 @@ func TestValidateParams(t *testing.T) {
 			},
 			expErr: true,
 		},
-		"reject wrong field address in any of  addresses": {
-			src: Params{
-				CodeUploadAccess:             AccessConfig{Permission: AccessTypeAnyOfAddresses, Address: anyAddress.String(), Addresses: []string{anyAddress.String()}},
-				InstantiateDefaultPermission: AccessTypeAnyOfAddresses,
-			},
-			expErr: true,
-		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
@@ -166,7 +125,6 @@ func TestAccessTypeMarshalJson(t *testing.T) {
 	}{
 		"Unspecified":              {src: AccessTypeUnspecified, exp: `"Unspecified"`},
 		"Nobody":                   {src: AccessTypeNobody, exp: `"Nobody"`},
-		"OnlyAddress":              {src: AccessTypeOnlyAddress, exp: `"OnlyAddress"`},
 		"AccessTypeAnyOfAddresses": {src: AccessTypeAnyOfAddresses, exp: `"AnyOfAddresses"`},
 		"Everybody":                {src: AccessTypeEverybody, exp: `"Everybody"`},
 		"unknown":                  {src: 999, exp: `"Unspecified"`},
@@ -187,7 +145,6 @@ func TestAccessTypeUnmarshalJson(t *testing.T) {
 	}{
 		"Unspecified":    {src: `"Unspecified"`, exp: AccessTypeUnspecified},
 		"Nobody":         {src: `"Nobody"`, exp: AccessTypeNobody},
-		"OnlyAddress":    {src: `"OnlyAddress"`, exp: AccessTypeOnlyAddress},
 		"AnyOfAddresses": {src: `"AnyOfAddresses"`, exp: AccessTypeAnyOfAddresses},
 		"Everybody":      {src: `"Everybody"`, exp: AccessTypeEverybody},
 		"unknown":        {src: `""`, exp: AccessTypeUnspecified},
@@ -252,20 +209,6 @@ func TestAccessTypeWith(t *testing.T) {
 			src:   AccessTypeEverybody,
 			addrs: []sdk.AccAddress{myAddress},
 			exp:   AccessConfig{Permission: AccessTypeEverybody},
-		},
-		"only address without address": {
-			src:      AccessTypeOnlyAddress,
-			expPanic: true,
-		},
-		"only address with address": {
-			src:   AccessTypeOnlyAddress,
-			addrs: []sdk.AccAddress{myAddress},
-			exp:   AccessConfig{Permission: AccessTypeOnlyAddress, Address: myAddress.String()},
-		},
-		"only address with invalid address": {
-			src:      AccessTypeOnlyAddress,
-			addrs:    []sdk.AccAddress{nil},
-			expPanic: true,
 		},
 		"any of address without address": {
 			src:      AccessTypeAnyOfAddresses,

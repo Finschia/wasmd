@@ -3,9 +3,9 @@ package testutil
 import (
 	"fmt"
 
-	"github.com/Finschia/finschia-sdk/client/flags"
-	clitestutil "github.com/Finschia/finschia-sdk/testutil/cli"
-	sdk "github.com/Finschia/finschia-sdk/types"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Finschia/wasmd/x/wasm/client/cli"
 	"github.com/Finschia/wasmd/x/wasm/keeper"

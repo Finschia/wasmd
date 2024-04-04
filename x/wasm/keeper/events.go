@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	sdk "github.com/Finschia/finschia-sdk/types"
-	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
 	wasmvmtypes "github.com/Finschia/wasmvm/types"
+
+	errorsmod "cosmossdk.io/errors"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Finschia/wasmd/x/wasm/types"
 )
@@ -31,7 +33,7 @@ func newCustomEvents(evts wasmvmtypes.Events, contractAddr sdk.AccAddress) (sdk.
 	for _, e := range evts {
 		typ := strings.TrimSpace(e.Type)
 		if len(typ) <= eventTypeMinLength {
-			return nil, sdkerrors.Wrap(types.ErrInvalidEvent, fmt.Sprintf("Event type too short: '%s'", typ))
+			return nil, errorsmod.Wrap(types.ErrInvalidEvent, fmt.Sprintf("Event type too short: '%s'", typ))
 		}
 		attributes, err := contractSDKEventAttributes(e.Attributes, contractAddr)
 		if err != nil {
@@ -50,16 +52,12 @@ func contractSDKEventAttributes(customAttributes []wasmvmtypes.EventAttribute, c
 		// ensure key and value are non-empty (and trim what is there)
 		key := strings.TrimSpace(l.Key)
 		if len(key) == 0 {
-			return nil, sdkerrors.Wrap(types.ErrInvalidEvent, fmt.Sprintf("Empty attribute key. Value: %s", l.Value))
+			return nil, errorsmod.Wrap(types.ErrInvalidEvent, fmt.Sprintf("Empty attribute key. Value: %s", l.Value))
 		}
 		value := strings.TrimSpace(l.Value)
-		// TODO: check if this is legal in the SDK - if it is, we can remove this check
-		if len(value) == 0 {
-			return nil, sdkerrors.Wrap(types.ErrInvalidEvent, fmt.Sprintf("Empty attribute value. Key: %s", key))
-		}
 		// and reserve all _* keys for our use (not contract)
 		if strings.HasPrefix(key, types.AttributeReservedPrefix) {
-			return nil, sdkerrors.Wrap(types.ErrInvalidEvent, fmt.Sprintf("Attribute key starts with reserved prefix %s: '%s'", types.AttributeReservedPrefix, key))
+			return nil, errorsmod.Wrap(types.ErrInvalidEvent, fmt.Sprintf("Attribute key starts with reserved prefix %s: '%s'", types.AttributeReservedPrefix, key))
 		}
 		attrs = append(attrs, sdk.NewAttribute(key, value))
 	}

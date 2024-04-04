@@ -3,15 +3,18 @@ package ioutils
 import (
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"io"
 
-	"github.com/Finschia/wasmd/x/wasm/types"
+	errorsmod "cosmossdk.io/errors"
 )
 
+var errLimit = errors.New("exceeds limit")
+
 // Uncompress expects a valid gzip source to unpack or fails. See IsGzip
-func Uncompress(gzipSrc []byte, limit uint64) ([]byte, error) {
-	if uint64(len(gzipSrc)) > limit {
-		return nil, types.ErrLimit
+func Uncompress(gzipSrc []byte, limit int64) ([]byte, error) {
+	if int64(len(gzipSrc)) > limit {
+		return nil, errorsmod.Wrapf(errLimit, "max %d bytes", limit)
 	}
 	zr, err := gzip.NewReader(bytes.NewReader(gzipSrc))
 	if err != nil {
@@ -19,11 +22,15 @@ func Uncompress(gzipSrc []byte, limit uint64) ([]byte, error) {
 	}
 	zr.Multistream(false)
 	defer zr.Close()
-	return io.ReadAll(LimitReader(zr, int64(limit)))
+	bz, err := io.ReadAll(LimitReader(zr, limit))
+	if errors.Is(err, errLimit) {
+		return nil, errorsmod.Wrapf(errLimit, "max %d bytes", limit)
+	}
+	return bz, err
 }
 
 // LimitReader returns a Reader that reads from r
-// but stops with types.ErrLimit after n bytes.
+// but stops with "limit error" after n bytes.
 // The underlying implementation is a *io.LimitedReader.
 func LimitReader(r io.Reader, n int64) io.Reader {
 	return &LimitedReader{r: &io.LimitedReader{R: r, N: n}}
@@ -35,7 +42,7 @@ type LimitedReader struct {
 
 func (l *LimitedReader) Read(p []byte) (n int, err error) {
 	if l.r.N <= 0 {
-		return 0, types.ErrLimit
+		return 0, errLimit
 	}
 	return l.r.Read(p)
 }
