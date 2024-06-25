@@ -19,6 +19,7 @@ import (
 
 	"github.com/Finschia/finschia-sdk/client"
 	"github.com/Finschia/finschia-sdk/codec"
+	codectypes "github.com/Finschia/finschia-sdk/codec/types"
 	sdkerrors "github.com/Finschia/finschia-sdk/types/errors"
 	ocrpcmocks "github.com/Finschia/ostracon/rpc/client/mocks"
 	ocrpctypes "github.com/Finschia/ostracon/rpc/core/types"
@@ -201,6 +202,7 @@ func TestGetCmdGetContractInfo(t *testing.T) {
 	bz, err := res.Marshal()
 	require.NoError(t, err)
 	ctx := makeContext(bz)
+
 	tests := testcase{
 		{"execute success", nil, ctx, nil, argsWithAddr},
 		{"bad status", badStatusError, ctx, nil, argsWithAddr},
@@ -396,6 +398,6 @@ func makeContext(bz []byte) context.Context {
 			mock.Anything, mock.Anything, mock.Anything, mock.Anything,
 		).Once().Return(&failure, nil)
 	}
-	cli := client.Context{}.WithClient(&mockClient).WithCodec(codec.NewProtoCodec(nil))
+	cli := client.Context{}.WithClient(&mockClient).WithCodec(codec.NewProtoCodec(codectypes.NewInterfaceRegistry()))
 	return context.WithValue(context.Background(), client.ClientContextKey, &cli)
 }
