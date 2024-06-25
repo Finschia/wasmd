@@ -304,12 +304,6 @@ func TestAddr(addr string, bech string) (sdk.AccAddress, error) {
 	return res, nil
 }
 
-// CheckBalance checks the balance of an account.
-func CheckBalance(t *testing.T, app *WasmApp, addr sdk.AccAddress, balances sdk.Coins) {
-	ctxCheck := app.BaseApp.NewContext(true, tmproto.Header{})
-	require.True(t, balances.IsEqual(app.BankKeeper.GetAllBalances(ctxCheck, addr)))
-}
-
 const DefaultGas = 1200000
 
 // SignCheckDeliver checks a generated signed transaction and simulates a
