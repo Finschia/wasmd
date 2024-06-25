@@ -5,8 +5,6 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
-    - depguard
     - dogsled
     - errcheck
     - goconst
@@ -23,14 +21,15 @@ linters:
     - prealloc
     - exportloopref
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unused
-    - varcheck
 
 issues:
+  exclude-dirs: # following upstream rules
+    - x/wasm
+    - app
   exclude-rules:
     - text: "Use of weak random number generator"
       linters:
@@ -46,12 +45,6 @@ linters-settings:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
     # default is false: such cases aren't reported by default.
     check-blank: true
-  maligned:
-    # print struct with more effective memory layout or not, false by default
-    suggest-new: true
-  golint:
-    # minimal confidence for issues, default is 0.8
-    min-confidence: 0
   prealloc:
     # XXX: we don't recommend using this linter before doing performance profiling.
     # For most programs usage of prealloc will be a premature optimization.
