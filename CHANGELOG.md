@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased](https://github.com/Finschia/wasmd/compare/v0.3.0...HEAD)
+## [Unreleased](https://github.com/Finschia/wasmd/compare/v0.3.1...HEAD)
 
 ### Features
 
@@ -14,6 +14,10 @@
 
 ### Document Updates
 
+## [v0.3.1](https://github.com/Finschia/wasmd/releases/tag/v0.3.1) - 2024.06.25
+
+### Build, CI
+* [\#125](https://github.com/Finschia/wasmd/pull/125) Update outdated deps/ghactions
 
 ## [v0.3.0](https://github.com/Finschia/wasmd/releases/tag/v0.3.0) - 2024.02.27
 
