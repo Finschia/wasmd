@@ -1,6 +1,6 @@
 # docker build . -t finschia/wasmd:latest
 # docker run --rm -it finschia/wasmd:latest /bin/sh
-FROM golang:1.20-alpine AS go-builder
+FROM golang:1.22-alpine AS go-builder
 ARG arch=x86_64
 
 # this comes from standard alpine nightly file
@@ -30,7 +30,7 @@ RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/wasmd | grep "statically linked")
 
 # --------------------------------------------------------
-FROM alpine:3.15
+FROM alpine:3.18
 
 COPY --from=go-builder /code/build/wasmd /usr/bin/wasmd
 
